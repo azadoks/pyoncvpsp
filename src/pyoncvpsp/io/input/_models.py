@@ -151,7 +151,7 @@ class AtomicConfigurationInput(BaseModel):  # pylint: disable=too-few-public-met
             f=self.f[index],
         )
 
-    def __iter__(self):
+    def __iter__(self):  # type: ignore
         for i in range(len(self)):
             yield self[i]
 
@@ -260,7 +260,7 @@ class PseudoPotentialsInput(BaseModel):  # pylint: disable=too-few-public-method
             qcut=self.qcut[index],
         )
 
-    def __iter__(self):
+    def __iter__(self):  # type: ignore
         for i in range(len(self)):
             yield self[i]
 
@@ -401,7 +401,7 @@ class VKBProjectorsInput(BaseModel):  # pylint: disable=too-few-public-methods
             debl=self.debl[index],
         )
 
-    def __iter__(self):
+    def __iter__(self):  # type: ignore
         for i in range(len(self)):
             yield self[i]
 

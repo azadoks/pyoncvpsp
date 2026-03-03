@@ -63,7 +63,7 @@ def unflatten(dictionary: Mapping[str, Any], separator="__"):  # pylint: disable
         dict[str, Any]: Reconstructed nested dictionary.
     """
     if all(key.split(separator)[0].isdigit() for key in dictionary.keys()):
-        nested = []
+        nested: list[Any] | dict[str | int, Any] = []
     else:
         nested = {}
     for key, value in dictionary.items():
@@ -71,23 +71,23 @@ def unflatten(dictionary: Mapping[str, Any], separator="__"):  # pylint: disable
         d = nested
         for i, part in enumerate(parts[:-1]):
             if part.isdigit():
-                part = int(part)
+                part = int(part)  # type: ignore
                 if i == len(parts) - 1:
-                    while len(d) <= part:
-                        d.append(None)
+                    while len(d) <= part:  # type: ignore
+                        d.append(None)  # type: ignore
                 else:
                     if parts[i + 1].isdigit():
-                        while len(d) <= part:
-                            d.append([])
+                        while len(d) <= part:  # type: ignore
+                            d.append([])  # type: ignore
                     else:
-                        while len(d) <= part:
-                            d.append({})
+                        while len(d) <= part:  # type: ignore
+                            d.append({})  # type: ignore
             elif part not in d:
                 if parts[i + 1].isdigit():
-                    d[part] = []
+                    d[part] = []  # type: ignore
                 else:
-                    d[part] = {}
-            d = d[part]
+                    d[part] = {}  # type: ignore
+            d = d[part]  # type: ignore
         if isinstance(d, list):
             index = int(parts[-1])
             while len(d) <= index:

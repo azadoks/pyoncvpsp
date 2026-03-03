@@ -1,3 +1,6 @@
+"""Parser for the ONCVPSP/METAPSP stdout text output."""
+# pylint: disable=too-many-lines
+
 from collections import defaultdict
 from functools import cached_property
 from os import PathLike
@@ -9,166 +12,9 @@ import numpy as np
 
 from pyoncvpsp.io._utils import fort_float
 from pyoncvpsp.io.input._models import OncvpspInput
+from ._data import WARNINGS, ERRORS
 
 RE_FLOAT: str = r"[+-]?(?:\d+\.\d*|\.\d+|\d+)(?:[eEdD][+-]?\d+)?"
-
-WARNINGS = [
-    {
-        "name": "icmod1_not_converged",
-        "pattern": r"WARNING - modcore not converged",
-        "match_string": "WARNING - modcore not converged",
-        "line_count": 1,
-        "subroutine": "modcore",
-        "description": "Optimization of polynomial model core charge did not converge",
-    },
-    {
-        "name": "icmod4_nm_not_converged",
-        "pattern": r"WARNING: not fully converged in 100 steps",
-        "match_string": "WARNING: not fully converged in 100 steps",
-        "line_count": 1,
-        "subroutine": "modcore3",
-        "description": "Nelder-Mead optimization of model core charge Teter parameters did not converge",
-    },
-    {
-        "name": "atom_not_converged",
-        "pattern": r"(?P<rel>sr|rel)atom: WARNING failed to converge",
-        "match_string": "atom: WARNING failed to converge",
-        "line_count": 1,
-        "subroutine": "(sr|rel)atom",
-        "description": "All-electron calculation did not converge",
-    },
-    {
-        "name": "ldiracfb_not_converged",
-        "pattern": r"runconfig: WARNING ldiracfb convergence ERROR n,l,kap,iter=",
-        "match_string": "runconfig: WARNING ldiracfb convergence ERROR n,l,kap,iter=",
-        "line_count": 1,
-        "subroutine": "run_config_r",
-        "description": "",
-    },
-    {
-        "name": "fr_no_ae_solution",
-        "pattern": r"run_config_r: WARNING  for AE atom,",
-        "match_string": "run_config_r: WARNING  for AE atom,",
-        "line_count": 1,
-        "subroutine": "run_config_r",
-        "description": "",
-    },
-    {
-        "name": "fr_fully_non_local_ps_atom",
-        "pattern": r"run_config_r: WARNING for fully non-local PS atom",
-        "match_string": "run_config_r: WARNING for fully non-local PS atom",
-        "line_count": 1,
-        "subroutine": "run_config_r",
-        "description": "",
-    },
-    {
-        "name": "localized_bound_state_for_projector",
-        "pattern": r"WARNING wellstate: localized bound state found for n=",
-        "match_string": "WARNING wellstate: localized bound state found for n=",
-        "line_count": 1,
-        "subroutine": "wellstate[_r]",
-        "description": "",
-    },
-    {
-        "name": "moderately_localized_bound_state_for_projector",
-        "pattern": r"WARNING wellstate: moderately localized bound state found for n=",
-        "match_string": "WARNING wellstate: moderately localized bound state found for n=",
-        "line_count": 1,
-        "subroutine": "wellstate[_r]",
-        "description": "",
-    },
-    {
-        "name": "scattering_first_projector",
-        "pattern": r"WARNING wellstate: negative energy specified for n=\s*(?P<enn>\d+) l=\s*(?P<ell>\d+)",
-        "match_string": "WARNING wellstate: negative energy specified for n=",
-        "line_count": 3,
-        "subroutine": "wellstate",
-        "description": "",
-    },
-    {
-        "name": "lschvkbbe_not_converged",
-        "pattern": rf"(?P<subroutine>\w+): lschvkbbe ERROR\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+({RE_FLOAT})\s+({RE_FLOAT})",
-        "match_string": "lschvkbbe ERROR",
-        "line_count": 1,
-        "subroutine": "lschvkbbe",
-        "description": "Unable to converge fixed-energy solution in local+non-local potential.",
-    },
-]
-
-ERRORS = [
-    {
-        "name": "lschvkbb_not_converged",
-        "pattern": r"psatom(?:_r)?: WARNING lschvkbb convergence error n,l,(?:kap,)?iter=",
-        "match_string": "WARNING lschvkbb convergence error n,l,",
-        "line_count": 1,
-        "subroutine": "psatom(_r)",
-        "description": "Unable to converge bound-state solution in local+non-local potential.",
-    },
-    {
-        "name": "wellstate_not_converged",
-        "pattern": r"ERROR wellstate(?:_r)?: well potential iteration failed to converge, n=",
-        "match_string": "ERROR wellstate: well potential iteration failed to converge, n=",
-        "line_count": 1,
-        "subroutine": "wellstate(_r)",
-        "description": "Unable to converge well-state solution in full potential.",
-    },
-    {
-        "name": "bad_input",
-        "pattern": r"ERROR: test_data found\s*(?P<nerr>\d+)\s*ERROR; stopping",
-        "match_string": "ERROR: test_data found",
-        "line_count": 1,
-        "subroutine": "check_data",
-        "description": "Invalid input data.",
-    },
-    {
-        "name": "input_file_read_error",
-        "pattern": r"Error reading input data file",
-        "match_string": "Error reading input data file",
-        "line_count": 1,
-        "subroutine": "input",
-        "description": "Unable to read input data file.",
-    },
-    {
-        "name": "no_classical_turning_point",
-        "pattern": r"ERROR no classical turning point",
-        "match_string": "ERROR no classical turning point",
-        "line_count": 1,
-        "subroutine": "lsch*",
-        "description": "No classical turning point found.",
-    },
-    {
-        "name": "no_core_valence_crossing",
-        "pattern": r"ERROR ircc (cor-valence charge crossover",
-        "match_string": "ERROR ircc (cor-valence charge crossover",
-        "line_count": 1,
-        "subroutine": "modcore*",
-        "description": "No core-valence charge density crossover radius found.",
-    },
-    {
-        "name": "first_pswf_has_node",
-        "pattern": r"ERROR pspot:  first pseudo wave function has node,",
-        "match_string": "ERROR pspot:  first pseudo wave function has node,",
-        "line_count": 2,
-        "subroutine": "pspot",
-        "description": "First pseudo wavefunction has a node.",
-    },
-    {
-        "name": "ps0norm_gt_uunorm",
-        "pattern": r"optimize: ERROR ps0norm > uunorm, code will stop",
-        "match_string": "optimize: ERROR ps0norm > uunorm, code will stop",
-        "line_count": 1,
-        "subroutine": "optimize",
-        "description": "Norm of unoptimized pseudo wavefunction exceeds that of all-electron wavefunction.",
-    },
-    {
-        "name": "rxpsh_too_small",
-        "pattern": rf"ERROR: run_phsft: rxpsh= (?P<rxpsh>{RE_FLOAT}) < rc\((?P<l>\d)\)= (?P<rc>{RE_FLOAT})",
-        "match_string": "ERROR: run_phsft: rxpsh=",
-        "line_count": 1,
-        "subroutine": "run_phsft",
-        "description": "Matching radius is smaller than pseudopotential core radius for given angular momentum.",
-    },
-]
 
 
 def _kappa(
@@ -181,14 +27,21 @@ def _kappa(
     assert any(sources) and not any(sources), (
         "Exactly one input source must be provided."
     )
-    if spin_sign is not None:
-        ess: float = spin_sign * 1 / 2
-    if ess is not None:
-        jay: float = ell + ess
-    return int((ell - jay) * (2 * jay + 1))
+    if jay is not None:
+        j = jay
+    elif spin_sign is not None:
+        s = spin_sign * 1 / 2
+        j = ell + s
+    elif ess is not None:
+        j = ell + ess
+    else:
+        raise RuntimeError("unreachable")
+    return int((ell - j) * (2 * j + 1))
 
 
 class OncvpspOutputError(Exception):
+    """Error message from ONCVPSP."""
+
     line_numbers: list[int]
     context_lines: list[str]
     context_line_numbers: list[int]
@@ -238,6 +91,8 @@ class OncvpspOutputError(Exception):
 
 
 class OncvpspTextParser:
+    """Parser for ONCVPSP/METAPSP stdout text output."""
+
     _lines: list[str]
 
     def __init__(
@@ -775,6 +630,13 @@ class OncvpspTextParser:
 
     @cached_property
     def vkb_scalar_projector_coefficients(self) -> list[dict]:
+        r"""Projector coefficients 1/\tilde{b}_i for each angular momentum.
+
+        Returns:
+            list[dict]: List of dicts containing:
+                ell (int): Angular momentum quantum number.
+                coefficients (np.ndarray): Orthonormal scalar projector coefficients for the given ell.
+        """
         coefficients: list[dict] = []
         for i, match in self.findall(
             r" Orthonormal scalar projector coefficients, l =\s+(?P<ell>\d)"
@@ -792,6 +654,13 @@ class OncvpspTextParser:
 
     @cached_property
     def vkb_spin_orbit_projector_coefficients(self) -> list[dict]:
+        """ "Spin-orbit"-convention projector coefficients for each angular momentum.
+
+        Returns:
+            list[dict]: List of dicts containing:
+                ell (int): Angular momentum quantum number.
+                coefficients (np.ndarray): Orthonormal "spin-orbit" projector coefficients for the given ell.
+        """
         coefficients: list[dict] = []
         for i, match in self.findall(
             r" Orthonormal spin-orbit projector coefficients, l =\s+(?P<ell>\d)"
@@ -809,6 +678,16 @@ class OncvpspTextParser:
 
     @cached_property
     def vkb_hermiticity_errors(self) -> list[dict]:
+        """Hermiticity errors for Bij matrces.
+
+        Returns:
+            list[dict]: List of dicts containing:
+                ell (int): Angular momentum quantum number.
+                spin_sign (int): Spin sign (+1 for j=l+1/2, -1 for j=l-1/2, 0 for non-relativistic).
+                i (int): Projector index i.
+                j (int): Projector index j.
+                hermiticity_error (float): Hermiticity error for Bij matrix element (i, j) in Ha.
+        """
         v3_herm_err_pattern = re.compile(
             rf"Hermiticity error\s+(?P<herm_err>{RE_FLOAT})"
         )
@@ -957,7 +836,13 @@ class OncvpspTextParser:
         if not start_match or not stop_match:
             return []
         pattern = re.compile(
-            rf"\s+(?P<ell>\d)(?:\s+(?P<kap>-?\d))?\s+(?P<rcore>{RE_FLOAT})\s+(?P<rmatch>{RE_FLOAT})\s+(?P<e_in>{RE_FLOAT})\s+(?P<e_test>{RE_FLOAT})\s+(?P<norm_test>{RE_FLOAT})\s+(?P<slope_test>{RE_FLOAT})"
+            r"\s+(?P<ell>\d)(?:\s+(?P<kap>-?\d))?"
+            rf"\s+(?P<rcore>{RE_FLOAT})"
+            rf"\s+(?P<rmatch>{RE_FLOAT})"
+            rf"\s+(?P<e_in>{RE_FLOAT})"
+            rf"\s+(?P<e_test>{RE_FLOAT})"
+            rf"\s+(?P<norm_test>{RE_FLOAT})"
+            rf"\s+(?P<slope_test>{RE_FLOAT})"
         )
         return [
             {
@@ -1005,7 +890,13 @@ class OncvpspTextParser:
             raise RuntimeError("Failed to find end of VKB diagnostic test block")
         is_v3 = self.program_information["version"].startswith("3")
         pattern = re.compile(
-            rf"\s+(?P<ell>\d)(?:\s+(?P<kap>-?\d))?\s+(?P<rcore>{RE_FLOAT})\s+(?P<rmatch>{RE_FLOAT})\s+(?P<e_in>{RE_FLOAT})\s+(?P<e_or_delta_e_test>{RE_FLOAT})\s+(?P<norm_test>{RE_FLOAT})\s+(?P<slope_test>{RE_FLOAT})"
+            r"\s+(?P<ell>\d)(?:\s+(?P<kap>-?\d))?"
+            rf"\s+(?P<rcore>{RE_FLOAT})"
+            rf"\s+(?P<rmatch>{RE_FLOAT})"
+            rf"\s+(?P<e_in>{RE_FLOAT})"
+            rf"\s+(?P<e_or_delta_e_test>{RE_FLOAT})"
+            rf"\s+(?P<norm_test>{RE_FLOAT})"
+            rf"\s+(?P<slope_test>{RE_FLOAT})"
         )
         return [
             {
@@ -1045,7 +936,10 @@ class OncvpspTextParser:
         """
         ghosts = []
         pattern = re.compile(
-            rf"\s+(?P<ell>\d)(?:\s+(?P<kap>-?\d))?\s+(?:(?P<r_rc>{RE_FLOAT})\s+)?(?P<eig>{RE_FLOAT})\s+(?P<ecut>{RE_FLOAT})\s+WARNING - GHOST\((?P<sign>[+-])\)"
+            r"\s+(?P<ell>\d)(?:\s+(?P<kap>-?\d))?"
+            rf"\s+(?:(?P<r_rc>{RE_FLOAT})\s+)?"
+            rf"(?P<eig>{RE_FLOAT})"
+            rf"\s+(?P<ecut>{RE_FLOAT})\s+WARNING - GHOST\((?P<sign>[+-])\)"
         )
         matches = self.findall(pattern)
         for _, match in matches:
@@ -1084,7 +978,11 @@ class OncvpspTextParser:
         """
         test_configurations: list[list[dict]] = []
         pattern = re.compile(
-            rf"\s+(?P<enn>\d)\s+(?P<ell>\d)\s+(?:(?P<kappa>-?\d)\s+)?(?P<occ>{RE_FLOAT})\s+(?P<eig_ae>{RE_FLOAT})(?:\s+(?P<eig_ps>{RE_FLOAT}))?(?:\s+(?P<diff>{RE_FLOAT}))?"
+            r"\s+(?P<enn>\d)\s+(?P<ell>\d)\s+(?:(?P<kappa>-?\d)\s+)?"
+            rf"(?P<occ>{RE_FLOAT})"
+            rf"\s+(?P<eig_ae>{RE_FLOAT})"
+            rf"(?:\s+(?P<eig_ps>{RE_FLOAT}))?"
+            rf"(?:\s+(?P<diff>{RE_FLOAT}))?"
         )
         test_matches = self.findall(r"Test configuration\s+(?P<itest>\d+)")
         for i, match in test_matches:
@@ -1235,7 +1133,10 @@ class OncvpspTextParser:
                 rho_model_core (np.ndarray): Model core charge density (e/a.u.³).
         """
         pattern = re.compile(
-            rf"!r\s+(?P<r>{RE_FLOAT})\s+(?P<rho_val>{RE_FLOAT})\s+(?P<rho_core>{RE_FLOAT})\s+(?P<rho_model_core>{RE_FLOAT})"
+            rf"!r\s+(?P<r>{RE_FLOAT})"
+            rf"\s+(?P<rho_val>{RE_FLOAT})"
+            rf"\s+(?P<rho_core>{RE_FLOAT})"
+            rf"\s+(?P<rho_model_core>{RE_FLOAT})"
         )
         block = self.findall(pattern)
         data = defaultdict(list)
@@ -1297,7 +1198,8 @@ class OncvpspTextParser:
                 r (np.ndarray): Radial grid points (a.u.).
                 wfn_ae (np.ndarray): All-electron wavefunction values.
                 wfn_ps (np.ndarray): Pseudowavefunction values.
-                is_bound (bool | None): Whether the state is a bound state (True), a wellstate (False), or unknown (None).
+                is_bound (bool | None): Whether the state is a bound state (True),
+                a wellstate (False), or unknown (None).
                 n (int | None): Principal quantum number, None if unknown.
                 l (int): Angular momentum quantum number.
                 iproj (int): Projector index (1-based).
@@ -1310,7 +1212,8 @@ class OncvpspTextParser:
                 half_point_radius (float, optional): Half-point radius (a.u.), if available.
         """
         data_pattern = re.compile(
-            rf"&\s+(?P<spin_sign>[\s-])(?P<iproj>\d)?(?P<ell>\d)\s+(?P<r>{RE_FLOAT})\s+(?P<wfn_ae>{RE_FLOAT})\s+(?P<wfn_ps>{RE_FLOAT})"
+            r"&\s+(?P<spin_sign>[\s-])(?P<iproj>\d)?(?P<ell>\d)"
+            rf"\s+(?P<r>{RE_FLOAT})\s+(?P<wfn_ae>{RE_FLOAT})\s+(?P<wfn_ps>{RE_FLOAT})"
         )
         header_pattern = re.compile(r"n=\s*(?P<enn>\d+),\s+l=\s*(?P<ell>\d)")
         v4_scattering_header_pattern = re.compile(
@@ -1390,7 +1293,11 @@ class OncvpspTextParser:
                     if k[1] == ell and k[2] == spin_sign
                 ]
             ) + sorted([k for k in wellstates if k[1] == ell and k[2] == spin_sign])
-            state_key = state_keys[iproj - 1] if (iproj - 1 < len(state_keys)) else None
+            state_key = (
+                state_keys[iproj - 1]
+                if (iproj - 1 < len(state_keys))
+                else (-1, -1, -10)
+            )
             state_metadata = {
                 "is_bound": None,
                 "n": 0,
@@ -1402,14 +1309,16 @@ class OncvpspTextParser:
                 "r_rc": np.nan,
             }  # Default empty metadata
             if (
-                block_data["is_bound"] is not False
+                block_data["is_bound"] is not False  # pyrefly: ignore
                 and state_key in self.valence_quantum_numbers
             ):
                 # If we're sure this is not a wellstate, get a boundstate
                 state_metadata.update(test_config.get(state_key, {}))
                 state_metadata.update(ref_config[state_key])
                 state_metadata["is_bound"] = True
-            if block_data["is_bound"] is not True and state_key in wellstates:
+            if (
+                block_data["is_bound"] is not True and state_key in wellstates
+            ):  # pyrefly: ignore
                 # If we're sure this is not a boundstate, get a wellstate
                 state_metadata.update(wellstates[state_key])
                 state_metadata["is_bound"] = False
@@ -1521,6 +1430,12 @@ class OncvpspTextParser:
 
     @cached_property
     def ecut_recommended(self) -> float:
+        """Recommended cutoff energy in Hartree. Determined as the maximum Ecut for the first projector
+        over angular momenta.
+
+        Returns:
+            float: Recommended Ecut (Ha).
+        """
         ecut = -np.inf
         for prof in self.convergence_profiles:
             if prof["iproj"] != 1:
@@ -1548,7 +1463,8 @@ class OncvpspTextParser:
                 log_deriv_ps (np.ndarray): Pseudopotential logarithmic derivative.
         """
         pattern = re.compile(
-            rf"!\s+(?P<spin_sign>[\s-])(?P<ell>\d)\s+(?P<e>{RE_FLOAT})\s+(?P<log_deriv_ae>{RE_FLOAT})\s+(?P<log_deriv_ps>{RE_FLOAT})"
+            rf"!\s+(?P<spin_sign>[\s-])(?P<ell>\d)\s+(?P<e>{RE_FLOAT})"
+            rf"\s+(?P<log_deriv_ae>{RE_FLOAT})\s+(?P<log_deriv_ps>{RE_FLOAT})"
         )
         blocks = self._get_plot_blocks(pattern)
         data: dict[tuple[int, int], dict[str, Any]] = defaultdict(
@@ -1589,23 +1505,6 @@ class OncvpspTextParser:
             for key, value in data.items()
         ]
 
-    @property
-    def full_potential(self) -> dict:
-        """Full potential radial function, if `lloc != 4`.
-
-        Returns:
-            dict:
-                r (np.ndarray): Radial grid points (a.u.).
-                v_full (np.ndarray): Full potential values (Ha).
-        """
-        pattern = re.compile(rf"\s*!VF\s+(?P<r>{RE_FLOAT})\s+(?P<v_full>{RE_FLOAT})")
-        block = self.findall(pattern)
-        data = defaultdict(list)
-        for _, match in block:
-            data["r"].append(float(match.group("r")))
-            data["v_full"].append(float(match.group("v_full")))
-        return {k: np.array(v) for k, v in data.items()}
-
     @cached_property
     def plot_data(self) -> dict:
         """Dictionary containing plot data (radial functions).
@@ -1624,7 +1523,6 @@ class OncvpspTextParser:
         return {
             "unscreened_semilocal_potentials": self.unscreened_semilocal_potentials,
             "semilocal_potentials": self.semilocal_potentials,
-            "full_potential": self.full_potential,  # TODO: only hacked in
             "local_potential": self.local_potential,
             "charge_densities": self.charge_densities,
             "kinetic_energy_densities": self.kinetic_energy_densities,
