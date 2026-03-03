@@ -1317,8 +1317,8 @@ class OncvpspTextParser:
                 state_metadata.update(ref_config[state_key])
                 state_metadata["is_bound"] = True
             if (
-                block_data["is_bound"] is not True and state_key in wellstates
-            ):  # pyrefly: ignore
+                block_data["is_bound"] is not True and state_key in wellstates  # type: ignore
+            ):
                 # If we're sure this is not a boundstate, get a wellstate
                 state_metadata.update(wellstates[state_key])
                 state_metadata["is_bound"] = False
