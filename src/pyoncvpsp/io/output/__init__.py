@@ -1,6 +1,7 @@
 """ONCVPSP output I/O package."""
 
-from ._text import ERRORS, WARNINGS, OncvpspOutputError, OncvpspTextParser
+from ._data import ERRORS, WARNINGS
+from ._text import OncvpspOutputError, OncvpspTextParser
 
 __all__: list[str] = [
     "ERRORS",
