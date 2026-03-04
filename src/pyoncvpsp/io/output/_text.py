@@ -1442,8 +1442,9 @@ class OncvpspTextParser:
                 continue
             mask = np.isclose(prof["eresid"], 1e-5, atol=1e-10)
             if np.sum(mask) == 0 or not np.any(mask):
-                continue
-            ecut_proj = prof["ecut"][mask][0]
+                ecut_proj = np.inf
+            else:
+                ecut_proj = prof["ecut"][mask][0]
             if ecut_proj > ecut:
                 ecut = ecut_proj
         return ecut
