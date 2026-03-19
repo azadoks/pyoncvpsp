@@ -174,4 +174,21 @@ ERRORS = [
         "subroutine": "wellstate",
         "description": "No bound state found in the well potetntial for given n and l.",
     },
+    {
+        "name": "too_few_qroots",
+        "pattern": r"qroots: ERROR - failed to find nroot roots",
+        "match_string": "qroots: ERROR - failed to find nroot roots",
+        "line_count": 1,
+        "subroutine": "qroots",
+        "description": "Unable to find required number of roots in qroots subroutine.",
+    },
+    {
+        "name": "vkb_bound_state_not_converged",
+        "pattern": r"oncvpsp: lschvkbb ERROR\s+(?P<n>\d+)\s+(?P<l>\d+)\s+(?P<ierr>\d+)",
+        "match_string": "oncvpsp: lschvkbb ERROR",
+        "line_count": 1,
+        "subroutine": "oncvpsp",
+        "description": "Unable to solve for bound state in separable pseudopotential when constructing final pseudo-states and densities."
+    },
+
 ]
