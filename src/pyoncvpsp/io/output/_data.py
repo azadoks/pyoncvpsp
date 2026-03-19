@@ -158,4 +158,12 @@ ERRORS = [
         "subroutine": "run_phsft",
         "description": "Matching radius is smaller than pseudopotential core radius for given angular momentum.",
     },
+    {
+        "name": "wellstate_no_bound_state",
+        "pattern": r"wellstate: ERROR lschfb convergence error, n=\s+(?P<n>\d+) l=\s+(?P<l>\d+)",
+        "match_string": "wellstate: ERROR lschfb convergence error, n=",
+        "line_count": 1,
+        "subroutine": "wellstate",
+        "description": "No bound state found in the well potetntial for given n and l.",
+    },
 ]
