@@ -83,6 +83,14 @@ WARNINGS = [
         "subroutine": "lschvkbbe",
         "description": "Unable to converge fixed-energy solution in local+non-local potential.",
     },
+    {
+        "name": "first_pswf_has_node",
+        "pattern": r" WARNING pspot:  first pseudo wave function has node",
+        "match_string": " WARNING pspot:  first pseudo wave function has node",
+        "line_count": 1,
+        "subroutine": "pspot",
+        "description": "First pseudo wavefunction has a node.",
+    }
 ]
 
 ERRORS = [
