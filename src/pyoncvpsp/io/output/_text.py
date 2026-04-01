@@ -1567,6 +1567,7 @@ class OncvpspTextParser:
         output["warnings"] = self.warnings
         output["program_information"] = self.program_information
         output["input"] = self.input
+        output["reference_configuration"] = self.reference_configuration
         output["wellstate_metadata"] = self.wellstate_metadata
         output["vkb_hermiticity_errors"] = self.vkb_hermiticity_errors
         output["vkb_scalar_projector_coefficients"] = (

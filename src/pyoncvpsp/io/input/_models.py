@@ -1,12 +1,15 @@
 """ONVPSP input file handling."""
 
 import logging
+from math import floor
 from os import PathLike
 from typing import Annotated, Any, Iterator, TextIO
 
-from pydantic import BaseModel, Field, model_validator
+import numpy as np
 import toml
+from pydantic import BaseModel, Field, model_validator
 
+from ...utils import build_mesh
 from .._utils import flatten, recursive_merge
 
 LOGGER: logging.Logger = logging.getLogger(__name__)
@@ -585,6 +588,84 @@ class OncvpspInput(BaseModel):
     log_derivative_analysis: LogDerivativeInput
     test_configurations: list[AtomicConfigurationInput] = []
     output_grid: OutputGridInput
+
+    def get_num_ae_bound_states(self, l: int) -> int:  # noqa: E741
+        """Get the number of all-electron bound states for a given angular momentum channel.
+
+        Args:
+            l (int): Angular momentum quantum number.
+        Returns:
+            int: Number of all-electron bound states for the given angular momentum channel.
+        """
+        return sum(
+            1 for state in self.reference_configuration if state.l == l and state.f > 0
+        )
+
+    def projector_state_is_bound(self, l: int, i: int) -> bool:  # noqa: E741
+        """Determine whether the i-th projector for angular momentum channel l corresponds to a bound state.
+
+        Args:
+            l (int): Angular momentum quantum number.
+            i (int): Projector index (0-based).
+        Returns:
+            bool: True if the projector corresponds to a bound state, False otherwise.
+        """
+        num_ae_bound_states = self.get_num_ae_bound_states(l)
+        return i < num_ae_bound_states
+
+    def ep_is_active(self, l: int) -> bool:  # noqa: E741
+        """Determine whether the energy parameter `ep` for angular momentum channel `l` is active (i.e., used in pseudopotential construction).
+
+        Args:
+            l (int): Angular momentum quantum number.
+        Returns:
+            bool: True if `ep` is active for the given angular momentum channel, False otherwise.
+        """
+        return not self.projector_state_is_bound(l, 0)
+
+    def debl_is_active(self, l: int) -> bool:  # noqa: E741
+        """Determine whether the energy increment parameter `debl` for angular momentum channel `l` is active (i.e., used in constructing additional projectors when no corresponding occupied bound state exists).
+
+        Args:
+            l (int): Angular momentum quantum number.
+        Returns:
+            bool: True if `debl` is active for the given angular momentum channel, False otherwise.
+        """
+        return self.vkb_projectors.nproj[l] > 0 and not all(
+            self.projector_state_is_bound(l, i)
+            for i in range(1, self.vkb_projectors.nproj[l])
+        )
+
+    @property
+    def radial_mesh(self) -> np.ndarray:
+        """Radial grid used for pseudopotential construction and output.
+
+        Returns:
+            np.ndarray: Radial grid points in Bohr.
+        """
+        return build_mesh(self.oncvpsp.z)
+
+    @property
+    def rxpsh(self) -> list[float]:
+        """Radii at which logarithmic derivatives are calculated for each angular momentum channel.
+
+        Returns:
+            list[float]: List of radii in Bohr.
+        """
+        if self.log_derivative_analysis.rxpsh is not None:
+            return [self.log_derivative_analysis.rxpsh] * 4
+        else:
+            # The main program rounds all rc values to 5 decimal places before using them
+            # `run_phsft(_r)` uses `irc(l+1) + 2` for l <= lmax and `irc(lloc+1)` otherwise
+            radial_mesh = self.radial_mesh
+            rcloc = self.local_potential.rcloc or self.pseudopotentials.rc[self.local_potential.lloc]
+            rcloc_rounded = floor(1e5 * rcloc) / 1e5
+            rxpsh_default = radial_mesh[radial_mesh >= rcloc_rounded][0]
+            rxpsh = [rxpsh_default] * 4
+            for l in range(self.pseudopotentials.lmax + 1):  # noqa: E741
+                rc_rounded = floor(1e5 * self.pseudopotentials.rc[l]) / 1e5
+                rxpsh[l] = radial_mesh[radial_mesh >= rc_rounded][2]
+            return rxpsh
 
     def merge(self, other: dict[str, Any] | None = None, **kwargs) -> "OncvpspInput":
         """Merge this set of input parameters with another set of parameters or keyword arguments.
