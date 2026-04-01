@@ -658,7 +658,10 @@ class OncvpspInput(BaseModel):
             # The main program rounds all rc values to 5 decimal places before using them
             # `run_phsft(_r)` uses `irc(l+1) + 2` for l <= lmax and `irc(lloc+1)` otherwise
             radial_mesh = self.radial_mesh
-            rcloc = self.local_potential.rcloc or self.pseudopotentials.rc[self.local_potential.lloc]
+            rcloc = (
+                self.local_potential.rcloc
+                or self.pseudopotentials.rc[self.local_potential.lloc]
+            )
             rcloc_rounded = floor(1e5 * rcloc) / 1e5
             rxpsh_default = radial_mesh[radial_mesh >= rcloc_rounded][0]
             rxpsh = [rxpsh_default] * 4

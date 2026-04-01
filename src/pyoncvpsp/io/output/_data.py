@@ -90,7 +90,7 @@ WARNINGS = [
         "line_count": 1,
         "subroutine": "pspot",
         "description": "First pseudo wavefunction has a node.",
-    }
+    },
 ]
 
 ERRORS = [
@@ -188,7 +188,6 @@ ERRORS = [
         "match_string": "oncvpsp: lschvkbb ERROR",
         "line_count": 1,
         "subroutine": "oncvpsp",
-        "description": "Unable to solve for bound state in separable pseudopotential when constructing final pseudo-states and densities."
+        "description": "Unable to solve for bound state in separable pseudopotential when constructing final pseudo-states and densities.",
     },
-
 ]
