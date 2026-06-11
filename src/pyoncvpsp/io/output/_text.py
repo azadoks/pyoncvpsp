@@ -134,6 +134,7 @@ class OncvpspTextParser:
         )
         errors = []
         for i, line in enumerate(self._lines):
+            # Stop looking for errors once we get to the plotting block
             if line.strip().startswith("DATA FOR PLOTTING"):
                 break
             line_number = i + 1
