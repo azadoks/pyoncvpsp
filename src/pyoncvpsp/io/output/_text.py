@@ -177,7 +177,7 @@ class OncvpspTextParser:
         if not stop_match:
             return []
         end_idx = stop_match[0] + (1 if include_stop else 0)
-        return self.lines[start_idx:end_idx]
+        return self.clean_lines[start_idx:end_idx]
 
     def search(
         self, pattern: str | re.Pattern[str], start: int = 0
@@ -192,8 +192,8 @@ class OncvpspTextParser:
             tuple[int, re.Match[str]] | None: Tuple of (line index, regex match object) if found, else None.
         """
         regex = re.compile(pattern) if isinstance(pattern, str) else pattern
-        for i in range(start, len(self.lines)):
-            if match := regex.search(self.lines[i]):
+        for i in range(start, len(self.clean_lines)):
+            if match := regex.search(self.clean_lines[i]):
                 return i, match
         return None
 
@@ -211,10 +211,10 @@ class OncvpspTextParser:
             list[tuple[int, re.Match[str]]]: List of tuples of (line index, regex match object).
         """
         regex = re.compile(pattern) if isinstance(pattern, str) else pattern
-        stop = stop if stop >= 0 else len(self.lines)
+        stop = stop if stop >= 0 else len(self.clean_lines)
         matches = []
         for i in range(start, stop):
-            if match := regex.search(self.lines[i]):
+            if match := regex.search(self.clean_lines[i]):
                 matches.append((i, match))
         return matches
 
@@ -282,7 +282,12 @@ class OncvpspTextParser:
         return self.search("DATA FOR PLOTTING") is not None
 
     @cached_property
-    def lines(self) -> list[str]:
+    def raw_lines(self) -> list[str]:
+        """Raw lines of the output file."""
+        return self._lines
+
+    @cached_property
+    def clean_lines(self) -> list[str]:
         """Lines of the output file, excluding those corresponding to warnings and errors."""
         # Remove lines corresponding to warnings and errors prior to parsing output quantities
         # because they may be inserted within formatted data blocks.
@@ -311,12 +316,12 @@ class OncvpspTextParser:
                 date (str): Date of the program run.
                 relativistic_treatment (str): Relativistic treatment used.
         """
-        program: str = self.lines[0].strip().split()[0]
+        program: str = self.clean_lines[0].strip().split()[0]
         if program == "ONCVPSP":
-            line = self.lines[1]
+            line = self.clean_lines[1]
             relativistic_treatment = line.strip().split()[0]
         elif program == "METAPSP":
-            line = self.lines[2]
+            line = self.clean_lines[2]
             relativistic_treatment = "non-relativistic"
         else:
             raise ValueError(f"Unknown program: {program}")
@@ -344,7 +349,7 @@ class OncvpspTextParser:
         """Parsed input data used for the pseudopotential generation."""
         if line_match := self.search(r"^# ATOM AND REFERENCE CONFIGURATION$"):
             i, _ = line_match
-            return OncvpspInput.from_dat_string("\n".join(self.lines[i:])).model_dump()
+            return OncvpspInput.from_dat_string("\n".join(self.clean_lines[i:])).model_dump()
         return {}
 
     def get_reference_quantum_numbers(self, index) -> list[tuple[int, int, int]]:
@@ -479,9 +484,9 @@ class OncvpspTextParser:
         ap_pattern = re.compile(rf"\s+asymptotic potential =\s*(?P<ap>{RE_FLOAT})")
         hpr_pattern = re.compile(rf"\s+half-point radius =\s*(?P<hpr>{RE_FLOAT})")
         for i, match in matches:
-            eig_match = re.match(eig_pattern, self.lines[i + 1])
-            ap_match = re.match(ap_pattern, self.lines[i + 2])
-            hpr_match = re.match(hpr_pattern, self.lines[i + 3])
+            eig_match = re.match(eig_pattern, self.clean_lines[i + 1])
+            ap_match = re.match(ap_pattern, self.clean_lines[i + 2])
+            hpr_match = re.match(hpr_pattern, self.clean_lines[i + 3])
             enn = int(match.group("enn"))
             ell = int(match.group("ell"))
             kappa = int(match.group("kappa")) if match.group("kappa") is not None else 0
@@ -618,7 +623,7 @@ class OncvpspTextParser:
         """
         coefficients: list[dict] = []
         for ell, spin_sign, _, stop in self._run_vkb_indices:
-            for iproj, value in enumerate(self.lines[stop].split()[3:], start=1):
+            for iproj, value in enumerate(self.clean_lines[stop].split()[3:], start=1):
                 coefficients.append(
                     {
                         "l": ell,
@@ -647,7 +652,7 @@ class OncvpspTextParser:
                 {
                     "l": ell,
                     "coefficients": np.array(
-                        [float(c) for c in self.lines[i + 1].split()]
+                        [float(c) for c in self.clean_lines[i + 1].split()]
                     ),
                 }
             )
@@ -671,7 +676,7 @@ class OncvpspTextParser:
                 {
                     "l": ell,
                     "coefficients": np.array(
-                        [float(c) for c in self.lines[i + 1].split()]
+                        [float(c) for c in self.clean_lines[i + 1].split()]
                     ),
                 }
             )
@@ -699,7 +704,7 @@ class OncvpspTextParser:
         hermiticity_errors: list[dict] = []
         for ell, spin_sign, start, stop in self._run_vkb_indices:
             # Parse hermiticity errors
-            if herm_err_match := re.match(v3_herm_err_pattern, self.lines[start + 1]):
+            if herm_err_match := re.match(v3_herm_err_pattern, self.clean_lines[start + 1]):
                 hermiticity_errors.append(
                     {
                         "l": ell,
@@ -746,7 +751,7 @@ class OncvpspTextParser:
             with_nlcc = match.group("no") is None
             key = f"{ae_ps}_with_nlcc" if with_nlcc else ae_ps
             for j in range(self.input["oncvpsp"]["nv"]):
-                line = self.lines[i + 2 + j]
+                line = self.clean_lines[i + 2 + j]
                 data[key].append([fort_float(x) for x in line.split()])
         return {k: np.array(v) for k, v in data.items()}
 
@@ -780,8 +785,8 @@ class OncvpspTextParser:
         if self.input["model_core_charge"]["icmod"] == 4:
             param_match = self.search(r"amplitude prefactor, scale prefactor")
             if param_match:
-                parameters["fcfact"] = float(self.lines[param_match[0] + 1].split()[0])
-                parameters["rcfact"] = float(self.lines[param_match[0] + 1].split()[1])
+                parameters["fcfact"] = float(self.clean_lines[param_match[0] + 1].split()[0])
+                parameters["rcfact"] = float(self.clean_lines[param_match[0] + 1].split()[1])
         match_match = self.search(
             r"rmatch, rhocmatch\s+(?P<rmatch>{RE_FLOAT})\s+(?P<rhocmatch>{RE_FLOAT})"
         )
@@ -805,9 +810,9 @@ class OncvpspTextParser:
         if not match:
             return {}
         grid: dict[str, list] = defaultdict(list)
-        grid["fcfact"] = [float(x) for x in self.lines[match[0] + 5].split()]
+        grid["fcfact"] = [float(x) for x in self.clean_lines[match[0] + 5].split()]
         i = match[0] + 7
-        while words := self.lines[i].strip().split():
+        while words := self.clean_lines[i].strip().split():
             grid["rcfact"].append(float(words[0]))
             grid["d2exc_rmse"].append([float(x) for x in words[1:]])
             i += 1
@@ -988,7 +993,7 @@ class OncvpspTextParser:
         test_matches = self.findall(r"Test configuration\s+(?P<itest>\d+)")
         for i, match in test_matches:
             test_lines = self._get_lines_between(
-                start_pattern=self.lines[i],
+                start_pattern=self.clean_lines[i],
                 stop_pattern=rf"PSP excitation error=\s+{RE_FLOAT}",
                 include_start=True,
                 include_stop=True,
@@ -1249,7 +1254,7 @@ class OncvpspTextParser:
             block_data = {k: np.array(v) for k, v in block_data.items()}
             # Parse the header line and first block line for enn, ell, bound vs. scattering state, iproj
             first_ln, first_match = block[0]
-            header_line: str = self.lines[first_ln - 2]
+            header_line: str = self.clean_lines[first_ln - 2]
             block_data["is_bound"] = None
             if header_match := re.match(header_pattern, header_line):
                 if self.program_information["version"].startswith("4"):
@@ -1439,8 +1444,8 @@ class OncvpspTextParser:
         """
         ecut = -np.inf
         for prof in self.convergence_profiles:
-            if prof["iproj"] != 1:
-                continue
+            # if prof["iproj"] != 1:
+            #     continue
             mask = np.isclose(prof["eresid"], 1e-5, atol=1e-10)
             if np.sum(mask) == 0 or not np.any(mask):
                 ecut_proj = np.inf
@@ -1474,7 +1479,7 @@ class OncvpspTextParser:
         )
         for block in blocks:
             first_ln, first_match = block[0]
-            header_line: str = self.lines[first_ln - 3]
+            header_line: str = self.clean_lines[first_ln - 3]
             ell = int(first_match.group("ell"))
             spin_sign: int = 0
             if self.is_relativistic:
