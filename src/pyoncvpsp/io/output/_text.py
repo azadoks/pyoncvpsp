@@ -742,17 +742,21 @@ class OncvpspTextParser:
             dict: AE/PS d2Exc/dfi with/without non-linear core corrections.
         """
         pattern = re.compile(
-            r"d2exc(?P<ae_ps>ae|ps) - (?:all-electron|pseudofunction) derivatives with(?P<no> no)? core correction"
+            r"d2exc(?P<ae_ps>ae|ps) - (?:all-electron|pseudofunction) derivatives( with(?P<no> no)? core correction)?"
         )
         matches = self.findall(pattern)
+        nv = self.input["oncvpsp"]["nv"]
+        nlines_per_state = int(np.ceil(nv / 4))
         data = defaultdict(list)
         for i, match in matches:
+            j = i + 2
             ae_ps = match.group("ae_ps")
             with_nlcc = match.group("no") is None
-            key = f"{ae_ps}_with_nlcc" if with_nlcc else ae_ps
-            for j in range(self.input["oncvpsp"]["nv"]):
-                line = self.clean_lines[i + 2 + j]
+            key = f"{ae_ps}_with_nlcc" if (ae_ps == "ps" and with_nlcc) else ae_ps
+            for _ in range(nv):
+                line = " ".join(self.clean_lines[j:j + nlines_per_state])
                 data[key].append([fort_float(x) for x in line.split()])
+                j += nlines_per_state
         return {k: np.array(v) for k, v in data.items()}
 
     @cached_property
