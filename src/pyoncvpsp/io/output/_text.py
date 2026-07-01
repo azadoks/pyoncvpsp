@@ -349,7 +349,9 @@ class OncvpspTextParser:
         """Parsed input data used for the pseudopotential generation."""
         if line_match := self.search(r"^# ATOM AND REFERENCE CONFIGURATION$"):
             i, _ = line_match
-            return OncvpspInput.from_dat_string("\n".join(self.clean_lines[i:])).model_dump()
+            return OncvpspInput.from_dat_string(
+                "\n".join(self.clean_lines[i:])
+            ).model_dump()
         return {}
 
     def get_reference_quantum_numbers(self, index) -> list[tuple[int, int, int]]:
@@ -392,6 +394,20 @@ class OncvpspTextParser:
         """
         n_core = self.input["oncvpsp"]["nc"]
         return self.get_reference_quantum_numbers(index=slice(n_core, None))
+
+    @property
+    def valence_quantum_numbers_and_ae_eig(self) -> list[tuple[int, int, int, float]]:
+        """Quantum number tuples (n, l, sign(s), eigenvalue) corresponding to the valence states.
+
+        Returns:
+            list[tuple[int, int, int, float]]: Quantum number tuples (n, l, sign(s), eigenvalue)
+        """
+        vqn_eig = []
+        for (enn, ell, spin_sign) in self.valence_quantum_numbers:
+            for config in self.reference_configuration:
+                if (config["n"], config["l"], config["spin_sign"]) == (enn, ell, spin_sign):
+                    vqn_eig.append((enn, ell, spin_sign, config["eig_ae"]))
+        return vqn_eig
 
     @cached_property
     def reference_configuration(self) -> list[dict]:
@@ -704,7 +720,9 @@ class OncvpspTextParser:
         hermiticity_errors: list[dict] = []
         for ell, spin_sign, start, stop in self._run_vkb_indices:
             # Parse hermiticity errors
-            if herm_err_match := re.match(v3_herm_err_pattern, self.clean_lines[start + 1]):
+            if herm_err_match := re.match(
+                v3_herm_err_pattern, self.clean_lines[start + 1]
+            ):
                 hermiticity_errors.append(
                     {
                         "l": ell,
@@ -754,7 +772,7 @@ class OncvpspTextParser:
             with_nlcc = match.group("no") is None
             key = f"{ae_ps}_with_nlcc" if (ae_ps == "ps" and with_nlcc) else ae_ps
             for _ in range(nv):
-                line = " ".join(self.clean_lines[j:j + nlines_per_state])
+                line = " ".join(self.clean_lines[j : j + nlines_per_state])
                 data[key].append([fort_float(x) for x in line.split()])
                 j += nlines_per_state
         return {k: np.array(v) for k, v in data.items()}
@@ -789,8 +807,12 @@ class OncvpspTextParser:
         if self.input["model_core_charge"]["icmod"] == 4:
             param_match = self.search(r"amplitude prefactor, scale prefactor")
             if param_match:
-                parameters["fcfact"] = float(self.clean_lines[param_match[0] + 1].split()[0])
-                parameters["rcfact"] = float(self.clean_lines[param_match[0] + 1].split()[1])
+                parameters["fcfact"] = float(
+                    self.clean_lines[param_match[0] + 1].split()[0]
+                )
+                parameters["rcfact"] = float(
+                    self.clean_lines[param_match[0] + 1].split()[1]
+                )
         match_match = self.search(
             r"rmatch, rhocmatch\s+(?P<rmatch>{RE_FLOAT})\s+(?P<rhocmatch>{RE_FLOAT})"
         )
@@ -1230,21 +1252,27 @@ class OncvpspTextParser:
             r"scattering, iprj=\s*(?P<iproj>\d+),\s+l=\s*(?P<ell>\d)"
         )
         blocks = self._get_plot_blocks(data_pattern)
-        # Used to augment state data with metadata from  reference configuration
+        # Used to augment state data with metadata from reference configuration
+        # Quantum number degeneracy is possible for wellstates, so add the eigenvalue to the key too
         test_config = (
             {
-                (cfg["n"], cfg["l"], cfg["spin_sign"]): cfg
+                (cfg["n"], cfg["l"], cfg["spin_sign"], cfg["eig_ae"]): cfg
                 for cfg in self.test_configurations[0]
             }
             if self.test_configurations
             else {}
         )
         ref_config = {
-            (cfg["n"], cfg["l"], cfg["spin_sign"]): cfg
+            (cfg["n"], cfg["l"], cfg["spin_sign"], cfg["eig_ae"]): cfg
             for cfg in self.reference_configuration
         }
         wellstates = {
-            (well["n"], well["l"], well["spin_sign"]): well
+            (
+                well["n"],
+                well["l"],
+                well["spin_sign"],
+                well["eig_ae"],
+            ): well
             for well in self.wellstate_metadata
         }
         data: list[dict] = []
@@ -1299,14 +1327,16 @@ class OncvpspTextParser:
             state_keys = sorted(
                 [
                     k
-                    for k in self.valence_quantum_numbers
+                    for k in self.valence_quantum_numbers_and_ae_eig
                     if k[1] == ell and k[2] == spin_sign
-                ]
-            ) + sorted([k for k in wellstates if k[1] == ell and k[2] == spin_sign])
+                ],
+            ) + sorted(
+                [k for k in wellstates if k[1] == ell and k[2] == spin_sign],
+            )
             state_key = (
                 state_keys[iproj - 1]
                 if (iproj - 1 < len(state_keys))
-                else (-1, -1, -10)
+                else (-1, -1, -10, 0.0)
             )
             state_metadata = {
                 "is_bound": None,
@@ -1320,7 +1350,7 @@ class OncvpspTextParser:
             }  # Default empty metadata
             if (
                 block_data["is_bound"] is not False  # pyrefly: ignore
-                and state_key in self.valence_quantum_numbers
+                and state_key in self.valence_quantum_numbers_and_ae_eig
             ):
                 # If we're sure this is not a wellstate, get a boundstate
                 state_metadata.update(test_config.get(state_key, {}))
