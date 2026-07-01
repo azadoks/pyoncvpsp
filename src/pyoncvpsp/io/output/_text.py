@@ -1397,7 +1397,7 @@ class OncvpspTextParser:
                             "spin_sign": spin_sign,
                             "r": block_data["r"],
                             "proj": block_data[proj_key],
-                            "coeff": coeffs[(ell, iproj, spin_sign)],
+                            "coeff": coeffs.get((ell, iproj, spin_sign), None),
                         }
                     )
         return data
