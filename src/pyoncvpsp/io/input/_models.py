@@ -641,6 +641,7 @@ class OncvpspInput(BaseModel):
                 if self.local_potential.lloc == 4
                 else self.pseudopotentials.rc[self.local_potential.lloc]
             )
+            assert rcloc is not None  # validated to be set when lloc == 4
             rcloc_rounded = floor(1e5 * rcloc) / 1e5
             rxpsh_default = radial_mesh[radial_mesh >= rcloc_rounded][0]
             rxpsh = [rxpsh_default] * 4

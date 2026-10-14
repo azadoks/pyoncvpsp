@@ -1552,10 +1552,10 @@ class OncvpspTextParser:
             # Parse the header line and first block line for enn, ell, bound vs. scattering state, iproj
             first_ln, first_match = block[0]
             header_line: str = self.clean_lines[first_ln - 2]
-            block_data["is_bound"] = None
+            is_bound: bool | None = None
             if header_match := re.match(header_pattern, header_line):
                 if self.program_information["version"].startswith("4"):
-                    block_data["is_bound"] = True
+                    is_bound = True
                 block_data["n"] = int(header_match.group("enn"))
                 ell = int(header_match.group("ell"))
                 if first_match.group("iproj"):
@@ -1569,7 +1569,7 @@ class OncvpspTextParser:
                         f"Failed to infer projector index for ONCVPSP v3 from ell={ell} in header line: '{header_line}'"
                     )
             elif header_match := re.match(v4_scattering_header_pattern, header_line):
-                block_data["is_bound"] = False
+                is_bound = False
                 ell = int(header_match.group("ell"))
                 iproj = int(header_match.group("iproj"))
                 block_data["n"] = None
@@ -1577,6 +1577,7 @@ class OncvpspTextParser:
                 raise RuntimeError(
                     f"Failed to parse wavefunction header line: '{header_line}'"
                 )
+            block_data["is_bound"] = is_bound
             projector = ProjectorKey(
                 ChannelKey.from_plot_marker(
                     ell, first_match.group("marker"), self.is_relativistic
@@ -1585,7 +1586,8 @@ class OncvpspTextParser:
             )
             # Add additional information about the state from the reference configuration,
             # wellstate metadata, or localized bound state
-            state_kind, state = projector_states.get(projector, (None, None))
+            no_state: tuple[str | None, Any] = (None, None)
+            state_kind, state = projector_states.get(projector, no_state)
             state_metadata = {
                 "is_bound": None,
                 "n": 0,
@@ -1596,16 +1598,12 @@ class OncvpspTextParser:
                 "half_point_radius": np.nan,
                 "r_rc": np.nan,
             }  # Default empty metadata
-            if (
-                state_kind == "valence" and block_data["is_bound"] is not False
-            ):  # pyrefly: ignore
+            if state_kind == "valence" and is_bound is not False:
                 # If we're sure this is not a wellstate, get a boundstate
                 state_metadata.update(test_config.get(state[:2], {}))
                 state_metadata.update(ref_config[state])
                 state_metadata["is_bound"] = True
-            elif (
-                state_kind == "localized" and block_data["is_bound"] is not False
-            ):  # pyrefly: ignore
+            elif state_kind == "localized" and is_bound is not False:
                 state_metadata.update(state)
                 state_metadata["f"] = 0.0
             elif state_kind == "wellstate":

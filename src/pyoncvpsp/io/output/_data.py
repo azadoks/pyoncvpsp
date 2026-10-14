@@ -5,9 +5,11 @@ A line is attributed to a definition if it contains `match_string` and `pattern`
 The wording of many messages differs between ONCVPSP v3, v4, and METAPSP; the patterns cover all known variants.
 """
 
+from typing import Any
+
 RE_FLOAT: str = r"[+-]?(?:\d+\.\d*|\.\d+|\d+)(?:[eEdD][+-]?\d+)?"
 
-WARNINGS = [
+WARNINGS: list[dict[str, Any]] = [
     {
         "name": "icmod1_not_converged",
         # ONCVPSP prints "conveged" (sic)
@@ -172,7 +174,7 @@ WARNINGS = [
     },
 ]
 
-ERRORS = [
+ERRORS: list[dict[str, Any]] = [
     {
         "name": "lschvkbb_not_converged",
         # ONCVPSP v3 prints "psatom: lschvkbb convergence error n,l,okb,iter="
