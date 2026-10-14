@@ -284,6 +284,31 @@ MESSAGES = [
     ),
     ("Error reading input data file", "input_file_read_error"),
     ("optimize: ERROR ps0norm > uunorm, code will stop", "ps0norm_gt_uunorm"),
+    # check_data complaints (ONCVPSP 4.0.1 check_data.f90), each followed by the `bad_input` summary
+    ("test_data: must have rc>0.0, l=   1", "input_rc_nonpositive"),
+    ("test_data: must have 3 <= ncon <= 5, l=   2", "input_ncon_out_of_range"),
+    ("test_data: must have ncon+3 <= nbas <= ncon+5, l=   1", "input_nbas_out_of_range"),
+    ("test_data: must have ncon+2 <= nbas <= ncon+5, l=   1", "input_nbas_out_of_range"),
+    ("test_data: must have qcut>0.0, l=   0", "input_qcut_nonpositive"),
+    ("test_data: rc < rc(lloc) for l = 0.  Not allowed.", "input_rc_lt_rcloc"),
+    ("test_data: must have debl>0.0)   2", "input_debl_negative"),
+    ("test_data: must have nproj in [1,5] (0 OK lloc=4 or   2)", "input_nproj_out_of_range"),
+    ("test_data: must have 0 <= lloc <= lmax or lloc == 4", "input_local_potential_invalid"),
+    ("test_data: for lloc==4, must have rc > 0.0", "input_local_potential_invalid"),
+    ("test_data: must have 1 <= lpopt <= 5", "input_local_potential_invalid"),
+    ("test_data: must have 0<= icmod <=4", "input_model_core_invalid"),
+    ("test_data: must have fcfact>0.0 for icmod= 1 or 3", "input_model_core_invalid"),
+    ("test_data: must have rlmax>rcmax", "input_rlmax_too_small"),
+    ("test_data: must have positive atomic number z", "input_invalid"),
+    ("test_data: l > n, reference configuration line   3", "input_invalid"),
+    ("test_data: negative ion, test configuration   1", "input_invalid"),
+    # Fortran runtime errors (stderr, when merged into the parsed text)
+    (
+        "Fortran runtime error: Expected REAL for item 10 in formatted transfer, got CHARACTER",
+        "fortran_runtime_error",
+    ),
+    ("forrtl: severe (174): SIGSEGV, segmentation fault occurred", "fortran_runtime_error"),
+    ("Program received signal SIGFPE: Floating-point exception - erroneous arithmetic operation.", "fortran_runtime_error"),
 ]
 
 # Lines which resemble errors or warnings but are not reported as such
@@ -293,6 +318,9 @@ NON_MESSAGES = [
     "B matrix Hermiticity error, ll=   0",
     "    Residual kinetic energy error=  1.71D+00 Ha",
     "  all-electron total energy (Ha)   -2.09589946D+03",
+    "At line 436 of file oncvpsp.F90 (unit = 6, file = 'stdout')",
+    "Note: The following floating-point exceptions are signalling: IEEE_UNDERFLOW_FLAG",
+    "Error termination. Backtrace:",
 ]
 
 

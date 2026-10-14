@@ -1,0 +1,21 @@
+At line 436 of file /home/zadoks_a/project/pseudo-opt/git/oncvpsp/src/oncvpsp.F90 (unit = 6, file = 'stdout')
+Fortran runtime error: Expected REAL for item 10 in formatted transfer, got CHARACTER
+(a,f8.3,a/a)
+   ^
+
+Error termination. Backtrace:
+#0  0x7b6e63a23960 in ???
+#1  0x7b6e63a244d9 in ???
+#2  0x7b6e63a2510f in ???
+#3  0x7b6e63c69ec3 in ???
+#4  0x7b6e63c770e2 in ???
+#5  0x7b6e63c7aa89 in ???
+#6  0x7b6e63c7ae05 in ???
+#7  0x634b5be21393 in ???
+#8  0x634b5be1e5fe in ???
+#9  0x7b6e63629d8f in __libc_start_call_main
+	at ../sysdeps/nptl/libc_start_call_main.h:58
+#10  0x7b6e63629e3f in __libc_start_main_impl
+	at ../csu/libc-start.c:392
+#11  0x634b5be1e644 in ???
+#12  0xffffffffffffffff in ???

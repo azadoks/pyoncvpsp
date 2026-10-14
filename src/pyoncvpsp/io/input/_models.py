@@ -622,9 +622,9 @@ class OncvpspInput(BaseModel):
         Returns:
             int: Number of all-electron bound states for the given angular momentum channel.
         """
-        return sum(
-            1 for state in self.reference_configuration if state.l == l and state.f > 0
-        )
+        # Only valence states count: the first `nc` states of the reference configuration are core
+        valence = list(self.reference_configuration)[self.oncvpsp.nc :]
+        return sum(1 for state in valence if state.l == l and state.f > 0)
 
     def projector_state_is_bound(self, l: int, i: int) -> bool:  # noqa: E741
         """Determine whether the i-th projector for angular momentum channel l corresponds to a bound state.

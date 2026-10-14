@@ -35,7 +35,7 @@ WARNINGS = [
     },
     {
         "name": "ldiracfb_not_converged",
-        "pattern": r"runconfig: WARNING ldiracfb convergence ERROR n,l,kap,iter=",
+        "pattern": r"runconfig: WARNING ldiracfb convergence ERROR n,l,kap,iter=\s*(?P<n>\d+)\s+(?P<l>\d+)",
         "match_string": "runconfig: WARNING ldiracfb convergence ERROR",
         "line_count": 1,
         "subroutine": "run_config_r",
@@ -43,7 +43,7 @@ WARNINGS = [
     },
     {
         "name": "runconfig_lschfb_not_converged",
-        "pattern": r"runconfig: WARNING lschfb convergence ERROR n,l,iter=",
+        "pattern": r"runconfig: WARNING lschfb convergence ERROR n,l,iter=\s*(?P<n>\d+)\s+(?P<l>\d+)",
         "match_string": "runconfig: WARNING lschfb convergence ERROR",
         "line_count": 1,
         "subroutine": "run_config",
@@ -78,7 +78,7 @@ WARNINGS = [
     },
     {
         "name": "localized_bound_state_for_projector",
-        "pattern": r"WARNING wellstate: localized bound state found for n=",
+        "pattern": r"WARNING wellstate: localized bound state found for n=\s*(?P<n>\d+)\s+l=\s*(?P<l>\d+)",
         "match_string": "WARNING wellstate: localized bound state found for n=",
         "line_count": 3,
         "subroutine": "wellstate[_r]",
@@ -86,7 +86,7 @@ WARNINGS = [
     },
     {
         "name": "moderately_localized_bound_state_for_projector",
-        "pattern": r"WARNING wellstate: moderately localized bound state found for n=",
+        "pattern": r"WARNING wellstate: moderately localized bound state found for n=\s*(?P<n>\d+)\s+l=\s*(?P<l>\d+)",
         "match_string": "WARNING wellstate: moderately localized bound state found for n=",
         "line_count": 3,
         "subroutine": "wellstate[_r]",
@@ -94,7 +94,7 @@ WARNINGS = [
     },
     {
         "name": "scattering_first_projector",
-        "pattern": r"WARNING wellstate: negative energy specified for n=\s*(?P<enn>\d+) l=\s*(?P<ell>\d+)",
+        "pattern": r"WARNING wellstate: negative energy specified for n=\s*(?P<n>\d+) l=\s*(?P<l>\d+)",
         "match_string": "WARNING wellstate: negative energy specified for n=",
         "line_count": 3,
         "subroutine": "wellstate",
@@ -102,7 +102,7 @@ WARNINGS = [
     },
     {
         "name": "wellstate_negative_energy_state",
-        "pattern": r"wellstate: Negative-energy state for l=\s*(?P<ell>\d+) found for maximum barrier",
+        "pattern": r"wellstate: Negative-energy state for l=\s*(?P<l>\d+) found for maximum barrier",
         "match_string": "wellstate: Negative-energy state for l=",
         "line_count": 2,
         "subroutine": "wellstate[_r]",
@@ -118,7 +118,11 @@ WARNINGS = [
     },
     {
         "name": "lschvkbbe_not_converged",
-        "pattern": rf"(?P<subroutine>\w+): lschvkbbe(?:_m)? ERROR\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+({RE_FLOAT})\s+({RE_FLOAT})",
+        # run_diag: lschvkbbe ERROR iprj, nnp, ll, ierr, epa, etest
+        "pattern": (
+            r"(?P<subroutine>\w+): lschvkbbe(?:_m)? ERROR\s+(?P<iproj>\d+)\s+(?P<n>\d+)\s+(?P<l>\d+)\s+(?P<ierr>-?\d+)"
+            rf"\s+({RE_FLOAT})\s+({RE_FLOAT})"
+        ),
         "match_string": "lschvkbbe",
         "line_count": 1,
         "subroutine": "run_diag(_r)",
@@ -126,7 +130,11 @@ WARNINGS = [
     },
     {
         "name": "diag_lschvkbb_not_converged",
-        "pattern": r"(?:run_diag(?:_r|_m|_sr_so_r)?|run_ghosts): lschvkbb(?:_m)? ERROR",
+        # run_diag: lschvkbb ERROR iprj, ll, ierr, ...; run_ghosts: lschvkbb ERROR nn, ll, ierr, ...
+        "pattern": (
+            r"(?P<subroutine>run_diag(?:_r|_m|_sr_so_r)?|run_ghosts): lschvkbb(?:_m)? ERROR"
+            r"(?:\s+(?P<first>\d+)\s+(?P<l>\d+)\s+(?P<ierr>-?\d+))?"
+        ),
         "match_string": "lschvkbb",
         "line_count": 1,
         "subroutine": "run_diag(_r)|run_ghosts",
@@ -155,7 +163,7 @@ ERRORS = [
     {
         "name": "lschvkbb_not_converged",
         # ONCVPSP v3 prints "psatom: lschvkbb convergence error n,l,okb,iter="
-        "pattern": r"psatom(?:_r)?: (?:WARNING )?lschvkbb convergence error n,l,(?:kap,|okb,)?iter=",
+        "pattern": r"psatom(?:_r)?: (?:WARNING )?lschvkbb convergence error n,l,(?:kap,|okb,)?iter=\s*(?P<n>\d+)\s+(?P<l>\d+)",
         "match_string": "lschvkbb convergence error n,l,",
         "line_count": 1,
         "subroutine": "psatom(_r)",
@@ -163,7 +171,7 @@ ERRORS = [
     },
     {
         "name": "wellstate_not_converged",
-        "pattern": r"well potential iteration failed to converge, n=",
+        "pattern": r"well potential iteration failed to converge, n=\s*(?P<n>\d+)\s+l=\s*(?P<l>\d+)",
         "match_string": "well potential iteration failed to converge, n=",
         "line_count": 1,
         "subroutine": "wellstate(_r)",
@@ -425,7 +433,8 @@ ERRORS = [
     },
     {
         "name": "ghost_lschpsbar_error",
-        "pattern": r"run_ghosts(?: \d+)?: lschpsbar(?:_m)? ERROR",
+        # v4: "run_ghosts 143: lschpsbar ERROR ierr,nn,ll,ee,emin,emax" followed by the values
+        "pattern": r"run_ghosts(?: \d+)?: lschpsbar(?:_m)? ERROR(?: ierr,nn,ll,ee,emin,emax\s+(?P<ierr>-?\d+)\s+(?P<n>\d+)\s+(?P<l>\d+))?",
         "match_string": "lschpsbar",
         "line_count": 1,
         "subroutine": "run_ghosts",
@@ -479,5 +488,113 @@ ERRORS = [
         "line_count": 1,
         "subroutine": "gauss_smooth",
         "description": "Polynomial smoothing requires an odd number of constraints (METAPSP).",
+    },
+]
+
+# Specific `check_data` complaints (each is followed by the summary `bad_input` error)
+_CHECK_DATA_SPECIFIC = (
+    r"must have rc>0\.0|must have 3 <= ncon|must have ncon\+|must have qcut>0\.0|rc < rc\(lloc\)"
+    r"|must have debl>0\.0\)|must have nproj in|must have 0 <= lloc|for lloc==4|must have 1 <= lpopt"
+    r"|must have 0<= icmod|must have fcfact|must have rcfact|must have rlmax>rcmax"
+)
+
+ERRORS += [
+    {
+        "name": "input_rc_nonpositive",
+        "pattern": r"test_data: must have rc>0\.0, l=\s*(?P<l>\d)",
+        "match_string": "test_data: must have rc>0.0",
+        "line_count": 1,
+        "subroutine": "check_data",
+        "description": "Core radius rc must be positive.",
+    },
+    {
+        "name": "input_ncon_out_of_range",
+        "pattern": r"test_data: must have 3 <= ncon <= 5, l=\s*(?P<l>\d)",
+        "match_string": "test_data: must have 3 <= ncon",
+        "line_count": 1,
+        "subroutine": "check_data",
+        "description": "Number of constraints ncon must be in [3, 5].",
+    },
+    {
+        "name": "input_nbas_out_of_range",
+        "pattern": r"test_data: must have ncon\+[23] <= nbas <= ncon\+5, l=\s*(?P<l>\d)",
+        "match_string": "test_data: must have ncon+",
+        "line_count": 1,
+        "subroutine": "check_data",
+        "description": "Basis size nbas must be in [ncon+2 (or 3), ncon+5].",
+    },
+    {
+        "name": "input_qcut_nonpositive",
+        "pattern": r"test_data: must have qcut>0\.0, l=\s*(?P<l>\d)",
+        "match_string": "test_data: must have qcut>0.0",
+        "line_count": 1,
+        "subroutine": "check_data",
+        "description": "Wavevector cutoff qcut must be positive.",
+    },
+    {
+        "name": "input_rc_lt_rcloc",
+        "pattern": r"test_data: rc < rc\(lloc\) for l =\s*(?P<l>\d)",
+        "match_string": "test_data: rc < rc(lloc)",
+        "line_count": 1,
+        "subroutine": "check_data",
+        "description": "Core radius rc is smaller than the local-potential radius rc(lloc).",
+    },
+    {
+        "name": "input_debl_negative",
+        "pattern": r"test_data: must have debl>0\.0\)\s*(?P<l>\d)",
+        "match_string": "test_data: must have debl>0.0)",
+        "line_count": 1,
+        "subroutine": "check_data",
+        "description": "Energy increment debl must not be negative.",
+    },
+    {
+        "name": "input_nproj_out_of_range",
+        "pattern": r"test_data: must have nproj in \[1,5\] \(0 OK lloc=4 or\s*(?P<l>\d)\)",
+        "match_string": "test_data: must have nproj in",
+        "line_count": 1,
+        "subroutine": "check_data",
+        "description": "Number of projectors nproj must be in [1, 5] (0 only for the local channel).",
+    },
+    {
+        "name": "input_local_potential_invalid",
+        "pattern": r"test_data: (?:must have 0 <= lloc <= lmax or lloc == 4|for lloc==4, must have rc > 0\.0|must have 1 <= lpopt <= 5)",
+        "match_string": "test_data: ",
+        "line_count": 1,
+        "subroutine": "check_data",
+        "description": "Invalid local-potential parameters (lloc, lpopt, or rc(lloc)).",
+    },
+    {
+        "name": "input_model_core_invalid",
+        "pattern": r"test_data: must have (?:0<= icmod <=4|fcfact>0\.0 for icmod|rcfact>0\.0 for icmod)",
+        "match_string": "test_data: must have",
+        "line_count": 1,
+        "subroutine": "check_data",
+        "description": "Invalid model-core-charge parameters (icmod, fcfact, or rcfact).",
+    },
+    {
+        "name": "input_rlmax_too_small",
+        "pattern": r"test_data: must have rlmax>rcmax",
+        "match_string": "test_data: must have rlmax>rcmax",
+        "line_count": 1,
+        "subroutine": "check_data",
+        "description": "Output grid extent rlmax must exceed the largest core radius.",
+    },
+    {
+        "name": "input_invalid",
+        "pattern": rf"^\s*test_data: (?!{_CHECK_DATA_SPECIFIC})\S",
+        "match_string": "test_data: ",
+        "line_count": 1,
+        "subroutine": "check_data",
+        "description": "Invalid input data (see message).",
+    },
+    {
+        "name": "fortran_runtime_error",
+        # Written to stderr by the Fortran runtime (gfortran: "Fortran runtime error:", ifort: "forrtl: severe");
+        # only seen when stderr is merged into the parsed text
+        "pattern": r"^(?:Fortran runtime error:|forrtl: severe|Program received signal)",
+        "match_string": "r",
+        "line_count": 1,
+        "subroutine": "runtime",
+        "description": "Fortran runtime error (I/O or formatted-transfer error, floating-point exception, or signal).",
     },
 ]

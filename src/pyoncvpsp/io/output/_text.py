@@ -13,6 +13,8 @@ import numpy as np
 from pyoncvpsp.io._utils import fort_float
 from pyoncvpsp.io.input._models import OncvpspInput
 from ._data import WARNINGS, ERRORS
+from ._messages import OncvpspFailure, OncvpspMessage, Stage
+from . import _attribution
 
 RE_FLOAT: str = r"[+-]?(?:\d+\.\d*|\.\d+|\d+)(?:[eEdD][+-]?\d+)?"
 
@@ -1794,6 +1796,27 @@ class OncvpspTextParser:
     def psp8_string(self) -> str:
         """String containing the pseudopotential in Abinit PSP8 format."""
         return "\n".join(self._get_lines_between("Begin PSPCODE8", "</INPUT>"))
+
+
+    # --- Attribution ---------------------------------------------------------------------------------
+
+    @cached_property
+    def messages(self) -> list[OncvpspMessage]:
+        """All warnings and errors, attributed to the program stage, angular-momentum channel and
+        input parameters that produced them, sorted by line."""
+        return _attribution.attribute_messages(self)
+
+    @cached_property
+    def failure(self) -> OncvpspFailure | None:
+        """Why the run failed (primary error, stage, channel, implicated parameters), or `None` if
+        ONCVPSP wrote all of its output."""
+        return _attribution.analyze_failure(self)
+
+    @cached_property
+    def last_stage_reached(self) -> Stage:
+        """Last stage of the program for which any output was found."""
+        contexts = _attribution.line_contexts(self.raw_lines)
+        return contexts[-1].stage if contexts else Stage.INPUT
 
     @cached_property
     def output(self) -> dict:
