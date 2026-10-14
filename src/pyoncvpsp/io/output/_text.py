@@ -134,9 +134,6 @@ class OncvpspTextParser:
         )
         errors = []
         for i, line in enumerate(self._lines):
-            # Stop looking for errors once we get to the plotting block
-            if line.strip().startswith("DATA FOR PLOTTING"):
-                break
             line_number = i + 1
             for definition in definitions:
                 if definition["match_string"] in line:
@@ -211,7 +208,7 @@ class OncvpspTextParser:
             list[tuple[int, re.Match[str]]]: List of tuples of (line index, regex match object).
         """
         regex = re.compile(pattern) if isinstance(pattern, str) else pattern
-        stop = stop if stop >= 0 else len(self.clean_lines)
+        stop = min(stop, len(self.clean_lines)) if stop >= 0 else len(self.clean_lines)
         matches = []
         for i in range(start, stop):
             if match := regex.search(self.clean_lines[i]):
@@ -265,7 +262,8 @@ class OncvpspTextParser:
                     ),
                     name="incomplete_output",
                     subroutine="main",
-                    description="'DATA FOR PLOTTING' section not found.",
+                    description="Missing or truncated plotting data: "
+                    + ", ".join(self.missing_plot_data),
                 )
             )
         exceptions.extend([OncvpspOutputError(**error) for error in self.errors])
@@ -282,8 +280,43 @@ class OncvpspTextParser:
 
     @cached_property
     def completed(self) -> bool:
-        """Whether ONCVPSP/METAPSP successfully pseudized the atom."""
-        return self.search("DATA FOR PLOTTING") is not None
+        """Whether ONCVPSP/METAPSP successfully pseudized the atom and wrote all plotting data."""
+        return not self.missing_plot_data
+
+    @cached_property
+    def missing_plot_data(self) -> list[str]:
+        """Plotting data sections which are missing or truncated, e.g. because ONCVPSP/METAPSP
+        stopped or was killed while writing them. The pseudopotential file is not considered,
+        as its output may be disabled.
+
+        Returns:
+            list[str]: Names of the missing or truncated sections; empty if all were written.
+        """
+        start_match = self.search("DATA FOR PLOTTING")
+        if not start_match:
+            return ["DATA FOR PLOTTING"]
+        start = start_match[0]
+        sections = {
+            "unscreened_semilocal_potentials": r"^!p\s",
+            "charge_densities": r"^!r\s",
+            "wavefunctions": r"^&\s",
+            # VKB projectors are not checked: e.g. ONCVPSP 3.2.2 omits them when all nproj = 1
+            "convergence_profiles": r"^!C\s",
+        }
+        missing = [
+            name
+            for name, pattern in sections.items()
+            if not self.search(pattern, start=start)
+        ]
+        # The number of log derivative blocks depends on the program version, but all blocks
+        # share the same energy grid, so a truncated block is shorter than the others
+        log_derivatives = self.log_derivatives
+        if not log_derivatives or len({len(ld["e"]) for ld in log_derivatives}) != 1:
+            missing.append("log_derivatives")
+        # The gnuplot script is always written after the last of the plotting data
+        if not self.search(r"^GNUSCRIPT", start=start):
+            missing.append("gnuplot_script")
+        return missing
 
     @cached_property
     def raw_lines(self) -> list[str]:
@@ -585,6 +618,9 @@ class OncvpspTextParser:
         for ell, iproj, spin_sign, start in self._optimize_line_indices:
             convergence_match = self.search(convergence_header_pattern, start=start)
             if convergence_match:
+                # ONCVPSP prints an empty table when no residual threshold is reached;
+                # keep the (empty) profile so that `ecut_recommended` reflects it
+                data[(ell, iproj, spin_sign)].update({"eresid": [], "ecut": []})
                 for _, match in self.findall(
                     convergence_body_pattern,
                     start=convergence_match[0],
@@ -920,10 +956,8 @@ class OncvpspTextParser:
             r"Diagnostic tests using Vanderbilt-Kleinman-Bylander pseudopotentials"
         )
         stop_match = self.search(r"\s*Test", start=start_match[0] if start_match else 0)
-        if not start_match:
-            raise RuntimeError("Failed to find start of VKB diagnostic test block")
-        if not stop_match:
-            raise RuntimeError("Failed to find end of VKB diagnostic test block")
+        if not start_match or not stop_match:
+            return []
         is_v3 = self.program_information["version"].startswith("3")
         pattern = re.compile(
             r"\s+(?P<ell>\d)(?:\s+(?P<kap>-?\d))?"
@@ -1609,6 +1643,7 @@ class OncvpspTextParser:
         """Parsed output as a dictionary."""
         output: dict[str, Any] = {}
         output["completed"] = self.completed
+        output["missing_plot_data"] = self.missing_plot_data
         output["errors"] = self.errors
         output["warnings"] = self.warnings
         output["program_information"] = self.program_information
