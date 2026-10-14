@@ -755,14 +755,13 @@ class OncvpspTextParser:
                     f"Failed to find ang. mom. in `optimize` block starting at line {block.line + 1}"
                 )
             ell, iproj = block.l, block.iproj
-            if (ell, iproj, -1) in indices:
-                spin_sign = +1
-            elif self.is_relativistic and ell == 0:
-                spin_sign = 1
-            elif self.is_relativistic and ell > 0:
+            # The relativistic loop over kappa does kap = -(l+1) (j = l+1/2) before kap = l
+            if not self.is_relativistic:
+                spin_sign = 0
+            elif (ell, iproj, +1) in indices:
                 spin_sign = -1
             else:
-                spin_sign = 0
+                spin_sign = +1
             indices[(ell, iproj, spin_sign)] = (start, stop)
         return [
             (ell, iproj, spin_sign, start, stop)

@@ -1,5 +1,7 @@
 """Tests for the blocks located by the stage state machine and the quantities bounded by them."""
 
+import pytest
+
 from pyoncvpsp.io.output import OncvpspTextParser
 from pyoncvpsp.io.output._sections import BlockKind, blocks, line_contexts
 
@@ -73,3 +75,16 @@ DATA FOR PLOTTING
     parser = OncvpspTextParser(text=text, check=False)
     assert [len(config) for config in parser.test_configurations] == [1, 0, 2]
 
+
+@pytest.mark.parametrize("name", ["oncvpsp-2.1.1-fr_08_O_r", "oncvpsp-4.0.1-fr_74_W_r"])
+def test_relativistic_projector_spin_follows_kappa(parse_output, name):
+    # Each channel is optimized for kap = -(l+1) (j = l+1/2) before kap = l, as its VKB blocks are
+    parser = parse_output(name)
+    projectors = [
+        (ell, spin_sign)
+        for ell, iproj, spin_sign, _, _ in parser._optimize_line_indices
+        if iproj == 1
+    ]
+    vkb = [(ell, spin_sign) for ell, spin_sign, _, _ in parser._run_vkb_indices]
+    assert projectors == vkb
+    assert projectors[:3] == [(0, 1), (1, 1), (1, -1)]

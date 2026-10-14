@@ -827,7 +827,7 @@
     },
     "iproj": 1,
     "l": 1,
-    "spin_sign": -1
+    "spin_sign": 1
    },
    {
     "ecut": {
@@ -848,7 +848,7 @@
     },
     "iproj": 2,
     "l": 1,
-    "spin_sign": -1
+    "spin_sign": 1
    },
    {
     "ecut": {
@@ -869,7 +869,7 @@
     },
     "iproj": 3,
     "l": 1,
-    "spin_sign": -1
+    "spin_sign": 1
    },
    {
     "ecut": {
@@ -890,7 +890,7 @@
     },
     "iproj": 1,
     "l": 1,
-    "spin_sign": 1
+    "spin_sign": -1
    },
    {
     "ecut": {
@@ -911,7 +911,7 @@
     },
     "iproj": 2,
     "l": 1,
-    "spin_sign": 1
+    "spin_sign": -1
    },
    {
     "ecut": {
@@ -932,7 +932,7 @@
     },
     "iproj": 3,
     "l": 1,
-    "spin_sign": 1
+    "spin_sign": -1
    },
    {
     "ecut": {
@@ -953,7 +953,7 @@
     },
     "iproj": 1,
     "l": 2,
-    "spin_sign": -1
+    "spin_sign": 1
    },
    {
     "ecut": {
@@ -974,7 +974,7 @@
     },
     "iproj": 2,
     "l": 2,
-    "spin_sign": -1
+    "spin_sign": 1
    },
    {
     "ecut": {
@@ -995,7 +995,7 @@
     },
     "iproj": 3,
     "l": 2,
-    "spin_sign": -1
+    "spin_sign": 1
    },
    {
     "ecut": {
@@ -1016,7 +1016,7 @@
     },
     "iproj": 1,
     "l": 2,
-    "spin_sign": 1
+    "spin_sign": -1
    },
    {
     "ecut": {
@@ -1037,7 +1037,7 @@
     },
     "iproj": 2,
     "l": 2,
-    "spin_sign": 1
+    "spin_sign": -1
    },
    {
     "ecut": {
@@ -1058,7 +1058,7 @@
     },
     "iproj": 3,
     "l": 2,
-    "spin_sign": 1
+    "spin_sign": -1
    },
    {
     "ecut": {
@@ -1079,7 +1079,7 @@
     },
     "iproj": 1,
     "l": 3,
-    "spin_sign": -1
+    "spin_sign": 1
    },
    {
     "ecut": {
@@ -1100,7 +1100,7 @@
     },
     "iproj": 2,
     "l": 3,
-    "spin_sign": -1
+    "spin_sign": 1
    },
    {
     "ecut": {
@@ -1121,7 +1121,7 @@
     },
     "iproj": 1,
     "l": 3,
-    "spin_sign": 1
+    "spin_sign": -1
    },
    {
     "ecut": {
@@ -1142,7 +1142,7 @@
     },
     "iproj": 2,
     "l": 3,
-    "spin_sign": 1
+    "spin_sign": -1
    },
    {
     "ecut": {
