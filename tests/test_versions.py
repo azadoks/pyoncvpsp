@@ -199,6 +199,32 @@ def test_oncvpsp_v4_fully_relativistic_partner_wellstates(parse_output):
 # dc150ab, the ONCVPSP 3.3.1 release tarball, and METAPSP at azadoks/metapsp bde6d65.
 
 
+@pytest.mark.parametrize(
+    "name",
+    [
+        "oncvpsp-4.0.1-sr_12_Mg_valence_gt_nproj",
+        "metapsp-1.0.2-nr_20_Ca_valence_gt_nproj",
+    ],
+)
+def test_v4_valence_states_beyond_nproj_are_not_projector_states(parse_output, name):
+    # Two s valence states with nproj = 1: only the first is used (oncvpsp.F90:422)
+    parser = parse_output(name)
+    assert parser.completed
+    s_valence = [c for c in parser.reference_configuration if c["l"] == 0][-2:]
+    assert len(s_valence) == 2
+    assert parser.input["vkb_projectors"]["nproj"][0] == 1
+    layout = parser.projector_layout
+    assert layout is not None
+    (slot,) = layout.channel(ChannelKey(0))
+    assert slot.is_valence and slot.n == s_valence[0]["n"]
+    assert list(parser._valence_projector_states) == [
+        s.projector for s in layout if s.is_valence
+    ]
+    assert [(w["n"], w["iproj"]) for w in parser.wavefunctions if w["l"] == 0] == [
+        (s_valence[0]["n"], 1)
+    ]
+
+
 def test_v3_fully_relativistic_negative_energy_second_projector_l1(parse_output):
     # ep + debl < 0 for the second p projector of both j: each is solved as a bound 4p state and
     # reported only in a warning (oncvpsp_r.f90:451-464); the s channel has a second valence state
