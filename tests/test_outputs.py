@@ -66,9 +66,12 @@ def test_completed_output_consistency(completed_output_name, parse_output):
         for ell in inp["reference_configuration"]["l"]
     )
     assert len(parser.reference_configuration) == n_states
-    # Every plotted wavefunction is associated with a state
+    # Every plotted wavefunction is associated with a state, whose eigenvalue is known unless
+    # ONCVPSP printed only its target energy (fully-relativistic v4, j = l - 1/2 wellstates)
     for wavefunction in parser.wavefunctions:
-        assert wavefunction["eig_ae"] is not None, wavefunction["l"]
+        assert (wavefunction["eig_ae"] is not None) != (
+            wavefunction.get("energy_guess") is not None
+        ), wavefunction["l"]
         assert (
             wavefunction["r"].shape
             == wavefunction["wfn_ae"].shape

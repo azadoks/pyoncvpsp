@@ -23,6 +23,8 @@ from ._messages import (
 from ._sections import LineContext
 
 if TYPE_CHECKING:
+    from pyoncvpsp.projectors import ProjectorLayout
+
     from ._text import OncvpspTextParser
 
 # Attribution metadata per message name (keys `"warning:<name>"` / `"error:<name>"` take precedence
@@ -183,23 +185,23 @@ def _int_group(groups: Mapping[str, str], key: str) -> int | None:
     return int(value) if value is not None else None
 
 
-def _debl_candidates(input_data: Mapping[str, Any] | None) -> list[int]:
-    """Channels for which ONCVPSP's `debl <= 0 with 2+ scattering states` check fails."""
-    if not input_data:
+def _debl_candidates(
+    input_data: Mapping[str, Any] | None, layout: "ProjectorLayout | None"
+) -> list[int]:
+    """Channels for which ONCVPSP's `debl <= 0 with 2+ scattering states` check fails: a projector
+    state energy is set by `debl`, and `debl <= 0`."""
+    if not input_data or layout is None:
         return []
     try:
-        from pyoncvpsp.io.input._models import OncvpspInput
-
-        model = OncvpspInput(**input_data)
-    except Exception:  # pylint: disable=broad-except
+        debl = input_data["vkb_projectors"]["debl"]
+        lmax = input_data["pseudopotentials"]["lmax"]
+    except (KeyError, TypeError):
         return []
-    candidates = []
-    for l in range(model.pseudopotentials.lmax + 1):  # noqa: E741
-        nproj = model.vkb_projectors.nproj[l]
-        debl = model.vkb_projectors.debl[l]
-        if nproj >= 2 and debl <= 0.0 and model.debl_is_active(l):
-            candidates.append(l)
-    return candidates
+    return [
+        l
+        for l in range(lmax + 1)  # noqa: E741
+        if debl[l] <= 0.0 and layout.uses_debl(l)
+    ]
 
 
 def attribute_message(
@@ -208,6 +210,7 @@ def attribute_message(
     lines: list[str],
     contexts: list[LineContext],
     input_data: Mapping[str, Any] | None = None,
+    layout: "ProjectorLayout | None" = None,
 ) -> OncvpspMessage:
     """Attribute a message dictionary (as produced by `OncvpspTextParser._parse_errors`)."""
     name = message["name"]
@@ -263,7 +266,7 @@ def attribute_message(
             l = ctx.current_l  # noqa: E741
             attribution = Attribution.INFERRED
     if name == "debl_not_allowed":
-        candidates = _debl_candidates(input_data)
+        candidates = _debl_candidates(input_data, layout)
         if candidates and l not in candidates:
             l = candidates[0] if len(candidates) == 1 else l  # noqa: E741
             attribution = Attribution.INFERRED if l is not None else Attribution.NONE
@@ -308,7 +311,7 @@ def attribute_message(
         n=n,
         config_index=config_index,
         implicated_parameters=implicated_parameters(
-            stage, scope, l, iproj, config_index, input_data
+            stage, scope, l, iproj, config_index, input_data, layout
         ),
         groups=groups,
     )
@@ -321,16 +324,24 @@ def _safe_input(parser: "OncvpspTextParser") -> dict | None:
         return None
 
 
+def _safe_layout(parser: "OncvpspTextParser") -> "ProjectorLayout | None":
+    try:
+        return parser.projector_layout
+    except Exception:  # pylint: disable=broad-except
+        return None
+
+
 def attribute_messages(parser: "OncvpspTextParser") -> list[OncvpspMessage]:
     """All warnings and errors of a parsed output, attributed and sorted by line."""
     lines = parser.raw_lines
     contexts = parser.line_contexts
     input_data = _safe_input(parser)
+    layout = _safe_layout(parser)
     messages = [
-        attribute_message(m, Level.WARNING, lines, contexts, input_data)
+        attribute_message(m, Level.WARNING, lines, contexts, input_data, layout)
         for m in parser.warnings
     ] + [
-        attribute_message(m, Level.ERROR, lines, contexts, input_data)
+        attribute_message(m, Level.ERROR, lines, contexts, input_data, layout)
         for m in parser.errors
     ]
     return sorted(messages, key=lambda m: m.line_numbers[0])
@@ -387,6 +398,7 @@ def analyze_failure(parser: "OncvpspTextParser") -> OncvpspFailure | None:
                 None,
                 last.config_index if stage == Stage.TEST_CONFIG else None,
                 _safe_input(parser),
+                _safe_layout(parser),
             ),
         )
     return OncvpspFailure(

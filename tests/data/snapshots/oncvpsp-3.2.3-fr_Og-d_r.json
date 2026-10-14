@@ -464,7 +464,16 @@
    ]
   }
  },
- "localized_bound_states": [],
+ "localized_bound_states": [
+  {
+   "eig_ae": -0.052635,
+   "energy_guess": null,
+   "iproj": 2,
+   "j": 0.5,
+   "l": 0,
+   "n": 8
+  }
+ ],
  "missing_plot_data": [],
  "plot_data": {
   "charge_densities": {
@@ -1904,6 +1913,7 @@
   {
    "asymptotic_potential": 1.1738,
    "eig_ae": 0.1857,
+   "energy_guess": null,
    "half_point_radius": 9.3139,
    "iproj": 2,
    "j": 1.5,
@@ -1913,6 +1923,7 @@
   {
    "asymptotic_potential": 0.6736,
    "eig_ae": 0.1857,
+   "energy_guess": null,
    "half_point_radius": 5.7871,
    "iproj": 2,
    "j": 0.5,
@@ -1922,6 +1933,7 @@
   {
    "asymptotic_potential": 1.3804,
    "eig_ae": 0.721,
+   "energy_guess": null,
    "half_point_radius": 3.025,
    "iproj": 2,
    "j": 2.5,
@@ -1931,6 +1943,7 @@
   {
    "asymptotic_potential": 1.411,
    "eig_ae": 0.721,
+   "energy_guess": null,
    "half_point_radius": 2.8721,
    "iproj": 2,
    "j": 1.5,

@@ -12,6 +12,12 @@ import numpy as np
 
 from pyoncvpsp.channels import ChannelKey, ProjectorKey, j_channels
 from pyoncvpsp.io._utils import fort_float
+from pyoncvpsp.projectors import (
+    ProjectorLayout,
+    ProjectorSlot,
+    Solver,
+    predict_projector_layout,
+)
 from pyoncvpsp.io.input._models import OncvpspInput
 from ._data import WARNINGS, ERRORS
 from ._messages import OncvpspFailure, OncvpspMessage, Stage
@@ -506,44 +512,47 @@ class OncvpspTextParser:
         return data
 
     @cached_property
-    def _valence_projector_states(self) -> list[tuple[int, ChannelKey, float]]:
-        """Valence states `(n, channel, eig_ae)` from which projectors are built, in input order.
+    def projector_layout(self) -> ProjectorLayout | None:
+        """Projector state of every projector as predicted from the input (`None` if the output
+        echoes no input). See `pyoncvpsp.projectors`."""
+        if not self.input:
+            return None
+        info = self.program_information
+        return predict_projector_layout(
+            OncvpspInput.from_dict(self.input),
+            info["program"],
+            info["version"],
+            self.is_relativistic,
+        )
 
-        ONCVPSP v4 and METAPSP use every valence state of a given l. ONCVPSP v2/v3 use the first
-        valence state of a given l, and further valence states of that l only if they are occupied.
-        """
-        states = self.valence_quantum_numbers_and_ae_eig
-        if self.program_information[
-            "program"
-        ] != "ONCVPSP" or not self.program_information["version"].startswith(
-            ("2", "3")
-        ):
-            return states
-        config = self.input["reference_configuration"]
-        nc = self.input["oncvpsp"]["nc"]
-        occupations = {
-            (enn, ell): occ
-            for enn, ell, occ in zip(
-                config["n"][nc:], config["l"][nc:], config["f"][nc:]
-            )
+    @cached_property
+    def _valence_projector_states(self) -> dict[ProjectorKey, tuple[int, ChannelKey, float]]:
+        """Projectors built from a valence state solved as a bound state, with the state
+        `(n, channel, eig_ae)` of the reference configuration."""
+        if self.projector_layout is None:
+            return {}
+        config = list(self.input["reference_configuration"]["n"])
+        eigs = {
+            (state["n"], ChannelKey.from_record(state)): state["eig_ae"]
+            for state in self.reference_configuration
         }
-        seen: set[ChannelKey] = set()
-        projector_states = []
-        for state in states:
-            enn, channel, _ = state
-            if channel not in seen or occupations[(enn, channel.l)] > 0.0:
-                projector_states.append(state)
-            seen.add(channel)
-        return projector_states
+        states = {}
+        for slot in self.projector_layout:
+            if slot.is_valence and slot.valence_index is not None:
+                key = (config[slot.valence_index], slot.projector.channel)
+                if key in eigs:
+                    states[slot.projector] = (*key, eigs[key])
+        return states
 
     @cached_property
     def _unoccupied_projector_states(self) -> list[dict]:
-        """Unoccupied states used to construct projectors, in the order in which they are reported:
-        wellstates and localized bound states (which ONCVPSP uses in place of a wellstate, reporting
-        them only in a "localized bound state found" warning).
+        """Projector states other than bound valence states, in the order in which they are
+        reported: wellstates and localized bound states (which ONCVPSP reports only in a warning).
 
-        Projectors of each channel are built from the valence states first (in input order),
-        then from these states, so `iproj` counts on from the number of valence states.
+        Each reported state fills the next unresolved slot of its channel in `projector_layout`,
+        which also gives its `iproj`. In fully-relativistic ONCVPSP v4, the j = l - 1/2 state is
+        solved in the well of its j = l + 1/2 partner and takes the partner's kind; the energy
+        printed for it is only the target energy (`energy_guess`), so its `eig_ae` is `None`.
         """
         wellstate_pattern = re.compile(
             r"\s+Wellstate for l =\s+(?P<ell>\d)  n =\s+(?P<enn>\d+)(?:\s+kap(?:pa)?=\s+(?P<kappa>-?\d+))?"
@@ -558,6 +567,11 @@ class OncvpspTextParser:
         negative_energy_eig_pattern = re.compile(
             rf"Normal bound state at ep=\s*(?P<eig>{RE_FLOAT})"
         )
+        # ONCVPSP v2/v3 solve a negative-energy second projector state as a bound state
+        second_projector_pattern = re.compile(r"WARNING: negative energy of\s*" + RE_FLOAT)
+        second_projector_eig_pattern = re.compile(
+            rf"\s*Actual bound-state energy of\s*(?P<eig>{RE_FLOAT})"
+        )
         # Fully-relativistic ONCVPSP v3 reports n and kappa when renormalizing the state
         renormalization_pattern = re.compile(
             rf"\s+cnorm=\s*{RE_FLOAT}\s+l{{1,2}}=\s*(?P<ell>\d+),?\s+n=\s*(?P<enn>\d+)\s+kap=\s*(?P<kappa>-?\d+)"
@@ -569,31 +583,39 @@ class OncvpspTextParser:
         ap_pattern = re.compile(rf"\s+asymptotic potential =\s*(?P<ap>{RE_FLOAT})")
         hpr_pattern = re.compile(rf"\s+half-point radius =\s*(?P<hpr>{RE_FLOAT})")
 
+        if self.projector_layout is None:
+            return []
+        unresolved = [slot for slot in self.projector_layout if not slot.is_valence]
+
         def match_float(pattern: re.Pattern[str], i: int, group: str) -> float | None:
             if i < len(self._lines) and (match := re.match(pattern, self._lines[i])):
                 return float(match.group(group))
             return None
 
-        def v3_principal_quantum_number(ell: int) -> int:
-            """Principal quantum number `np(l)` of the first all-electron projector function in
-            ONCVPSP v3: the first valence state of this l, else one above the outermost core state
-            of this l, else l + 1. The second projector function has `np(l) + 1`."""
-            config = self.input["reference_configuration"]
-            nc = self.input["oncvpsp"]["nc"]
-            states = list(zip(config["n"], config["l"]))
-            if valence := [enn for enn, el in states[nc:] if el == ell]:
-                return valence[0]
-            if core := [enn for enn, el in states[:nc] if el == ell]:
-                return core[-1] + 1
-            return ell + 1
+        def renormalization(i: int) -> re.Match[str] | None:
+            for k in range(i + 1, min(i + 6, len(self._lines))):
+                if match := re.match(renormalization_pattern, self._lines[k]):
+                    return match
+            return None
 
-        # Number of projectors already taken in each channel, starting with the valence states
-        n_taken: dict[ChannelKey, int] = defaultdict(int)
-        for _, channel, _ in self._valence_projector_states:
-            n_taken[channel] += 1
+        def take_slot(
+            ell: int, kappa: int | None, solvers: tuple[Solver, ...] | None = None
+        ) -> ProjectorSlot | None:
+            channel = ChannelKey.from_printed_kappa(ell, kappa) if kappa else None
+            for slot in unresolved:
+                if (
+                    slot.projector.channel.l == ell
+                    and channel in (None, slot.projector.channel)
+                    and (solvers is None or slot.solver in solvers)
+                ):
+                    unresolved.remove(slot)
+                    return slot
+            return None
+
         states: list[dict] = []
         # Localized bound state warnings are removed from `clean_lines`, so search the raw lines
         for i, line in enumerate(self._lines):
+            solvers = None
             if match := re.match(wellstate_pattern, line):
                 ell = int(match.group("ell"))
                 kappa = int(match.group("kappa")) if match.group("kappa") else None
@@ -615,43 +637,52 @@ class OncvpspTextParser:
                 }
             elif match := re.search(negative_energy_pattern, line):
                 ell = int(match.group("ell"))
-                renormalization = next(
-                    (
-                        renormalization
-                        for j in range(i + 1, min(i + 6, len(self._lines)))
-                        if (
-                            renormalization := re.match(
-                                renormalization_pattern, self._lines[j]
-                            )
-                        )
-                    ),
-                    None,
-                )
-                if renormalization:
-                    enn = int(renormalization.group("enn"))
-                    kappa = int(renormalization.group("kappa"))
-                else:
-                    # Assume j = l + 1/2 if relativistic
-                    kappa = -(ell + 1) if self.is_relativistic else None
-                    enn = v3_principal_quantum_number(ell) + n_taken[
-                        ChannelKey.from_printed_kappa(ell, kappa)
-                    ]
+                renorm = renormalization(i)
+                kappa = int(renorm.group("kappa")) if renorm else None
                 state = {
-                    "n": enn,
+                    "n": int(renorm.group("enn")) if renorm else None,
                     "is_bound": True,
                     "eig_ae": match_float(negative_energy_eig_pattern, i + 1, "eig"),
                 }
+            elif re.match(second_projector_pattern, line):
+                renorm = renormalization(i)
+                if renorm:
+                    ell, kappa = int(renorm.group("ell")), int(renorm.group("kappa"))
+                else:
+                    # Printed in the semilocal loop over l before the header of l
+                    ell, kappa = self.line_contexts[i].pending_l, None
+                solvers = (Solver.BY_ENERGY,)
+                state = {
+                    "n": int(renorm.group("enn")) if renorm else None,
+                    "is_bound": True,
+                    "eig_ae": match_float(second_projector_eig_pattern, i + 1, "eig"),
+                }
             else:
                 continue
-            channel = ChannelKey.from_printed_kappa(ell, kappa)
-            n_taken[channel] += 1
+            if (slot := take_slot(ell, kappa, solvers)) is None:
+                continue
+            if state["n"] is None:
+                state["n"] = slot.n
+            if slot.solver == Solver.PARTNER_WELL:
+                state["energy_guess"], state["eig_ae"] = state["eig_ae"], None
             states.append(
                 {
                     "n": state.pop("n"),
-                    **ProjectorKey(channel, n_taken[channel]).as_dict(),
+                    **slot.projector.as_dict(),
+                    "energy_guess": None,
                     **state,
                 }
             )
+        # A state solved in the well of its j = l + 1/2 partner is of the partner's kind
+        kinds = {ProjectorKey.from_record(state): state["is_bound"] for state in states}
+        for state in states:
+            projector = ProjectorKey.from_record(state)
+            slot = self.projector_layout.get(projector)
+            if slot is not None and slot.solver == Solver.PARTNER_WELL:
+                partner = j_channels(projector.channel.l, True)[0]
+                state["is_bound"] = kinds.get(
+                    ProjectorKey(partner, projector.iproj), state["is_bound"]
+                )
         return states
 
     @cached_property
@@ -663,11 +694,11 @@ class OncvpspTextParser:
                 n (int): Principal quantum number.
                 l (int): Orbital angular momentum.
                 j (float | None): Total angular momentum, None for an l-channel.
-                iproj (int): Projector index (1-based). Projectors of each channel are built
-                    from the valence states first, then from wellstates / localized bound states.
-                eig_ae (float): All-electron eigenvalue (Ha). N.B.: for the j = l - 1/2 states of fully-
-                    relativistic ONCVPSP v4, this is the target energy printed before solving in the well
-                    potential of the j = l + 1/2 state, not the resulting eigenvalue.
+                iproj (int): Projector index (1-based), from `projector_layout`.
+                eig_ae (float | None): All-electron eigenvalue (Ha); None for the j = l - 1/2 states of
+                    fully-relativistic ONCVPSP v4, for which only the target energy is printed.
+                energy_guess (float | None): Target energy printed in place of the eigenvalue (Ha),
+                    for the j = l - 1/2 states of fully-relativistic ONCVPSP v4; else None.
                 asymptotic_potential (float | None): Asymptotic potential (Ha), if reported.
                 half_point_radius (float | None): Half-point radius (a.u.), if reported.
         """
@@ -687,8 +718,9 @@ class OncvpspTextParser:
                 n (int): Principal quantum number.
                 l (int): Orbital angular momentum.
                 j (float | None): Total angular momentum, None for an l-channel.
-                iproj (int): Projector index (1-based).
-                eig_ae (float): All-electron eigenvalue (Ha).
+                iproj (int): Projector index (1-based), from `projector_layout`.
+                eig_ae (float | None): All-electron eigenvalue (Ha); see `wellstate_metadata`.
+                energy_guess (float | None): See `wellstate_metadata`.
         """
         return [
             {k: v for k, v in state.items() if k != "is_bound"}
@@ -1333,6 +1365,7 @@ class OncvpspTextParser:
                 iproj (int): Projector index (1-based).
                 f (float, optional): Occupation number, if available.
                 eig_ae (float, optional): All-electron eigenvalue (Ha), if available.
+                energy_guess (float, optional): See `wellstate_metadata`.
                 eig_ps (float, optional): Pseudoeigenvalue (Ha), if available.
                 asymptotic_potential (float, optional): Asymptotic potential (Ha), if available.
                 half_point_radius (float, optional): Half-point radius (a.u.), if available.
@@ -1364,15 +1397,10 @@ class OncvpspTextParser:
         }
         # States from which the projectors are built: first the valence states (in input order),
         # then wellstates / localized bound states
-        projector_states: dict[ProjectorKey, tuple[str, Any]] = {}
-        n_valence: dict[ChannelKey, int] = defaultdict(int)
-        for state_key in self._valence_projector_states:
-            channel = state_key[1]
-            n_valence[channel] += 1
-            projector_states[ProjectorKey(channel, n_valence[channel])] = (
-                "valence",
-                state_key,
-            )
+        projector_states: dict[ProjectorKey, tuple[str, Any]] = {
+            projector: ("valence", state_key)
+            for projector, state_key in self._valence_projector_states.items()
+        }
         for state in self._unoccupied_projector_states:
             projector_states[ProjectorKey.from_record(state)] = (
                 "localized" if state["is_bound"] else "wellstate",

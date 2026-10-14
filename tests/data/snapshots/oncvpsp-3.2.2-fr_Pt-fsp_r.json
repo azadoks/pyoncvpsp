@@ -2018,6 +2018,7 @@
   {
    "asymptotic_potential": 1.3627,
    "eig_ae": 0.4073,
+   "energy_guess": null,
    "half_point_radius": 3.5321,
    "iproj": 2,
    "j": 1.5,
@@ -2027,6 +2028,7 @@
   {
    "asymptotic_potential": 1.2373,
    "eig_ae": 0.4073,
+   "energy_guess": null,
    "half_point_radius": 3.0133,
    "iproj": 2,
    "j": 0.5,
@@ -2036,6 +2038,7 @@
   {
    "asymptotic_potential": 1.3424,
    "eig_ae": 0.7729,
+   "energy_guess": null,
    "half_point_radius": 4.0752,
    "iproj": 2,
    "j": 2.5,
@@ -2045,6 +2048,7 @@
   {
    "asymptotic_potential": 1.4071,
    "eig_ae": 0.7729,
+   "energy_guess": null,
    "half_point_radius": 4.0752,
    "iproj": 2,
    "j": 1.5,

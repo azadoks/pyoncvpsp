@@ -5,7 +5,7 @@ import math
 import numpy as np
 import pytest
 
-from pyoncvpsp.channels import ChannelKey
+from pyoncvpsp.channels import ChannelKey, ProjectorKey
 from pyoncvpsp.io.output import OncvpspOutputError
 
 
@@ -152,3 +152,44 @@ def test_error_before_plot_data(parse_output):
     ] == ["first_pswf_has_node"]
     assert parser.wavefunctions == []
     assert parser.log_derivatives == []
+
+
+def test_oncvpsp_v3_negative_energy_second_projector(parse_output):
+    # ep + debl < 0 for the second s projector: solved as a bound state (n = np + 1), reported
+    # only in a warning and the following renormalization line (oncvpsp_r.f90:451-464)
+    parser = parse_output("oncvpsp-3.2.3-fr_Og-d_r")
+    assert [
+        (s["n"], s["l"], s["j"], s["iproj"], s["eig_ae"])
+        for s in parser.localized_bound_states
+    ] == [(8, 0, 0.5, 2, -0.052635)]
+
+
+def test_oncvpsp_v4_fully_relativistic_partner_wellstates(parse_output):
+    # j = l - 1/2 wellstates are solved in the well of their j = l + 1/2 partner, and ONCVPSP
+    # prints only their target energy (oncvpsp_r.F90:486-503)
+    parser = parse_output("oncvpsp-4.0.1-fr_74_W_r")
+    partners = [s for s in parser.wellstate_metadata if s["j"] == s["l"] - 0.5]
+    assert [(s["l"], s["iproj"]) for s in partners] == [
+        (1, 2),
+        (1, 3),
+        (2, 2),
+        (2, 3),
+        (3, 1),
+        (3, 2),
+    ]
+    assert all(s["eig_ae"] is None for s in partners)
+    assert [s["energy_guess"] for s in partners] == [
+        3.1429,
+        5.0095,
+        4.8113,
+        9.8232,
+        0.1,
+        3.1,
+    ]
+    others = [s for s in parser.wellstate_metadata if s not in partners]
+    assert all(s["eig_ae"] is not None and s["energy_guess"] is None for s in others)
+    # The layout predicts every reported wellstate
+    layout = parser.projector_layout
+    assert layout is not None
+    for state in parser.wellstate_metadata:
+        assert layout.get(ProjectorKey.from_record(state)) is not None

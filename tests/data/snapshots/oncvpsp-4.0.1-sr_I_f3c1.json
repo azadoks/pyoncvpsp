@@ -277,6 +277,7 @@
   {
    "asymptotic_potential": 3.6044,
    "eig_ae": 3.1044,
+   "energy_guess": null,
    "half_point_radius": 3.1159,
    "iproj": 2,
    "j": null,

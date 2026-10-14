@@ -760,6 +760,7 @@
     "asymptotic_potential": 0.8306,
     "eig_ae": 0.0,
     "eig_ps": "nan",
+    "energy_guess": null,
     "f": 0.0,
     "half_point_radius": 2.9643,
     "iproj": 1,
@@ -997,6 +998,7 @@
   {
    "asymptotic_potential": 1.8321,
    "eig_ae": 0.9707,
+   "energy_guess": null,
    "half_point_radius": 2.6273,
    "iproj": 2,
    "j": null,
@@ -1006,6 +1008,7 @@
   {
    "asymptotic_potential": 0.8306,
    "eig_ae": 0.0,
+   "energy_guess": null,
    "half_point_radius": 2.9643,
    "iproj": 1,
    "j": null,
@@ -1015,6 +1018,7 @@
   {
    "asymptotic_potential": 2.5131,
    "eig_ae": 2.0,
+   "energy_guess": null,
    "half_point_radius": 2.2039,
    "iproj": 2,
    "j": null,

@@ -7,9 +7,12 @@ often to the angular-momentum channel (and thus the input parameters) that cause
 
 from dataclasses import dataclass, field, asdict
 from enum import StrEnum
-from typing import Any, Mapping
+from typing import TYPE_CHECKING, Any, Mapping
 
 from pyoncvpsp.channels import ChannelKey
+
+if TYPE_CHECKING:
+    from pyoncvpsp.projectors import ProjectorLayout
 
 
 class Stage(StrEnum):
@@ -105,12 +108,12 @@ def ell_parameters(
     input_data: Mapping[str, Any] | None = None,
     iproj: int | None = None,
     include_vkb: bool = True,
+    layout: "ProjectorLayout | None" = None,
 ) -> list[str]:
     """Flattened input keys of the parameters that control channel `l`.
 
-    `ep` is included only when it is active (first projector unbound), and `debl` only when it is
-    active (an additional projector is unbound) and relevant to `iproj` (unknown or >= 2). Without
-    `input_data`, both are included unconditionally.
+    `ep` and `debl` are included only when the projector `layout` uses them to set a projector
+    state energy (of projector `iproj`, if given). Without a layout, both are included.
     """
     keys = [
         _key("pseudopotentials", "rc", l),
@@ -119,29 +122,28 @@ def ell_parameters(
         _key("pseudopotentials", "nbas", l),
     ]
     ep_active = debl_active = True
+    if layout is not None and layout.l_channel(l):
+        ep_active = layout.uses_ep(l)
+        debl_active = layout.uses_debl(l, iproj)
     nproj = None
-    if input_data:
-        try:
-            from pyoncvpsp.io.input._models import OncvpspInput
-
-            model = OncvpspInput(**input_data)
-            if l <= model.pseudopotentials.lmax:
-                ep_active = model.ep_is_active(l)
-                debl_active = model.debl_is_active(l)
-                nproj = model.vkb_projectors.nproj[l]
-        except Exception:  # pylint: disable=broad-except
-            pass
+    try:
+        nproj = (input_data or {})["vkb_projectors"]["nproj"][l]
+    except (KeyError, IndexError, TypeError):
+        pass
     if ep_active:
         keys.append(_key("pseudopotentials", "ep", l))
     if include_vkb:
         if nproj is None or nproj >= 1:
             keys.append(_key("vkb_projectors", "nproj", l))
-        if debl_active and (iproj is None or iproj >= 2):
+        if debl_active:
             keys.append(_key("vkb_projectors", "debl", l))
     return keys
 
 
-def local_parameters(input_data: Mapping[str, Any] | None = None) -> list[str]:
+def local_parameters(
+    input_data: Mapping[str, Any] | None = None,
+    layout: "ProjectorLayout | None" = None,
+) -> list[str]:
     """Flattened input keys of the local-potential parameters (including the semilocal channel
     used as local potential when `lloc != 4`)."""
     keys = [_key("local_potential", "lloc"), _key("local_potential", "lpopt")]
@@ -151,7 +153,7 @@ def local_parameters(input_data: Mapping[str, Any] | None = None) -> list[str]:
     if lloc is None or lloc == 4:
         keys += [_key("local_potential", "rcloc"), _key("local_potential", "dvloc0")]
     if lloc is not None and lloc != 4:
-        keys += ell_parameters(lloc, input_data, include_vkb=False)
+        keys += ell_parameters(lloc, input_data, include_vkb=False, layout=layout)
     return keys
 
 
@@ -170,17 +172,18 @@ def implicated_parameters(
     iproj: int | None = None,
     config_index: int | None = None,
     input_data: Mapping[str, Any] | None = None,
+    layout: "ProjectorLayout | None" = None,
 ) -> list[str]:
     """Flattened input keys implicated by a message with the given attribution."""
     keys: list[str] = []
     if scope in (Scope.ELL, Scope.ELL_AND_LOCAL) and l is not None:
         keys += ell_parameters(
-            l, input_data, iproj, include_vkb=stage != Stage.LOGDER_PLOT
+            l, input_data, iproj, include_vkb=stage != Stage.LOGDER_PLOT, layout=layout
         )
         if stage == Stage.LOGDER_PLOT:
             keys.append(_key("log_derivative_analysis", "rxpsh"))
     if scope in (Scope.ELL_AND_LOCAL, Scope.LOCAL):
-        keys += local_parameters(input_data)
+        keys += local_parameters(input_data, layout)
     if scope == Scope.MODEL_CORE:
         keys += model_core_parameters()
     # ONCVPSP numbers test configurations from 0 = the reference configuration, so configuration

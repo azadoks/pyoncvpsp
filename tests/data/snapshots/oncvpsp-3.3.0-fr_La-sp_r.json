@@ -576,6 +576,7 @@
  "localized_bound_states": [
   {
    "eig_ae": -0.155292,
+   "energy_guess": null,
    "iproj": 1,
    "j": 3.5,
    "l": 3,
@@ -583,6 +584,7 @@
   },
   {
    "eig_ae": -0.165419,
+   "energy_guess": null,
    "iproj": 1,
    "j": 2.5,
    "l": 3,
@@ -1543,6 +1545,7 @@
     "asymptotic_potential": "nan",
     "eig_ae": -0.155292,
     "eig_ps": "nan",
+    "energy_guess": null,
     "f": 0.0,
     "half_point_radius": "nan",
     "iproj": 1,
@@ -1580,6 +1583,7 @@
     "asymptotic_potential": "nan",
     "eig_ae": -0.165419,
     "eig_ps": "nan",
+    "energy_guess": null,
     "f": 0.0,
     "half_point_radius": "nan",
     "iproj": 1,
@@ -2166,6 +2170,7 @@
   {
    "asymptotic_potential": 3.8149,
    "eig_ae": 3.1745,
+   "energy_guess": null,
    "half_point_radius": 2.0165,
    "iproj": 2,
    "j": 1.5,
@@ -2175,6 +2180,7 @@
   {
    "asymptotic_potential": 4.0532,
    "eig_ae": 3.1745,
+   "energy_guess": null,
    "half_point_radius": 2.0165,
    "iproj": 2,
    "j": 0.5,
@@ -2184,6 +2190,7 @@
   {
    "asymptotic_potential": 4.5681,
    "eig_ae": 3.8865,
+   "energy_guess": null,
    "half_point_radius": 2.2092,
    "iproj": 2,
    "j": 2.5,
@@ -2193,6 +2200,7 @@
   {
    "asymptotic_potential": 4.6548,
    "eig_ae": 3.8865,
+   "energy_guess": null,
    "half_point_radius": 2.2092,
    "iproj": 2,
    "j": 1.5,
@@ -2202,6 +2210,7 @@
   {
    "asymptotic_potential": 3.7651,
    "eig_ae": 2.8447,
+   "energy_guess": null,
    "half_point_radius": 1.8011,
    "iproj": 2,
    "j": 3.5,
@@ -2211,6 +2220,7 @@
   {
    "asymptotic_potential": 3.7668,
    "eig_ae": 2.8346,
+   "energy_guess": null,
    "half_point_radius": 1.8011,
    "iproj": 2,
    "j": 2.5,

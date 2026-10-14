@@ -833,6 +833,7 @@
     "asymptotic_potential": 4.531,
     "eig_ae": 4.031,
     "eig_ps": "nan",
+    "energy_guess": null,
     "f": 0.0,
     "half_point_radius": 3.9618,
     "iproj": 2,
@@ -907,6 +908,7 @@
     "asymptotic_potential": 8.2022,
     "eig_ae": 7.7022,
     "eig_ps": "nan",
+    "energy_guess": null,
     "f": 0.0,
     "half_point_radius": 3.7385,
     "iproj": 2,
@@ -981,6 +983,7 @@
     "asymptotic_potential": 0.74,
     "eig_ae": 0.24,
     "eig_ps": "nan",
+    "energy_guess": null,
     "f": 0.0,
     "half_point_radius": 5.8644,
     "iproj": 2,
@@ -1319,6 +1322,7 @@
   {
    "asymptotic_potential": 4.531,
    "eig_ae": 4.031,
+   "energy_guess": null,
    "half_point_radius": 3.9618,
    "iproj": 2,
    "j": null,
@@ -1328,6 +1332,7 @@
   {
    "asymptotic_potential": 8.2022,
    "eig_ae": 7.7022,
+   "energy_guess": null,
    "half_point_radius": 3.7385,
    "iproj": 2,
    "j": null,
@@ -1337,6 +1342,7 @@
   {
    "asymptotic_potential": 0.74,
    "eig_ae": 0.24,
+   "energy_guess": null,
    "half_point_radius": 5.8644,
    "iproj": 2,
    "j": null,

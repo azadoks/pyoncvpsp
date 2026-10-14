@@ -614,53 +614,6 @@ class OncvpspInput(BaseModel):
     test_configurations: list[AtomicConfigurationInput] = []
     output_grid: OutputGridInput
 
-    def get_num_ae_bound_states(self, l: int) -> int:  # noqa: E741
-        """Get the number of all-electron bound states for a given angular momentum channel.
-
-        Args:
-            l (int): Angular momentum quantum number.
-        Returns:
-            int: Number of all-electron bound states for the given angular momentum channel.
-        """
-        # Only valence states count: the first `nc` states of the reference configuration are core
-        valence = list(self.reference_configuration)[self.oncvpsp.nc :]
-        return sum(1 for state in valence if state.l == l and state.f > 0)
-
-    def projector_state_is_bound(self, l: int, i: int) -> bool:  # noqa: E741
-        """Determine whether the i-th projector for angular momentum channel l corresponds to a bound state.
-
-        Args:
-            l (int): Angular momentum quantum number.
-            i (int): Projector index (0-based).
-        Returns:
-            bool: True if the projector corresponds to a bound state, False otherwise.
-        """
-        num_ae_bound_states = self.get_num_ae_bound_states(l)
-        return i < num_ae_bound_states
-
-    def ep_is_active(self, l: int) -> bool:  # noqa: E741
-        """Determine whether the energy parameter `ep` for angular momentum channel `l` is active (i.e., used in pseudopotential construction).
-
-        Args:
-            l (int): Angular momentum quantum number.
-        Returns:
-            bool: True if `ep` is active for the given angular momentum channel, False otherwise.
-        """
-        return not self.projector_state_is_bound(l, 0)
-
-    def debl_is_active(self, l: int) -> bool:  # noqa: E741
-        """Determine whether the energy increment parameter `debl` for angular momentum channel `l` is active (i.e., used in constructing additional projectors when no corresponding occupied bound state exists).
-
-        Args:
-            l (int): Angular momentum quantum number.
-        Returns:
-            bool: True if `debl` is active for the given angular momentum channel, False otherwise.
-        """
-        return self.vkb_projectors.nproj[l] > 0 and not all(
-            self.projector_state_is_bound(l, i)
-            for i in range(1, self.vkb_projectors.nproj[l])
-        )
-
     @property
     def radial_mesh(self) -> np.ndarray:
         """Radial grid used for pseudopotential construction and output.
