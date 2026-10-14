@@ -233,6 +233,9 @@ def test_v3_fully_relativistic_negative_energy_second_projector_l1(parse_output)
     assert [w["name"] for w in parser.warnings] == [
         "negative_energy_second_projector"
     ] * 2
+    # Both are printed before the header of their j-channel, the second after the l = 1 headers of
+    # the first j-channel; the `cnorm` lines before them tell which l they are about
+    assert [(m.l, m.iproj) for m in parser.messages] == [(1, 2), (1, 2)]
     assert [
         (s["n"], s["l"], s["j"], s["iproj"], s["eig_ae"])
         for s in parser.localized_bound_states

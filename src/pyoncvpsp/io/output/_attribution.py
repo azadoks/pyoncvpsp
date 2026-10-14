@@ -32,6 +32,7 @@ if TYPE_CHECKING:
 #   stage: Stage | None  -- None: infer from the position in the output
 #   scope: Scope | None  -- None: default for the stage
 #   l_rule: "pending" | "context" (default) | "none"
+#   iproj: int  -- projector the message is always about, when it does not print one
 ATTRIBUTION: dict[str, dict[str, Any]] = {
     # --- warnings
     "icmod1_not_converged": {"stage": Stage.MODEL_CORE, "scope": Scope.MODEL_CORE},
@@ -65,6 +66,7 @@ ATTRIBUTION: dict[str, dict[str, Any]] = {
         "stage": Stage.SEMILOCAL,
         "scope": Scope.ELL,
         "l_rule": "pending",
+        "iproj": 2,
     },
     "lschvkbbe_not_converged": {
         "stage": Stage.DIAGNOSTICS,
@@ -272,8 +274,12 @@ def attribute_message(
             attribution = Attribution.INFERRED if l is not None else Attribution.NONE
 
     iproj = _int_group(groups, "iproj")
+    if iproj is None:
+        iproj = meta.get("iproj")
+    # A message printed before the header of its channel is not about the last header's projector
     if (
         iproj is None
+        and l_rule != "pending"
         and stage == Stage.SEMILOCAL
         and ctx.stage == Stage.SEMILOCAL
         and l == ctx.header_l

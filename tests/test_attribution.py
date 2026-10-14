@@ -103,7 +103,9 @@ def test_line_contexts_follow_stage_headers():
     assert stages[5] == Stage.AE_REFERENCE  # after the input echo
     assert stages[8] == Stage.SEMILOCAL
     assert ctx[11].header_l == 0 and ctx[11].iproj == 1 and ctx[11].pending_l == 1
-    assert ctx[12].well_l == 1 and ctx[12].pending_l == 1 and ctx[12].current_l == 0
+    assert (
+        ctx[12].announced_l == 1 and ctx[12].pending_l == 1 and ctx[12].current_l == 0
+    )
     assert ctx[15].header_l == 1 and ctx[15].pending_l == 2
     assert ctx[18].iproj == 2
     assert ctx[19].stage == Stage.VKB and ctx[19].marker_l is None

@@ -7,7 +7,8 @@ configuration). The context is used to attribute messages and to bound the searc
 
 The main program's loop over `l` calls `wellstate`, the `debl` check and `qroots` *before* printing
 the per-`l` header `Calculating optimized projector`, so `LineContext.pending_l` gives the channel
-being processed before its header appears.
+being processed before its header appears. Fully-relativistic ONCVPSP v3 repeats that loop for each
+j-channel of `l`, and its `cnorm` lines (printed while computing the projector states) announce `l`.
 """
 
 from dataclasses import dataclass, replace
@@ -54,8 +55,8 @@ class LineContext:
     header_l: int | None = (
         None  # l of the last `Calculating optimized projector` header (semilocal)
     )
-    well_l: int | None = (
-        None  # l of the last `Wellstate for l =` block (printed before the header)
+    announced_l: int | None = (
+        None  # l of the last `Wellstate for l =` or v3 `cnorm` line since the last header
     )
     iproj: int | None = None  # projector of the last header (semilocal)
     marker_l: int | None = (
@@ -69,10 +70,8 @@ class LineContext:
     @property
     def pending_l(self) -> int:
         """Channel currently being processed by the main program *before* its header is printed."""
-        if self.well_l is not None and (
-            self.header_l is None or self.well_l > self.header_l
-        ):
-            return self.well_l
+        if self.announced_l is not None:
+            return self.announced_l
         return self.header_l + 1 if self.header_l is not None else 0
 
     @property
@@ -86,7 +85,7 @@ class LineContext:
     def last_l(self) -> int | None:
         """Highest channel for which any per-l output was seen."""
         candidates = [
-            x for x in (self.header_l, self.well_l, self.marker_l) if x is not None
+            x for x in (self.header_l, self.announced_l, self.marker_l) if x is not None
         ]
         return max(candidates) if candidates else None
 
@@ -99,6 +98,7 @@ _RE = {
         r"^Begin loop to\s+construct optimized pseudo wave functions"
     ),
     "wellstate": re.compile(r"^\s*Wellstate for l =\s*(?P<l>\d+)\s+n =\s*(?P<n>\d+)"),
+    "cnorm": re.compile(r"^\s+cnorm=\s*\S+\s+l{1,2}=\s*(?P<l>\d+)"),
     "header_v4": re.compile(r"^Calculating optimized projector #\s*(?P<iproj>\d+)"),
     "header_v4_l": re.compile(r"^\s*for l=\s*(?P<l>\d+)"),
     "header_v3": re.compile(
@@ -147,7 +147,11 @@ def line_contexts(lines: list[str]) -> list[LineContext]:
         elif ctx.stage in (Stage.AE_REFERENCE, Stage.SEMILOCAL) and (
             m := _RE["wellstate"].match(line)
         ):
-            ctx = replace(ctx, stage=Stage.SEMILOCAL, well_l=int(m["l"]), block=None)
+            ctx = replace(
+                ctx, stage=Stage.SEMILOCAL, announced_l=int(m["l"]), block=None
+            )
+        elif ctx.stage == Stage.SEMILOCAL and (m := _RE["cnorm"].match(line)):
+            ctx = replace(ctx, announced_l=int(m["l"]), block=None)
         elif m := _RE["header_v4"].match(line):
             # The format `(/a,i4)` reverts, so ` for l=` lands on its own line after a blank one
             l = None  # noqa: E741
@@ -161,6 +165,7 @@ def line_contexts(lines: list[str]) -> list[LineContext]:
                 stage=Stage.SEMILOCAL,
                 header_l=l,
                 iproj=iproj,
+                announced_l=None,
                 block=Block(BlockKind.PROJECTOR, i, l=l, iproj=iproj),
             )
         elif m := _RE["header_v3"].match(line):
@@ -171,6 +176,7 @@ def line_contexts(lines: list[str]) -> list[LineContext]:
                 stage=Stage.SEMILOCAL,
                 header_l=l,
                 iproj=iproj,
+                announced_l=None,
                 block=Block(BlockKind.PROJECTOR, i, l=l, iproj=iproj),
             )
         elif _RE["vkb"].match(line):
