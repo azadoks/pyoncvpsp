@@ -157,23 +157,23 @@
   {
    "eig_ae": -14.138222,
    "f": 2.0,
+   "j": null,
    "l": 0,
-   "n": 1,
-   "spin_sign": 0
+   "n": 1
   },
   {
    "eig_ae": -0.68290674,
    "f": 2.0,
+   "j": null,
    "l": 0,
-   "n": 2,
-   "spin_sign": 0
+   "n": 2
   },
   {
    "eig_ae": -0.26054783,
    "f": 3.0,
+   "j": null,
    "l": 1,
-   "n": 2,
-   "spin_sign": 0
+   "n": 2
   }
  ],
  "test_configurations": [],
@@ -219,10 +219,9 @@
    "eig_ae": 0.25,
    "half_point_radius": 5.5309,
    "iproj": 2,
-   "k": 0,
+   "j": null,
    "l": 0,
-   "n": 3,
-   "spin_sign": 0
+   "n": 3
   }
  ]
 }

@@ -34,46 +34,42 @@
   {
    "e_in": -1.2385811,
    "e_test": -1.238537,
-   "k": 0,
+   "j": null,
    "l": 0,
    "norm_test": 1.0000241,
    "rc": 1.9583503,
    "rmatch": 2.0787053,
-   "slope_test": 1.0000778,
-   "spin_sign": 0
+   "slope_test": 1.0000778
   },
   {
    "e_in": -0.6887362,
    "e_test": -0.6887406,
-   "k": 0,
+   "j": null,
    "l": 1,
    "norm_test": 0.9999997,
    "rc": 1.801469,
    "rmatch": 1.9121825,
-   "slope_test": 1.0000192,
-   "spin_sign": 0
+   "slope_test": 1.0000192
   },
   {
    "e_in": -0.0,
    "e_test": 7.6e-06,
-   "k": 0,
+   "j": null,
    "l": 2,
    "norm_test": 1.0000021,
    "rc": 1.9121825,
    "rmatch": 2.0297003,
-   "slope_test": 1.0000021,
-   "spin_sign": 0
+   "slope_test": 1.0000021
   },
   {
    "e_in": -0.1193191,
    "e_test": -0.1221412,
-   "k": 0,
+   "j": null,
    "l": 0,
    "norm_test": 0.8331238,
    "rc": 1.9583503,
    "rmatch": 2.0787053,
-   "slope_test": 0.9891513,
-   "spin_sign": 0
+   "slope_test": 0.9891513
   }
  ],
  "diagnostic_tests_vkb": [
@@ -81,73 +77,67 @@
    "delta_e": null,
    "e_in": -1.2385811,
    "e_test": -1.2384884,
-   "k": 0,
+   "j": null,
    "l": 0,
    "norm_test": 1.0001017,
    "rc": 1.9583503,
    "rmatch": 2.0787053,
-   "slope_test": 1.0002022,
-   "spin_sign": 0
+   "slope_test": 1.0002022
   },
   {
    "delta_e": null,
    "e_in": -0.6887362,
    "e_test": -0.6887402,
-   "k": 0,
+   "j": null,
    "l": 1,
    "norm_test": 1.0000637,
    "rc": 1.801469,
    "rmatch": 1.9121825,
-   "slope_test": 1.0000845,
-   "spin_sign": 0
+   "slope_test": 1.0000845
   },
   {
    "delta_e": null,
    "e_in": -0.0,
    "e_test": -0.0745494,
-   "k": 0,
+   "j": null,
    "l": 2,
    "norm_test": 0.9998501,
    "rc": 1.9121825,
    "rmatch": 2.0297003,
-   "slope_test": 1.0000423,
-   "spin_sign": 0
+   "slope_test": 1.0000423
   },
   {
    "delta_e": null,
    "e_in": -0.1193191,
    "e_test": -0.1193176,
-   "k": 0,
+   "j": null,
    "l": 0,
    "norm_test": 1.0000472,
    "rc": 1.9583503,
    "rmatch": 2.0787053,
-   "slope_test": 1.000038,
-   "spin_sign": 0
+   "slope_test": 1.000038
   },
   {
    "delta_e": null,
    "e_in": 1.8112638,
    "e_test": 1.8112698,
-   "k": 0,
+   "j": null,
    "l": 1,
    "norm_test": 1.0003393,
    "rc": 1.801469,
    "rmatch": 1.9121825,
-   "slope_test": 1.0003393,
-   "spin_sign": 0
+   "slope_test": 1.0003393
   },
   {
    "delta_e": null,
    "e_in": 3.0,
    "e_test": 2.9999964,
-   "k": 0,
+   "j": null,
    "l": 2,
    "norm_test": 1.0003426,
    "rc": 1.9121825,
    "rmatch": 2.0297003,
-   "slope_test": 1.0003426,
-   "spin_sign": 0
+   "slope_test": 1.0003426
   }
  ],
  "errors": [],
@@ -155,11 +145,10 @@
   {
    "ecut": 22.42,
    "eig": -1.238552,
-   "k": 0,
+   "j": null,
    "l": 0,
    "r_rc": null,
-   "sign": "-",
-   "spin_sign": 0
+   "sign": "-"
   }
  ],
  "gnuplot_script": {
@@ -355,8 +344,8 @@
      "sum": 0.011109999999999998
     },
     "iproj": 1,
-    "l": 0,
-    "spin_sign": 0
+    "j": null,
+    "l": 0
    },
    {
     "ecut": {
@@ -376,8 +365,8 @@
      "sum": 0.011109999999999998
     },
     "iproj": 2,
-    "l": 0,
-    "spin_sign": 0
+    "j": null,
+    "l": 0
    },
    {
     "ecut": {
@@ -397,8 +386,8 @@
      "sum": 0.011109999999999998
     },
     "iproj": 1,
-    "l": 1,
-    "spin_sign": 0
+    "j": null,
+    "l": 1
    },
    {
     "ecut": {
@@ -418,8 +407,8 @@
      "sum": 0.011109999999999998
     },
     "iproj": 2,
-    "l": 1,
-    "spin_sign": 0
+    "j": null,
+    "l": 1
    },
    {
     "ecut": {
@@ -439,8 +428,8 @@
      "sum": 0.011109999999999998
     },
     "iproj": 1,
-    "l": 2,
-    "spin_sign": 0
+    "j": null,
+    "l": 2
    },
    {
     "ecut": {
@@ -460,8 +449,8 @@
      "sum": 0.011109999999999998
     },
     "iproj": 2,
-    "l": 2,
-    "spin_sign": 0
+    "j": null,
+    "l": 2
    },
    {
     "ecut": {
@@ -481,8 +470,8 @@
      "sum": 0.014620000000000001
     },
     "iproj": 1,
-    "l": 0,
-    "spin_sign": 0
+    "j": null,
+    "l": 0
    },
    {
     "ecut": {
@@ -502,8 +491,8 @@
      "sum": 0.014620000000000001
     },
     "iproj": 1,
-    "l": 1,
-    "spin_sign": 0
+    "j": null,
+    "l": 1
    },
    {
     "ecut": {
@@ -523,8 +512,8 @@
      "sum": 0.014620000000000001
     },
     "iproj": 1,
-    "l": 2,
-    "spin_sign": 0
+    "j": null,
+    "l": 2
    }
   ],
   "kinetic_energy_densities": {},
@@ -561,7 +550,7 @@
      ],
      "sum": 12.0
     },
-    "k": 0,
+    "j": null,
     "l": 0,
     "log_deriv_ae": {
      "abs_sum": 11587.819627,
@@ -584,8 +573,7 @@
      "nan": 0,
      "shape": [],
      "sum": 2.94
-    },
-    "spin_sign": 0
+    }
    },
    {
     "e": {
@@ -596,7 +584,7 @@
      ],
      "sum": 12.0
     },
-    "k": 0,
+    "j": null,
     "l": 1,
     "log_deriv_ae": {
      "abs_sum": 8890.397350000001,
@@ -619,8 +607,7 @@
      "nan": 0,
      "shape": [],
      "sum": 2.94
-    },
-    "spin_sign": 0
+    }
    },
    {
     "e": {
@@ -631,7 +618,7 @@
      ],
      "sum": 12.0
     },
-    "k": 0,
+    "j": null,
     "l": 2,
     "log_deriv_ae": {
      "abs_sum": 13471.563012999999,
@@ -654,8 +641,7 @@
      "nan": 0,
      "shape": [],
      "sum": 2.94
-    },
-    "spin_sign": 0
+    }
    },
    {
     "e": {
@@ -666,7 +652,7 @@
      ],
      "sum": 12.0
     },
-    "k": 0,
+    "j": null,
     "l": 3,
     "log_deriv_ae": {
      "abs_sum": 10970.201615,
@@ -689,13 +675,13 @@
      "nan": 0,
      "shape": [],
      "sum": 2.94
-    },
-    "spin_sign": 0
+    }
    }
   ],
   "semilocal_potentials": [],
   "unscreened_semilocal_potentials": [
    {
+    "j": null,
     "l": 0,
     "r": {
      "abs_sum": 499.9875141,
@@ -715,6 +701,7 @@
     }
    },
    {
+    "j": null,
     "l": 1,
     "r": {
      "abs_sum": 499.9875141,
@@ -734,6 +721,7 @@
     }
    },
    {
+    "j": null,
     "l": 2,
     "r": {
      "abs_sum": 499.9875141,
@@ -763,7 +751,7 @@
     "half_point_radius": "nan",
     "iproj": 1,
     "is_bound": true,
-    "k": 0,
+    "j": null,
     "l": 0,
     "n": 5,
     "r": {
@@ -775,7 +763,6 @@
      "sum": 499.987515
     },
     "r_rc": "nan",
-    "spin_sign": 0,
     "wfn_ae": {
      "abs_sum": 137.35597099999998,
      "nan": 0,
@@ -801,7 +788,7 @@
     "half_point_radius": "nan",
     "iproj": 1,
     "is_bound": true,
-    "k": 0,
+    "j": null,
     "l": 1,
     "n": 5,
     "r": {
@@ -813,7 +800,6 @@
      "sum": 499.987515
     },
     "r_rc": "nan",
-    "spin_sign": 0,
     "wfn_ae": {
      "abs_sum": 130.12762700000002,
      "nan": 0,
@@ -839,7 +825,7 @@
     "half_point_radius": 4.6348,
     "iproj": 1,
     "is_bound": false,
-    "k": 0,
+    "j": null,
     "l": 2,
     "n": 5,
     "r": {
@@ -851,7 +837,6 @@
      "sum": 499.987515
     },
     "r_rc": "nan",
-    "spin_sign": 0,
     "wfn_ae": {
      "abs_sum": 88.564015,
      "nan": 0,
@@ -877,7 +862,7 @@
     "half_point_radius": "nan",
     "iproj": 2,
     "is_bound": true,
-    "k": 0,
+    "j": null,
     "l": 0,
     "n": 6,
     "r": {
@@ -889,7 +874,6 @@
      "sum": 499.987515
     },
     "r_rc": "nan",
-    "spin_sign": 0,
     "wfn_ae": {
      "abs_sum": 67.48071300000001,
      "nan": 0,
@@ -923,86 +907,86 @@
   {
    "eig_ae": -1368.6473,
    "f": 2.0,
+   "j": null,
    "l": 0,
-   "n": 1,
-   "spin_sign": 0
+   "n": 1
   },
   {
    "eig_ae": -216.33971,
    "f": 2.0,
+   "j": null,
    "l": 0,
-   "n": 2,
-   "spin_sign": 0
+   "n": 2
   },
   {
    "eig_ae": -194.02081,
    "f": 6.0,
+   "j": null,
    "l": 1,
-   "n": 2,
-   "spin_sign": 0
+   "n": 2
   },
   {
    "eig_ae": -45.658241,
    "f": 2.0,
+   "j": null,
    "l": 0,
-   "n": 3,
-   "spin_sign": 0
+   "n": 3
   },
   {
    "eig_ae": -38.504165,
    "f": 6.0,
+   "j": null,
    "l": 1,
-   "n": 3,
-   "spin_sign": 0
+   "n": 3
   },
   {
    "eig_ae": -28.107911,
    "f": 10.0,
+   "j": null,
    "l": 2,
-   "n": 3,
-   "spin_sign": 0
+   "n": 3
   },
   {
    "eig_ae": -8.9515686,
    "f": 2.0,
+   "j": null,
    "l": 0,
-   "n": 4,
-   "spin_sign": 0
+   "n": 4
   },
   {
    "eig_ae": -6.64346,
    "f": 6.0,
+   "j": null,
    "l": 1,
-   "n": 4,
-   "spin_sign": 0
+   "n": 4
   },
   {
    "eig_ae": -3.293072,
    "f": 10.0,
+   "j": null,
    "l": 2,
-   "n": 4,
-   "spin_sign": 0
+   "n": 4
   },
   {
    "eig_ae": -1.2385811,
    "f": 2.0,
+   "j": null,
    "l": 0,
-   "n": 5,
-   "spin_sign": 0
+   "n": 5
   },
   {
    "eig_ae": -0.68873621,
    "f": 6.0,
+   "j": null,
    "l": 1,
-   "n": 5,
-   "spin_sign": 0
+   "n": 5
   },
   {
    "eig_ae": -0.1193191,
    "f": 2.0,
+   "j": null,
    "l": 0,
-   "n": 6,
-   "spin_sign": 0
+   "n": 6
   }
  ],
  "test_configurations": [
@@ -1011,109 +995,97 @@
     "eig_ae": -1368.64732685,
     "eig_ps": null,
     "f": 2.0,
-    "k": 0,
+    "j": null,
     "l": 0,
-    "n": 1,
-    "spin_sign": 0
+    "n": 1
    },
    {
     "eig_ae": -216.33970993,
     "eig_ps": null,
     "f": 2.0,
-    "k": 0,
+    "j": null,
     "l": 0,
-    "n": 2,
-    "spin_sign": 0
+    "n": 2
    },
    {
     "eig_ae": -194.02080729,
     "eig_ps": null,
     "f": 6.0,
-    "k": 0,
+    "j": null,
     "l": 1,
-    "n": 2,
-    "spin_sign": 0
+    "n": 2
    },
    {
     "eig_ae": -45.65824122,
     "eig_ps": null,
     "f": 2.0,
-    "k": 0,
+    "j": null,
     "l": 0,
-    "n": 3,
-    "spin_sign": 0
+    "n": 3
    },
    {
     "eig_ae": -38.50416512,
     "eig_ps": null,
     "f": 6.0,
-    "k": 0,
+    "j": null,
     "l": 1,
-    "n": 3,
-    "spin_sign": 0
+    "n": 3
    },
    {
     "eig_ae": -28.10791068,
     "eig_ps": null,
     "f": 10.0,
-    "k": 0,
+    "j": null,
     "l": 2,
-    "n": 3,
-    "spin_sign": 0
+    "n": 3
    },
    {
     "eig_ae": -8.95156857,
     "eig_ps": null,
     "f": 2.0,
-    "k": 0,
+    "j": null,
     "l": 0,
-    "n": 4,
-    "spin_sign": 0
+    "n": 4
    },
    {
     "eig_ae": -6.64345996,
     "eig_ps": null,
     "f": 6.0,
-    "k": 0,
+    "j": null,
     "l": 1,
-    "n": 4,
-    "spin_sign": 0
+    "n": 4
    },
    {
     "eig_ae": -3.29307203,
     "eig_ps": null,
     "f": 10.0,
-    "k": 0,
+    "j": null,
     "l": 2,
-    "n": 4,
-    "spin_sign": 0
+    "n": 4
    },
    {
     "eig_ae": -1.23858108,
     "eig_ps": -1.23848844,
     "f": 2.0,
-    "k": 0,
+    "j": null,
     "l": 0,
-    "n": 5,
-    "spin_sign": 0
+    "n": 5
    },
    {
     "eig_ae": -0.68873621,
     "eig_ps": -0.68874025,
     "f": 6.0,
-    "k": 0,
+    "j": null,
     "l": 1,
-    "n": 5,
-    "spin_sign": 0
+    "n": 5
    },
    {
     "eig_ae": -0.1193191,
     "eig_ps": -0.1193176,
     "f": 2.0,
-    "k": 0,
+    "j": null,
     "l": 0,
-    "n": 6,
-    "spin_sign": 0
+    "n": 6
    }
   ]
  ],
@@ -1128,24 +1100,24 @@
  "vkb_hermiticity_errors": [
   {
    "hermiticity_error": 6.6729e-05,
-   "i": 1,
-   "j": 2,
-   "l": 0,
-   "spin_sign": 0
+   "iproj": 1,
+   "j": null,
+   "jproj": 2,
+   "l": 0
   },
   {
    "hermiticity_error": 0.00035177,
-   "i": 1,
-   "j": 2,
-   "l": 1,
-   "spin_sign": 0
+   "iproj": 1,
+   "j": null,
+   "jproj": 2,
+   "l": 1
   },
   {
    "hermiticity_error": 0.00035685,
-   "i": 1,
-   "j": 2,
-   "l": 2,
-   "spin_sign": 0
+   "iproj": 1,
+   "j": null,
+   "jproj": 2,
+   "l": 2
   }
  ],
  "vkb_scalar_projector_coefficients": [],
@@ -1157,30 +1129,27 @@
    "eig_ae": 1.8113,
    "half_point_radius": 2.4102,
    "iproj": 2,
-   "k": 0,
+   "j": null,
    "l": 1,
-   "n": 6,
-   "spin_sign": 0
+   "n": 6
   },
   {
    "asymptotic_potential": 0.7049,
    "eig_ae": -0.0,
    "half_point_radius": 4.6348,
    "iproj": 1,
-   "k": 0,
+   "j": null,
    "l": 2,
-   "n": 5,
-   "spin_sign": 0
+   "n": 5
   },
   {
    "asymptotic_potential": 3.9525,
    "eig_ae": 3.0,
    "half_point_radius": 2.5583,
    "iproj": 2,
-   "k": 0,
+   "j": null,
    "l": 2,
-   "n": 6,
-   "spin_sign": 0
+   "n": 6
   }
  ]
 }

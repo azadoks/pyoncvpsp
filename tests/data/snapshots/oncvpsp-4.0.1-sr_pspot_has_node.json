@@ -183,16 +183,16 @@
   {
    "eig_ae": -1.9056244,
    "f": 2.0,
+   "j": null,
    "l": 0,
-   "n": 1,
-   "spin_sign": 0
+   "n": 1
   },
   {
    "eig_ae": -0.10562447,
    "f": 1.0,
+   "j": null,
    "l": 0,
-   "n": 2,
-   "spin_sign": 0
+   "n": 2
   }
  ],
  "test_configurations": [],

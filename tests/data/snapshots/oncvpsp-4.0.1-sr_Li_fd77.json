@@ -147,8 +147,8 @@
      "sum": 0.011109999999999998
     },
     "iproj": 1,
-    "l": 0,
-    "spin_sign": 0
+    "j": null,
+    "l": 0
    },
    {
     "ecut": {
@@ -168,8 +168,8 @@
      "sum": 0.011109999999999998
     },
     "iproj": 2,
-    "l": 0,
-    "spin_sign": 0
+    "j": null,
+    "l": 0
    },
    {
     "ecut": {
@@ -189,8 +189,8 @@
      "sum": 0.011109999999999998
     },
     "iproj": 1,
-    "l": 1,
-    "spin_sign": 0
+    "j": null,
+    "l": 1
    },
    {
     "ecut": {
@@ -210,8 +210,8 @@
      "sum": 0.011109999999999998
     },
     "iproj": 2,
-    "l": 1,
-    "spin_sign": 0
+    "j": null,
+    "l": 1
    }
   ],
   "kinetic_energy_densities": {},
@@ -239,16 +239,16 @@
   {
    "eig_ae": -1.9056244,
    "f": 2.0,
+   "j": null,
    "l": 0,
-   "n": 1,
-   "spin_sign": 0
+   "n": 1
   },
   {
    "eig_ae": -0.10562447,
    "f": 1.0,
+   "j": null,
    "l": 0,
-   "n": 2,
-   "spin_sign": 0
+   "n": 2
   }
  ],
  "test_configurations": [],
@@ -258,17 +258,17 @@
  "vkb_hermiticity_errors": [
   {
    "hermiticity_error": 3.3366e-05,
-   "i": 1,
-   "j": 2,
-   "l": 0,
-   "spin_sign": 0
+   "iproj": 1,
+   "j": null,
+   "jproj": 2,
+   "l": 0
   },
   {
    "hermiticity_error": 1.4725e-05,
-   "i": 1,
-   "j": 2,
-   "l": 1,
-   "spin_sign": 0
+   "iproj": 1,
+   "j": null,
+   "jproj": 2,
+   "l": 1
   }
  ],
  "vkb_scalar_projector_coefficients": [],
@@ -280,20 +280,18 @@
    "eig_ae": 0.1,
    "half_point_radius": 4.3324,
    "iproj": 1,
-   "k": 0,
+   "j": null,
    "l": 1,
-   "n": 2,
-   "spin_sign": 0
+   "n": 2
   },
   {
    "asymptotic_potential": 1.6,
    "eig_ae": 1.1,
    "half_point_radius": 3.5149,
    "iproj": 2,
-   "k": 0,
+   "j": null,
    "l": 1,
-   "n": 3,
-   "spin_sign": 0
+   "n": 3
   }
  ]
 }

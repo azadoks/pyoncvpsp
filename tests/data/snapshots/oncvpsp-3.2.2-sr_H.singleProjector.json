@@ -6,24 +6,22 @@
   {
    "e_in": -0.2386017,
    "e_test": -0.2386039,
-   "k": 0,
+   "j": null,
    "l": 0,
    "norm_test": 0.9999988,
    "rc": 1.0095713,
    "rmatch": 1.0716169,
-   "slope_test": 1.0000557,
-   "spin_sign": 0
+   "slope_test": 1.0000557
   },
   {
    "e_in": 0.05,
    "e_test": 0.050025,
-   "k": 0,
+   "j": null,
    "l": 1,
    "norm_test": 1.0000001,
    "rc": 0.7058649,
    "rmatch": 1.0716169,
-   "slope_test": 1.0000001,
-   "spin_sign": 0
+   "slope_test": 1.0000001
   }
  ],
  "diagnostic_tests_vkb": [
@@ -31,13 +29,12 @@
    "delta_e": null,
    "e_in": -0.2386017,
    "e_test": -0.2386039,
-   "k": 0,
+   "j": null,
    "l": 0,
    "norm_test": 0.9999988,
    "rc": 1.0095713,
    "rmatch": 1.0716169,
-   "slope_test": 1.0000555,
-   "spin_sign": 0
+   "slope_test": 1.0000555
   }
  ],
  "errors": [],
@@ -193,8 +190,8 @@
      "sum": 0.011109999999999998
     },
     "iproj": 1,
-    "l": 0,
-    "spin_sign": 0
+    "j": null,
+    "l": 0
    },
    {
     "ecut": {
@@ -214,8 +211,8 @@
      "sum": 0.011109999999999998
     },
     "iproj": 1,
-    "l": 1,
-    "spin_sign": 0
+    "j": null,
+    "l": 1
    },
    {
     "ecut": {
@@ -235,8 +232,8 @@
      "sum": 0.014620000000000001
     },
     "iproj": 1,
-    "l": 0,
-    "spin_sign": 0
+    "j": null,
+    "l": 0
    },
    {
     "ecut": {
@@ -256,8 +253,8 @@
      "sum": 0.014620000000000001
     },
     "iproj": 1,
-    "l": 1,
-    "spin_sign": 0
+    "j": null,
+    "l": 1
    }
   ],
   "kinetic_energy_densities": {},
@@ -278,7 +275,7 @@
      ],
      "sum": 12.0
     },
-    "k": 0,
+    "j": null,
     "l": 0,
     "log_deriv_ae": {
      "abs_sum": 6434.777279,
@@ -301,8 +298,7 @@
      "nan": 0,
      "shape": [],
      "sum": 1.01
-    },
-    "spin_sign": 0
+    }
    },
    {
     "e": {
@@ -313,7 +309,7 @@
      ],
      "sum": 12.0
     },
-    "k": 0,
+    "j": null,
     "l": 1,
     "log_deriv_ae": {
      "abs_sum": 1414.3761789999999,
@@ -336,8 +332,7 @@
      "nan": 0,
      "shape": [],
      "sum": 1.01
-    },
-    "spin_sign": 0
+    }
    },
    {
     "e": {
@@ -348,7 +343,7 @@
      ],
      "sum": 12.0
     },
-    "k": 0,
+    "j": null,
     "l": 2,
     "log_deriv_ae": {
      "abs_sum": 1294.2726,
@@ -371,8 +366,7 @@
      "nan": 0,
      "shape": [],
      "sum": 1.01
-    },
-    "spin_sign": 0
+    }
    },
    {
     "e": {
@@ -383,7 +377,7 @@
      ],
      "sum": 12.0
     },
-    "k": 0,
+    "j": null,
     "l": 3,
     "log_deriv_ae": {
      "abs_sum": 1279.082472,
@@ -406,13 +400,13 @@
      "nan": 0,
      "shape": [],
      "sum": 1.01
-    },
-    "spin_sign": 0
+    }
    }
   ],
   "semilocal_potentials": [],
   "unscreened_semilocal_potentials": [
    {
+    "j": null,
     "l": 0,
     "r": {
      "abs_sum": 251.2622679,
@@ -432,6 +426,7 @@
     }
    },
    {
+    "j": null,
     "l": 1,
     "r": {
      "abs_sum": 251.2622679,
@@ -461,7 +456,7 @@
     "half_point_radius": "nan",
     "iproj": 1,
     "is_bound": true,
-    "k": 0,
+    "j": null,
     "l": 0,
     "n": 1,
     "r": {
@@ -473,7 +468,6 @@
      "sum": 251.262263
     },
     "r_rc": "nan",
-    "spin_sign": 0,
     "wfn_ae": {
      "abs_sum": 152.70506500000002,
      "nan": 0,
@@ -499,7 +493,7 @@
     "half_point_radius": 6.3528,
     "iproj": 1,
     "is_bound": false,
-    "k": 0,
+    "j": null,
     "l": 1,
     "n": 2,
     "r": {
@@ -511,7 +505,6 @@
      "sum": 251.262263
     },
     "r_rc": "nan",
-    "spin_sign": 0,
     "wfn_ae": {
      "abs_sum": 67.631902,
      "nan": 0,
@@ -542,9 +535,9 @@
   {
    "eig_ae": -0.23860171,
    "f": 1.0,
+   "j": null,
    "l": 0,
-   "n": 1,
-   "spin_sign": 0
+   "n": 1
   }
  ],
  "test_configurations": [
@@ -553,10 +546,9 @@
     "eig_ae": -0.23860171,
     "eig_ps": -0.23860388,
     "f": 1.0,
-    "k": 0,
+    "j": null,
     "l": 0,
-    "n": 1,
-    "spin_sign": 0
+    "n": 1
    }
   ]
  ],
@@ -573,10 +565,9 @@
    "eig_ae": 0.05,
    "half_point_radius": 6.3528,
    "iproj": 1,
-   "k": 0,
+   "j": null,
    "l": 1,
-   "n": 2,
-   "spin_sign": 0
+   "n": 2
   }
  ]
 }

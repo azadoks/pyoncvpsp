@@ -1,7 +1,10 @@
 """Tests for the blocks located by the stage state machine and the quantities bounded by them."""
 
+from fractions import Fraction
+
 import pytest
 
+from pyoncvpsp.channels import ChannelKey
 from pyoncvpsp.io.output import OncvpspTextParser
 from pyoncvpsp.io.output._sections import BlockKind, blocks, line_contexts
 
@@ -43,8 +46,8 @@ def test_block_attributes():
     contexts = line_contexts(LINES)
     projectors = [(b.l, b.iproj) for b, _, _ in blocks(contexts, BlockKind.PROJECTOR)]
     assert projectors == [(0, 1), (1, 1)]
-    vkb = [(b.l, b.kappa) for b, _, _ in blocks(contexts, BlockKind.VKB)]
-    assert vkb == [(1, -2), (1, 1)]
+    vkb = [b.channel for b, _, _ in blocks(contexts, BlockKind.VKB)]
+    assert vkb == [ChannelKey(1, Fraction(3, 2)), ChannelKey(1, Fraction(1, 2))]
     configs = [b.config_index for b, _, _ in blocks(contexts, BlockKind.TEST_CONFIG)]
     assert configs == [0, 1]
 
@@ -77,14 +80,14 @@ DATA FOR PLOTTING
 
 
 @pytest.mark.parametrize("name", ["oncvpsp-2.1.1-fr_08_O_r", "oncvpsp-4.0.1-fr_74_W_r"])
-def test_relativistic_projector_spin_follows_kappa(parse_output, name):
+def test_relativistic_projector_j_follows_kappa(parse_output, name):
     # Each channel is optimized for kap = -(l+1) (j = l+1/2) before kap = l, as its VKB blocks are
     parser = parse_output(name)
     projectors = [
-        (ell, spin_sign)
-        for ell, iproj, spin_sign, _, _ in parser._optimize_line_indices
-        if iproj == 1
+        projector.channel
+        for projector, _, _ in parser._optimize_line_indices
+        if projector.iproj == 1
     ]
-    vkb = [(ell, spin_sign) for ell, spin_sign, _, _ in parser._run_vkb_indices]
+    vkb = [channel for channel, _, _ in parser._run_vkb_indices]
     assert projectors == vkb
-    assert projectors[:3] == [(0, 1), (1, 1), (1, -1)]
+    assert [(c.l, c.j) for c in projectors[:3]] == [(0, 0.5), (1, 1.5), (1, 0.5)]

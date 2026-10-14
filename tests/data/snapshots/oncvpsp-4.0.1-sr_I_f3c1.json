@@ -190,79 +190,79 @@
   {
    "eig_ae": -1212.1791,
    "f": 2.0,
+   "j": null,
    "l": 0,
-   "n": 1,
-   "spin_sign": 0
+   "n": 1
   },
   {
    "eig_ae": -187.28461,
    "f": 2.0,
+   "j": null,
    "l": 0,
-   "n": 2,
-   "spin_sign": 0
+   "n": 2
   },
   {
    "eig_ae": -168.08982,
    "f": 6.0,
+   "j": null,
    "l": 1,
-   "n": 2,
-   "spin_sign": 0
+   "n": 2
   },
   {
    "eig_ae": -37.799889,
    "f": 2.0,
+   "j": null,
    "l": 0,
-   "n": 3,
-   "spin_sign": 0
+   "n": 3
   },
   {
    "eig_ae": -31.580509,
    "f": 6.0,
+   "j": null,
    "l": 1,
-   "n": 3,
-   "spin_sign": 0
+   "n": 3
   },
   {
    "eig_ae": -22.268858,
    "f": 10.0,
+   "j": null,
    "l": 2,
-   "n": 3,
-   "spin_sign": 0
+   "n": 3
   },
   {
    "eig_ae": -6.636736,
    "f": 2.0,
+   "j": null,
    "l": 0,
-   "n": 4,
-   "spin_sign": 0
+   "n": 4
   },
   {
    "eig_ae": -4.688085,
    "f": 6.0,
+   "j": null,
    "l": 1,
-   "n": 4,
-   "spin_sign": 0
+   "n": 4
   },
   {
    "eig_ae": -1.8477097,
    "f": 10.0,
+   "j": null,
    "l": 2,
-   "n": 4,
-   "spin_sign": 0
+   "n": 4
   },
   {
    "eig_ae": -0.63971309,
    "f": 2.0,
+   "j": null,
    "l": 0,
-   "n": 5,
-   "spin_sign": 0
+   "n": 5
   },
   {
    "eig_ae": -0.26040395,
    "f": 5.0,
+   "j": null,
    "l": 1,
-   "n": 5,
-   "spin_sign": 0
+   "n": 5
   }
  ],
  "test_configurations": [],
@@ -279,10 +279,9 @@
    "eig_ae": 3.1044,
    "half_point_radius": 3.1159,
    "iproj": 2,
-   "k": 0,
+   "j": null,
    "l": 0,
-   "n": 7,
-   "spin_sign": 0
+   "n": 7
   }
  ]
 }

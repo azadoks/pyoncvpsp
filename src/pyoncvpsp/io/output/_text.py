@@ -10,6 +10,7 @@ import re
 
 import numpy as np
 
+from pyoncvpsp.channels import ChannelKey, ProjectorKey, j_channels
 from pyoncvpsp.io._utils import fort_float
 from pyoncvpsp.io.input._models import OncvpspInput
 from ._data import WARNINGS, ERRORS
@@ -18,28 +19,6 @@ from . import _attribution, _sections
 from ._sections import Block, BlockKind, LineContext
 
 RE_FLOAT: str = r"[+-]?(?:\d+\.\d*|\.\d+|\d+)(?:[eEdD][+-]?\d+)?"
-
-
-def _kappa(
-    ell: int,
-    jay: float | None = None,
-    ess: float | None = None,
-    spin_sign: int | None = None,
-) -> int:
-    sources = iter(x is not None for x in [jay, ess, spin_sign])
-    assert any(sources) and not any(sources), (
-        "Exactly one input source must be provided."
-    )
-    if jay is not None:
-        j = jay
-    elif spin_sign is not None:
-        s = spin_sign * 1 / 2
-        j = ell + s
-    elif ess is not None:
-        j = ell + ess
-    else:
-        raise RuntimeError("unreachable")
-    return int((ell - j) * (2 * j + 1))
 
 
 class OncvpspOutputError(Exception):
@@ -418,63 +397,44 @@ class OncvpspTextParser:
             ).model_dump()
         return {}
 
-    def get_reference_quantum_numbers(self, index) -> list[tuple[int, int, int]]:
-        """Get the quantum numbers (n, l, sign(s)) describing the states of the reference configuration.
-        `index` acts upon the reference configuration _as it is written in the input file_, i.e. before
-        expanding for spin-orbit splitting in the relativistic case.
+    def get_reference_quantum_numbers(self, index) -> list[tuple[int, ChannelKey]]:
+        """Get the states `(n, channel)` of the reference configuration. `index` acts upon the
+        reference configuration _as it is written in the input file_, i.e. per l-channel, before
+        splitting into j-channels in the fully-relativistic case.
 
         Args:
             index (int | slice): State ind(ex|ices)
 
         Returns:
-            list[tuple[int, int, int]]: Quantum number tuples (n, l, sign(s)).
+            list[tuple[int, ChannelKey]]: States `(n, channel)`.
         """
         config = self.input["reference_configuration"]
         quantum_numbers = []
         for enn, ell in zip(config["n"][index], config["l"][index]):
-            spin_signs = (
-                [0] if not self.is_relativistic else ([1] if ell == 0 else [-1, 1])
-            )
-            for spin_sign in spin_signs:
-                quantum_numbers.append((enn, ell, spin_sign))
+            for channel in reversed(j_channels(ell, self.is_relativistic)):
+                quantum_numbers.append((enn, channel))
         return quantum_numbers
 
     @property
-    def core_quantum_numbers(self) -> list[tuple[int, int, int]]:
-        """Quantum number tuples (n, l, sign(s)) corresponding to the core states.
-
-        Returns:
-            list[tuple[int, int, int]]: Quantum number tuples (n, l, sign(s)).
-        """
+    def core_quantum_numbers(self) -> list[tuple[int, ChannelKey]]:
+        """States `(n, channel)` of the core."""
         n_core = self.input["oncvpsp"]["nc"]
         return self.get_reference_quantum_numbers(index=slice(0, n_core))
 
     @property
-    def valence_quantum_numbers(self) -> list[tuple[int, int, int]]:
-        """Quantum number tuples (n, l, sign(s)) corresponding to the valence states.
-
-        Returns:
-            list[tuple[int, int, int]]: Quantum number tuples (n, l, sign(s))
-        """
+    def valence_quantum_numbers(self) -> list[tuple[int, ChannelKey]]:
+        """Valence states `(n, channel)`."""
         n_core = self.input["oncvpsp"]["nc"]
         return self.get_reference_quantum_numbers(index=slice(n_core, None))
 
     @property
-    def valence_quantum_numbers_and_ae_eig(self) -> list[tuple[int, int, int, float]]:
-        """Quantum number tuples (n, l, sign(s), eigenvalue) corresponding to the valence states.
-
-        Returns:
-            list[tuple[int, int, int, float]]: Quantum number tuples (n, l, sign(s), eigenvalue)
-        """
+    def valence_quantum_numbers_and_ae_eig(self) -> list[tuple[int, ChannelKey, float]]:
+        """Valence states `(n, channel, all-electron eigenvalue)`."""
         vqn_eig = []
-        for enn, ell, spin_sign in self.valence_quantum_numbers:
+        for enn, channel in self.valence_quantum_numbers:
             for config in self.reference_configuration:
-                if (config["n"], config["l"], config["spin_sign"]) == (
-                    enn,
-                    ell,
-                    spin_sign,
-                ):
-                    vqn_eig.append((enn, ell, spin_sign, config["eig_ae"]))
+                if (config["n"], ChannelKey.from_record(config)) == (enn, channel):
+                    vqn_eig.append((enn, channel, config["eig_ae"]))
         return vqn_eig
 
     @cached_property
@@ -485,14 +445,13 @@ class OncvpspTextParser:
             RuntimeError: If the "ATOM AND REFERENCE CONFIGURATION" block cannot be found.
 
         Returns:
-            dict:
-                (l, n, spin_sign) (tuple[int, int, int]): State identifier tuple.
-                    n (int): Principal quantum number.
-                    l (int): Angular momentum quantum number.
-                    f (float): Occupation number.
-                    spin_sign (int): Spin sign (+1 for j=l+1/2, -1 for j=l-1/2, 0 for non-relativistic).
-                    eig_ae (float): All-electron eigenvalue (Ha).
-                    eig_pbe (float, optional): PBE eigenvalue (Ha), if available.
+            list[dict]: One per state of each l-channel or j-channel:
+                n (int): Principal quantum number.
+                l (int): Orbital angular momentum.
+                j (float | None): Total angular momentum, None for an l-channel.
+                f (float): Occupation number.
+                eig_ae (float): All-electron eigenvalue (Ha).
+                eig_pbe (float, optional): PBE eigenvalue (Ha), if available.
         """
         nlf_pattern = rf"\s+(?P<n>\d+)\s+(?P<l>\d+)\s+(?P<f>{RE_FLOAT})"
         pattern = re.compile(
@@ -530,20 +489,16 @@ class OncvpspTextParser:
             enn = int(match.group("n"))
             ell = int(match.group("l"))
             occ = float(match.group("f"))
-            if not self.is_relativistic:
-                eigs = {0: fort_float(match.group("eig"))}
-            else:
-                eigs = {1: fort_float(match.group("eig"))}
-                if ell > 0:
-                    eigs[-1] = fort_float(match.group("eig_dw"))
-            for spin_sign, eig in eigs.items():
+            # Fully-relativistic eigenvalues are printed for j = l + 1/2, then j = l - 1/2
+            channels = j_channels(ell, self.is_relativistic)
+            eig_groups = ["eig", "eig_dw"][: len(channels)]
+            for channel, group in zip(channels, eig_groups):
                 data.append(
                     {
                         "n": enn,
-                        "l": ell,
+                        **channel.as_dict(),
                         "f": occ,
-                        "spin_sign": spin_sign,
-                        "eig_ae": eig,
+                        "eig_ae": fort_float(match.group(group)),
                     }
                 )
                 if self.program_information["program"] == "METAPSP":
@@ -551,8 +506,8 @@ class OncvpspTextParser:
         return data
 
     @cached_property
-    def _valence_projector_states(self) -> list[tuple[int, int, int, float]]:
-        """Valence states (n, l, spin_sign, eig_ae) from which projectors are built, in input order.
+    def _valence_projector_states(self) -> list[tuple[int, ChannelKey, float]]:
+        """Valence states `(n, channel, eig_ae)` from which projectors are built, in input order.
 
         ONCVPSP v4 and METAPSP use every valence state of a given l. ONCVPSP v2/v3 use the first
         valence state of a given l, and further valence states of that l only if they are occupied.
@@ -572,13 +527,13 @@ class OncvpspTextParser:
                 config["n"][nc:], config["l"][nc:], config["f"][nc:]
             )
         }
-        seen: set[tuple[int, int]] = set()
+        seen: set[ChannelKey] = set()
         projector_states = []
         for state in states:
-            enn, ell, spin_sign, _ = state
-            if (ell, spin_sign) not in seen or occupations[(enn, ell)] > 0.0:
+            enn, channel, _ = state
+            if channel not in seen or occupations[(enn, channel.l)] > 0.0:
                 projector_states.append(state)
-            seen.add((ell, spin_sign))
+            seen.add(channel)
         return projector_states
 
     @cached_property
@@ -587,7 +542,7 @@ class OncvpspTextParser:
         wellstates and localized bound states (which ONCVPSP uses in place of a wellstate, reporting
         them only in a "localized bound state found" warning).
 
-        Projectors at each l (and spin) are built from the valence states first (in input order),
+        Projectors of each channel are built from the valence states first (in input order),
         then from these states, so `iproj` counts on from the number of valence states.
         """
         wellstate_pattern = re.compile(
@@ -632,16 +587,16 @@ class OncvpspTextParser:
                 return core[-1] + 1
             return ell + 1
 
-        # Number of projectors already taken at each (l, spin_sign), starting with the valence states
-        n_taken: dict[tuple[int, int], int] = defaultdict(int)
-        for _, ell, spin_sign, _ in self._valence_projector_states:
-            n_taken[(ell, spin_sign)] += 1
+        # Number of projectors already taken in each channel, starting with the valence states
+        n_taken: dict[ChannelKey, int] = defaultdict(int)
+        for _, channel, _ in self._valence_projector_states:
+            n_taken[channel] += 1
         states: list[dict] = []
         # Localized bound state warnings are removed from `clean_lines`, so search the raw lines
         for i, line in enumerate(self._lines):
             if match := re.match(wellstate_pattern, line):
                 ell = int(match.group("ell"))
-                kappa = int(match.group("kappa")) if match.group("kappa") else 0
+                kappa = int(match.group("kappa")) if match.group("kappa") else None
                 state = {
                     "n": int(match.group("enn")),
                     "is_bound": False,
@@ -652,7 +607,7 @@ class OncvpspTextParser:
             elif match := re.match(localized_pattern, line):
                 ell = int(match.group("ell"))
                 # Only reported for the j = l + 1/2 (kappa = -(l + 1)) state if relativistic
-                kappa = -(ell + 1) if self.is_relativistic else 0
+                kappa = -(ell + 1) if self.is_relativistic else None
                 state = {
                     "n": int(match.group("enn")),
                     "is_bound": True,
@@ -677,9 +632,10 @@ class OncvpspTextParser:
                     kappa = int(renormalization.group("kappa"))
                 else:
                     # Assume j = l + 1/2 if relativistic
-                    kappa = -(ell + 1) if self.is_relativistic else 0
-                    spin_sign = 0 if kappa == 0 else 1
-                    enn = v3_principal_quantum_number(ell) + n_taken[(ell, spin_sign)]
+                    kappa = -(ell + 1) if self.is_relativistic else None
+                    enn = v3_principal_quantum_number(ell) + n_taken[
+                        ChannelKey.from_printed_kappa(ell, kappa)
+                    ]
                 state = {
                     "n": enn,
                     "is_bound": True,
@@ -687,15 +643,12 @@ class OncvpspTextParser:
                 }
             else:
                 continue
-            spin_sign = 0 if kappa == 0 else (-1 if kappa > 0 else 1)
-            n_taken[(ell, spin_sign)] += 1
+            channel = ChannelKey.from_printed_kappa(ell, kappa)
+            n_taken[channel] += 1
             states.append(
                 {
                     "n": state.pop("n"),
-                    "l": ell,
-                    "iproj": n_taken[(ell, spin_sign)],
-                    "k": kappa,
-                    "spin_sign": spin_sign,
+                    **ProjectorKey(channel, n_taken[channel]).as_dict(),
                     **state,
                 }
             )
@@ -708,11 +661,10 @@ class OncvpspTextParser:
         Returns:
             dict:
                 n (int): Principal quantum number.
-                l (int): Angular momentum quantum number.
-                iproj (int): Projector index (1-based). Projectors at each l (and spin) are built
+                l (int): Orbital angular momentum.
+                j (float | None): Total angular momentum, None for an l-channel.
+                iproj (int): Projector index (1-based). Projectors of each channel are built
                     from the valence states first, then from wellstates / localized bound states.
-                k (int): Dirac quantum number kappa (0 for non-relativistic).
-                spin_sign (int): Spin sign (+1 for j=l+1/2, -1 for j=l-1/2, 0 for non-relativistic).
                 eig_ae (float): All-electron eigenvalue (Ha). N.B.: for the j = l - 1/2 states of fully-
                     relativistic ONCVPSP v4, this is the target energy printed before solving in the well
                     potential of the j = l + 1/2 state, not the resulting eigenvalue.
@@ -733,10 +685,9 @@ class OncvpspTextParser:
         Returns:
             dict:
                 n (int): Principal quantum number.
-                l (int): Angular momentum quantum number.
+                l (int): Orbital angular momentum.
+                j (float | None): Total angular momentum, None for an l-channel.
                 iproj (int): Projector index (1-based).
-                k (int): Dirac quantum number kappa (0 for non-relativistic).
-                spin_sign (int): Spin sign (+1 for j=l+1/2, -1 for j=l-1/2, 0 for non-relativistic).
                 eig_ae (float): All-electron eigenvalue (Ha).
         """
         return [
@@ -746,27 +697,21 @@ class OncvpspTextParser:
         ]
 
     @cached_property
-    def _optimize_line_indices(self) -> list[tuple[int, int, int, int, int]]:
-        """Optimized projector blocks as `(l, iproj, spin_sign, start, stop)` (`clean_lines` indices)."""
-        indices: dict = {}
+    def _optimize_line_indices(self) -> list[tuple[ProjectorKey, int, int]]:
+        """Optimized projector blocks as `(projector, start, stop)` (`clean_lines` indices)."""
+        indices: dict[ProjectorKey, tuple[int, int]] = {}
         for block, start, stop in self._blocks(BlockKind.PROJECTOR):
-            if block.l is None:
+            if block.l is None or block.iproj is None:
                 raise RuntimeError(
                     f"Failed to find ang. mom. in `optimize` block starting at line {block.line + 1}"
                 )
-            ell, iproj = block.l, block.iproj
             # The relativistic loop over kappa does kap = -(l+1) (j = l+1/2) before kap = l
-            if not self.is_relativistic:
-                spin_sign = 0
-            elif (ell, iproj, +1) in indices:
-                spin_sign = -1
-            else:
-                spin_sign = +1
-            indices[(ell, iproj, spin_sign)] = (start, stop)
-        return [
-            (ell, iproj, spin_sign, start, stop)
-            for (ell, iproj, spin_sign), (start, stop) in indices.items()
-        ]
+            first, *rest = j_channels(block.l, self.is_relativistic)
+            projector = ProjectorKey(first, block.iproj)
+            if projector in indices and rest:
+                projector = ProjectorKey(rest[0], block.iproj)
+            indices[projector] = (start, stop)
+        return [(projector, start, stop) for projector, (start, stop) in indices.items()]
 
     @property
     def _optimize_convergence_profiles(self) -> list[dict]:
@@ -774,48 +719,40 @@ class OncvpspTextParser:
         convergence_body_pattern = re.compile(
             rf"\s+(?P<eresid>{RE_FLOAT})\s+{RE_FLOAT}\s+(?P<ecut>{RE_FLOAT})"
         )
-        data: dict[tuple, dict[str, list]] = defaultdict(lambda: defaultdict(list))
-        for ell, iproj, spin_sign, start, stop in self._optimize_line_indices:
+        data: dict[ProjectorKey, dict[str, list]] = defaultdict(lambda: defaultdict(list))
+        for projector, start, stop in self._optimize_line_indices:
             header_matches = self.findall(convergence_header_pattern, start, stop)
             if header_matches:
                 header_index = header_matches[0][0]
                 # ONCVPSP prints an empty table when no residual threshold is reached;
                 # keep the (empty) profile so that `ecut_recommended` reflects it
-                data[(ell, iproj, spin_sign)].update({"eresid": [], "ecut": []})
+                data[projector].update({"eresid": [], "ecut": []})
                 for _, match in self.findall(
                     convergence_body_pattern,
                     start=header_index,
                     stop=min(header_index + 5, stop),
                 ):
-                    data[(ell, iproj, spin_sign)]["eresid"].append(
-                        float(match.group("eresid"))
-                    )
-                    data[(ell, iproj, spin_sign)]["ecut"].append(
-                        float(match.group("ecut"))
-                    )
+                    data[projector]["eresid"].append(float(match.group("eresid")))
+                    data[projector]["ecut"].append(float(match.group("ecut")))
         return [
-            {
-                **{"l": key[0], "iproj": key[1], "spin_sign": key[2]},
-                **{k: np.array(v) for k, v in value.items()},
-            }
-            for key, value in data.items()
+            {**projector.as_dict(), **{k: np.array(v) for k, v in value.items()}}
+            for projector, value in data.items()
         ]
 
     @cached_property
-    def _run_vkb_indices(self) -> list[tuple[int, int, int, int]]:
-        """VKB blocks as `(l, spin_sign, start, coefficients)`: the `clean_lines` indices of the
+    def _run_vkb_indices(self) -> list[tuple[ChannelKey, int, int]]:
+        """VKB blocks as `(channel, start, coefficients)`: the `clean_lines` indices of the
         `B matrix` header and of the `Orthonormal projector coefficients` line. Blocks without
         coefficients (truncated output) are skipped."""
         coeff_pattern = re.compile(
             rf"\s+Orthonormal projector coefficients(?:\s+{RE_FLOAT})+"
         )
-        indices: list[tuple[int, int, int, int]] = []
+        indices: list[tuple[ChannelKey, int, int]] = []
         for block, start, stop in self._blocks(BlockKind.VKB):
             if not (coeff_matches := self.findall(coeff_pattern, start + 1, stop)):
                 continue
-            kappa = block.kappa
-            spin_sign = 0 if kappa is None else (-1 if kappa > 0 else 1)
-            indices.append((block.l, spin_sign, start, coeff_matches[0][0]))
+            assert block.channel is not None
+            indices.append((block.channel, start, coeff_matches[0][0]))
         return indices
 
     @cached_property
@@ -824,19 +761,17 @@ class OncvpspTextParser:
 
         Returns:
             list[dict]:
-                ell (int): Angular momentum quantum number.
+                l (int): Orbital angular momentum.
+                j (float | None): Total angular momentum, None for an l-channel.
                 iproj (int): Projector index.
-                spin_sign (int): Spin sign (+1 for j=l+1/2, -1 for j=l-1/2, 0 for non-relativistic).
                 coefficient (float): VKB coefficient Dii.
         """
         coefficients: list[dict] = []
-        for ell, spin_sign, _, stop in self._run_vkb_indices:
+        for channel, _, stop in self._run_vkb_indices:
             for iproj, value in enumerate(self.clean_lines[stop].split()[3:], start=1):
                 coefficients.append(
                     {
-                        "l": ell,
-                        "iproj": iproj,
-                        "spin_sign": spin_sign,
+                        **ProjectorKey(channel, iproj).as_dict(),
                         "coefficient": float(value),
                     }
                 )
@@ -848,7 +783,8 @@ class OncvpspTextParser:
 
         Returns:
             list[dict]: List of dicts containing:
-                ell (int): Angular momentum quantum number.
+                l (int): Orbital angular momentum (l-channel).
+                j (None): Always None.
                 coefficients (np.ndarray): Orthonormal scalar projector coefficients for the given ell.
         """
         coefficients: list[dict] = []
@@ -858,7 +794,7 @@ class OncvpspTextParser:
             ell = int(match.group("ell"))
             coefficients.append(
                 {
-                    "l": ell,
+                    **ChannelKey(ell).as_dict(),
                     "coefficients": np.array(
                         [float(c) for c in self.clean_lines[i + 1].split()]
                     ),
@@ -872,7 +808,8 @@ class OncvpspTextParser:
 
         Returns:
             list[dict]: List of dicts containing:
-                ell (int): Angular momentum quantum number.
+                l (int): Orbital angular momentum (l-channel).
+                j (None): Always None.
                 coefficients (np.ndarray): Orthonormal "spin-orbit" projector coefficients for the given ell.
         """
         coefficients: list[dict] = []
@@ -882,7 +819,7 @@ class OncvpspTextParser:
             ell = int(match.group("ell"))
             coefficients.append(
                 {
-                    "l": ell,
+                    **ChannelKey(ell).as_dict(),
                     "coefficients": np.array(
                         [float(c) for c in self.clean_lines[i + 1].split()]
                     ),
@@ -896,10 +833,10 @@ class OncvpspTextParser:
 
         Returns:
             list[dict]: List of dicts containing:
-                ell (int): Angular momentum quantum number.
-                spin_sign (int): Spin sign (+1 for j=l+1/2, -1 for j=l-1/2, 0 for non-relativistic).
-                i (int): Projector index i.
-                j (int): Projector index j.
+                l (int): Orbital angular momentum.
+                j (float | None): Total angular momentum, None for an l-channel.
+                iproj (int): Projector index i.
+                jproj (int): Projector index j.
                 hermiticity_error (float): Hermiticity error for Bij matrix element (i, j) in Ha.
         """
         v3_herm_err_pattern = re.compile(
@@ -910,17 +847,16 @@ class OncvpspTextParser:
             rf"\s+(?P<i>\d)\s+(?P<j>\d)\s+(?P<herm_err>{RE_FLOAT})"
         )
         hermiticity_errors: list[dict] = []
-        for ell, spin_sign, start, stop in self._run_vkb_indices:
+        for channel, start, stop in self._run_vkb_indices:
             # Parse hermiticity errors
             if herm_err_match := re.match(
                 v3_herm_err_pattern, self.clean_lines[start + 1]
             ):
                 hermiticity_errors.append(
                     {
-                        "l": ell,
-                        "spin_sign": spin_sign,
-                        "i": 1,
-                        "j": 2,
+                        **channel.as_dict(),
+                        "iproj": 1,
+                        "jproj": 2,
                         "hermiticity_error": fort_float(
                             herm_err_match.group("herm_err")
                         ),
@@ -933,10 +869,9 @@ class OncvpspTextParser:
                 for _, herm_err_match in herm_err_matches:
                     hermiticity_errors.append(
                         {
-                            "l": ell,
-                            "spin_sign": spin_sign,
-                            "i": int(herm_err_match.group("i")),
-                            "j": int(herm_err_match.group("j")),
+                            **channel.as_dict(),
+                            "iproj": int(herm_err_match.group("i")),
+                            "jproj": int(herm_err_match.group("j")),
                             "hermiticity_error": fort_float(
                                 herm_err_match.group("herm_err")
                             ),
@@ -1042,9 +977,8 @@ class OncvpspTextParser:
 
         Returns:
             list[dict]:
-                l (int): Angular momentum quantum number.
-                k (int): Dirac quantum number kappa (0 for non-relativistic).
-                spin_sign (int): Spin sign (+1 for j=l+1/2, -1 for j=l-1/2, 0 for non-relativistic).
+                l (int): Orbital angular momentum.
+                j (float | None): Total angular momentum, None for an l-channel.
                 rcore (float): Core radius (a.u.).
                 rmatch (float): Matching radius (a.u.).
                 e_in (float): Input all-electron eigenvalue (Ha).
@@ -1063,11 +997,10 @@ class OncvpspTextParser:
         )
         return [
             {
-                "l": int(match.group("ell")),
-                "k": int(match.group("kap")) if match.group("kap") is not None else 0,
-                "spin_sign": 0
-                if match.group("kap") is None
-                else (-1 if int(match.group("kap")) > 0 else 1),
+                **ChannelKey.from_printed_kappa(
+                    int(match.group("ell")),
+                    int(match.group("kap")) if match.group("kap") is not None else None,
+                ).as_dict(),
                 "rc": float(match.group("rcore")),
                 "rmatch": float(match.group("rmatch")),
                 "e_in": float(match.group("e_in")),
@@ -1085,9 +1018,8 @@ class OncvpspTextParser:
 
         Returns:
             list[dict]:
-                l (int): Angular momentum quantum number.
-                k (int): Dirac quantum number kappa (0 for non-relativistic).
-                spin_sign (int): Spin sign (+1 for j=l+1/2, -1 for j=l-1/2, 0 for non-relativistic).
+                l (int): Orbital angular momentum.
+                j (float | None): Total angular momentum, None for an l-channel.
                 rcore (float): Core radius (a.u.).
                 rmatch (float): Matching radius (a.u.).
                 e_in (float): Input all-electron eigenvalue (Ha).
@@ -1108,11 +1040,10 @@ class OncvpspTextParser:
         )
         return [
             {
-                "l": int(match.group("ell")),
-                "k": int(match.group("kap")) if match.group("kap") is not None else 0,
-                "spin_sign": 0
-                if match.group("kap") is None
-                else (-1 if int(match.group("kap")) > 0 else 1),
+                **ChannelKey.from_printed_kappa(
+                    int(match.group("ell")),
+                    int(match.group("kap")) if match.group("kap") is not None else None,
+                ).as_dict(),
                 "rc": float(match.group("rcore")),
                 "rmatch": float(match.group("rmatch")),
                 "e_in": float(match.group("e_in")),
@@ -1133,9 +1064,8 @@ class OncvpspTextParser:
 
         Returns:
             list[dict]:
-                l (int): Angular momentum quantum number.
-                k (int): Dirac quantum number kappa (0 for non-relativistic).
-                spin_sign (int): Spin sign (+1 for j=l+1/2, -1 for j=l-1/2, 0 for non-relativistic).
+                l (int): Orbital angular momentum.
+                j (float | None): Total angular momentum, None for an l-channel.
                 eig (float): Eigenvalue of the ghost state (Ha).
                 ecut (float): Cutoff energy where the ghost appears (Ha).
                 sign (str): Sign of the ghost state ('+' or '-').
@@ -1152,13 +1082,10 @@ class OncvpspTextParser:
         for _, match in matches:
             ghosts.append(
                 {
-                    "l": int(match.group("ell")),
-                    "k": int(match.group("kap"))
-                    if match.group("kap") is not None
-                    else 0,
-                    "spin_sign": 0
-                    if match.group("kap") is None
-                    else (-1 if int(match.group("kap")) > 0 else 1),
+                    **ChannelKey.from_printed_kappa(
+                        int(match.group("ell")),
+                        int(match.group("kap")) if match.group("kap") is not None else None,
+                    ).as_dict(),
                     "eig": float(match.group("eig")),
                     "ecut": float(match.group("ecut")),
                     # ONCVPSP v3 only tests for bound ghosts, and prints no sign
@@ -1177,9 +1104,8 @@ class OncvpspTextParser:
         Returns:
             list[list[dict]]:
                 n (int): Principal quantum number.
-                l (int): Angular momentum quantum number.
-                k (int): Dirac quantum number kappa (0 for non-relativistic).
-                spin_sign (int): Spin sign (+1 for j=l+1/2, -1 for j=l-1/2, 0 for non-relativistic).
+                l (int): Orbital angular momentum.
+                j (float | None): Total angular momentum, None for an l-channel.
                 f (float): Occupation number.
                 eig_ae (float): All-electron eigenvalue (Ha).
                 eig_ps (float | None): Pseudoeigenvalue (Ha), if available.
@@ -1202,15 +1128,12 @@ class OncvpspTextParser:
                     kappa = (
                         int(config_match.group("kappa"))
                         if config_match.group("kappa") is not None
-                        else 0
+                        else None
                     )
-                    spin_sign = 0 if kappa == 0 else (-1 if kappa > 0 else 1)
                     test_configuration.append(
                         {
                             "n": enn,
-                            "l": ell,
-                            "k": kappa,
-                            "spin_sign": spin_sign,
+                            **ChannelKey.from_printed_kappa(ell, kappa).as_dict(),
                             "f": float(config_match.group("occ")),
                             "eig_ae": float(config_match.group("eig_ae")),
                             "eig_ps": (
@@ -1249,7 +1172,8 @@ class OncvpspTextParser:
 
         Returns:
             list[dict]:
-                l (int): Angular momentum quantum number.
+                l (int): Orbital angular momentum (l-channel).
+                j (None): Always None.
                 r (np.ndarray): Radial grid points (a.u.).
                 v_sl (np.ndarray): Unscreened semilocal potential values (Ha).
         """
@@ -1268,7 +1192,7 @@ class OncvpspTextParser:
                 data[ell]["r"].append(r)
                 data[ell]["v_sl"].append(float(match.group(f"v_sl_{ell}")))
         return [
-            {"l": ell, **{k: np.array(v) for k, v in values.items()}}
+            {**ChannelKey(ell).as_dict(), **{k: np.array(v) for k, v in values.items()}}
             for ell, values in data.items()
         ]
 
@@ -1278,7 +1202,8 @@ class OncvpspTextParser:
 
         Returns:
             list[dict]:
-                ell (int): Angular momentum quantum number.
+                l (int): Orbital angular momentum (l-channel).
+                j (None): Always None.
                 r (np.ndarray): Radial grid points (a.u.).
                 v_sl (np.ndarray): Semilocal potential values (Ha).
         """
@@ -1297,7 +1222,7 @@ class OncvpspTextParser:
                 data[ell]["r"].append(r)
                 data[ell]["v_sl"].append(float(match.group(f"v_sl_{ell}")))
         return [
-            {"l": ell, **{k: np.array(v) for k, v in values.items()}}
+            {**ChannelKey(ell).as_dict(), **{k: np.array(v) for k, v in values.items()}}
             for ell, values in data.items()
         ]
 
@@ -1403,10 +1328,9 @@ class OncvpspTextParser:
                 is_bound (bool | None): Whether the state is a bound state (True),
                 a wellstate (False), or unknown (None).
                 n (int | None): Principal quantum number, None if unknown.
-                l (int): Angular momentum quantum number.
+                l (int): Orbital angular momentum.
+                j (float | None): Total angular momentum, None for an l-channel.
                 iproj (int): Projector index (1-based).
-                k (int): Dirac quantum number kappa (0 for non-relativistic).
-                spin_sign (int): Spin sign (+1 for j=l+1/2, -1 for j=l-1/2, 0 for non-relativistic).
                 f (float, optional): Occupation number, if available.
                 eig_ae (float, optional): All-electron eigenvalue (Ha), if available.
                 eig_ps (float, optional): Pseudoeigenvalue (Ha), if available.
@@ -1414,7 +1338,7 @@ class OncvpspTextParser:
                 half_point_radius (float, optional): Half-point radius (a.u.), if available.
         """
         data_pattern = re.compile(
-            r"&\s+(?P<spin_sign>[\s-])(?P<iproj>\d)?(?P<ell>\d)"
+            r"&\s+(?P<marker>[\s-])(?P<iproj>\d)?(?P<ell>\d)"
             rf"\s+(?P<r>{RE_FLOAT})\s+(?P<wfn_ae>{RE_FLOAT})\s+(?P<wfn_ps>{RE_FLOAT})"
         )
         header_pattern = re.compile(r"n=\s*(?P<enn>\d+),\s+l=\s*(?P<ell>\d)")
@@ -1428,29 +1352,29 @@ class OncvpspTextParser:
         # configuration eigenvalues, so they are keyed by quantum numbers only (bound states are unique)
         test_config = (
             {
-                (cfg["n"], cfg["l"], cfg["spin_sign"]): cfg
+                (cfg["n"], ChannelKey.from_record(cfg)): cfg
                 for cfg in self.test_configurations[0]
             }
             if self.test_configurations
             else {}
         )
         ref_config = {
-            (cfg["n"], cfg["l"], cfg["spin_sign"], cfg["eig_ae"]): cfg
+            (cfg["n"], ChannelKey.from_record(cfg), cfg["eig_ae"]): cfg
             for cfg in self.reference_configuration
         }
-        # States from which the projectors are built, keyed by (l, spin_sign, iproj):
-        # first the valence states (in input order), then wellstates / localized bound states
-        projector_states: dict[tuple[int, int, int], tuple[str, Any]] = {}
-        n_valence: dict[tuple[int, int], int] = defaultdict(int)
+        # States from which the projectors are built: first the valence states (in input order),
+        # then wellstates / localized bound states
+        projector_states: dict[ProjectorKey, tuple[str, Any]] = {}
+        n_valence: dict[ChannelKey, int] = defaultdict(int)
         for state_key in self._valence_projector_states:
-            _, ell, spin_sign, _ = state_key
-            n_valence[(ell, spin_sign)] += 1
-            projector_states[(ell, spin_sign, n_valence[(ell, spin_sign)])] = (
+            channel = state_key[1]
+            n_valence[channel] += 1
+            projector_states[ProjectorKey(channel, n_valence[channel])] = (
                 "valence",
                 state_key,
             )
         for state in self._unoccupied_projector_states:
-            projector_states[(state["l"], state["spin_sign"], state["iproj"])] = (
+            projector_states[ProjectorKey.from_record(state)] = (
                 "localized" if state["is_bound"] else "wellstate",
                 state,
             )
@@ -1491,21 +1415,15 @@ class OncvpspTextParser:
                 raise RuntimeError(
                     f"Failed to parse wavefunction header line: '{header_line}'"
                 )
-            # Determine the sign of the spin quantum number
-            if self.is_relativistic:
-                spin_sign = (
-                    1 if first_match.group("spin_sign") == "-" or ell == 0 else -1
-                )
-                jay = ell + spin_sign * 1 / 2
-                block_data["k"] = int((ell - jay) * (2 * jay + 1))
-            else:
-                spin_sign = 0
-                block_data["k"] = 0
+            projector = ProjectorKey(
+                ChannelKey.from_plot_marker(
+                    ell, first_match.group("marker"), self.is_relativistic
+                ),
+                iproj,
+            )
             # Add additional information about the state from the reference configuration,
             # wellstate metadata, or localized bound state
-            state_kind, state = projector_states.get(
-                (ell, spin_sign, iproj), (None, None)
-            )
+            state_kind, state = projector_states.get(projector, (None, None))
             state_metadata = {
                 "is_bound": None,
                 "n": 0,
@@ -1520,7 +1438,7 @@ class OncvpspTextParser:
                 state_kind == "valence" and block_data["is_bound"] is not False
             ):  # pyrefly: ignore
                 # If we're sure this is not a wellstate, get a boundstate
-                state_metadata.update(test_config.get(state[:3], {}))
+                state_metadata.update(test_config.get(state[:2], {}))
                 state_metadata.update(ref_config[state])
                 state_metadata["is_bound"] = True
             elif (
@@ -1535,9 +1453,7 @@ class OncvpspTextParser:
                 state_metadata["f"] = 0.0
             block_data.update(state_metadata)
             # Finalize block data
-            block_data["l"] = ell
-            block_data["iproj"] = iproj
-            block_data["spin_sign"] = spin_sign
+            block_data.update(projector.as_dict())
             data.append(block_data)
         return data
 
@@ -1553,32 +1469,31 @@ class OncvpspTextParser:
                 r (np.ndarray): Radial grid points (a.u.).
                 proj (np.ndarray): VKB projector values.
                 coeff (float | None): VKB coefficient Dii, if available.
-                l (int): Angular momentum quantum number.
+                l (int): Orbital angular momentum.
+                j (float | None): Total angular momentum, None for an l-channel.
                 iproj (int): Projector index (1-based).
-                spin_sign (int): Spin sign (+1 for j=l+1/2, -1 for j=l-1/2, 0 for non-relativistic).
         """
         max_nproj: int = max(self.input["vkb_projectors"]["nproj"])
         pattern = re.compile(
-            rf"!J\s+(?P<spin_sign>[\s-])(?P<ell>\d)\s+(?P<r>{RE_FLOAT})\s+(?P<proj_1>{RE_FLOAT})"
+            rf"!J\s+(?P<marker>[\s-])(?P<ell>\d)\s+(?P<r>{RE_FLOAT})\s+(?P<proj_1>{RE_FLOAT})"
             + "".join(
                 rf"(?:\s+(?P<proj_{i}>{RE_FLOAT}))?" for i in range(2, max_nproj + 1)
             )
         )
         # Used to look up VKB coefficients
         coeffs = {
-            (c["l"], c["iproj"], c["spin_sign"]): c["coefficient"]
+            ProjectorKey.from_record(c): c["coefficient"]
             for c in self.vkb_projector_coefficients
         }
         blocks = self._get_plot_blocks(pattern)
         data: list[dict] = []
         for block in blocks:
             _, first_match = block[0]
-            ell: int = int(first_match.group("ell"))
-            spin_sign: int = 0
-            if self.is_relativistic:
-                spin_sign = (
-                    1 if first_match.group("spin_sign") == "-" or ell == 0 else -1
-                )
+            channel = ChannelKey.from_plot_marker(
+                int(first_match.group("ell")),
+                first_match.group("marker"),
+                self.is_relativistic,
+            )
             block_data: dict[str, Any] = defaultdict(list)
             for _, match in block:
                 block_data["r"].append(float(match.group("r")))
@@ -1590,17 +1505,13 @@ class OncvpspTextParser:
             for iproj in range(1, max_nproj + 1):
                 proj_key = f"proj_{iproj}"
                 if proj_key in block_data:
-                    jay = ell + spin_sign * 1 / 2
-                    kappa = int((ell - jay) * (2 * jay + 1))
+                    projector = ProjectorKey(channel, iproj)
                     data.append(
                         {
-                            "l": ell,
-                            "iproj": iproj,
-                            "k": kappa,
-                            "spin_sign": spin_sign,
+                            **projector.as_dict(),
                             "r": block_data["r"],
                             "proj": block_data[proj_key],
-                            "coeff": coeffs.get((ell, iproj, spin_sign), np.nan),
+                            "coeff": coeffs.get(projector, np.nan),
                         }
                     )
         return data
@@ -1611,20 +1522,15 @@ class OncvpspTextParser:
             rf"!C\s+(?P<ell>\d)\s+(?P<ecut>{RE_FLOAT})\s+(?P<eresid>{RE_FLOAT})"
         )
         block = self.findall(pattern)
-        data: dict[tuple[int, int, int], dict[str, list]] = defaultdict(
-            lambda: defaultdict(list)
-        )
-        spin_sign: int = 1 if self.is_relativistic else 0
+        data: dict[ProjectorKey, dict[str, list]] = defaultdict(lambda: defaultdict(list))
         for _, match in block:
-            ell = int(match.group("ell"))
-            data[(ell, 1, spin_sign)]["ecut"].append(float(match.group("ecut")))
-            data[(ell, 1, spin_sign)]["eresid"].append(float(match.group("eresid")))
+            # Plotted only for the first projector, and for j = l + 1/2 if fully-relativistic
+            channel = j_channels(int(match.group("ell")), self.is_relativistic)[0]
+            data[ProjectorKey(channel, 1)]["ecut"].append(float(match.group("ecut")))
+            data[ProjectorKey(channel, 1)]["eresid"].append(float(match.group("eresid")))
         return [
-            {
-                **{"l": key[0], "iproj": key[1], "spin_sign": key[2]},
-                **{k: np.array(v) for k, v in value.items()},
-            }
-            for key, value in data.items()
+            {**projector.as_dict(), **{k: np.array(v) for k, v in value.items()}}
+            for projector, value in data.items()
         ]
 
     @cached_property
@@ -1633,9 +1539,9 @@ class OncvpspTextParser:
 
         Returns:
             list[dict]:
-                l (int): Angular momentum quantum number.
+                l (int): Orbital angular momentum.
+                j (float | None): Total angular momentum, None for an l-channel.
                 iproj (int): Projector index (1-based).
-                spin_sign (int): Spin sign (+1 for j=l+1/2, -1 for j=l-1/2, 0 for non-relativistic).
                 ecut (np.ndarray): Cutoff energies (Ha).
                 eresid (np.ndarray): Kinetic energy residual L1 errors of the VKB projectors.
         """
@@ -1669,53 +1575,38 @@ class OncvpspTextParser:
 
         Returns:
             list[dict]:
-                l (int): Angular momentum quantum number.
-                k (int): Dirac quantum number kappa (0 for non-relativistic).
-                spin_sign (int): Spin sign (+1 for j=l+1/2, -1 for j=l-1/2, 0 for non-relativistic).
+                l (int): Orbital angular momentum.
+                j (float | None): Total angular momentum, None for an l-channel.
                 rxpsh (float): Radius for logarithmic derivative evaluation (a.u.).
                 e (np.ndarray): Energies (Ha).
                 log_deriv_ae (np.ndarray): All-electron logarithmic derivative.
                 log_deriv_ps (np.ndarray): Pseudopotential logarithmic derivative.
         """
         pattern = re.compile(
-            rf"!\s+(?P<spin_sign>[\s-])(?P<ell>\d)\s+(?P<e>{RE_FLOAT})"
+            rf"!\s+(?P<marker>[\s-])(?P<ell>\d)\s+(?P<e>{RE_FLOAT})"
             rf"\s+(?P<log_deriv_ae>{RE_FLOAT})\s+(?P<log_deriv_ps>{RE_FLOAT})"
         )
         blocks = self._get_plot_blocks(pattern)
-        data: dict[tuple[int, int], dict[str, Any]] = defaultdict(
-            lambda: defaultdict(list)
-        )
+        data: dict[ChannelKey, dict[str, Any]] = defaultdict(lambda: defaultdict(list))
         for block in blocks:
             first_ln, first_match = block[0]
             header_line: str = self.clean_lines[first_ln - 3]
-            ell = int(first_match.group("ell"))
-            spin_sign: int = 0
-            if self.is_relativistic:
-                spin_sign = (
-                    1 if first_match.group("spin_sign") == "-" or ell == 0 else -1
-                )
-            data[(ell, spin_sign)]["rxpsh"] = float(header_line.split("=")[-1])
+            channel = ChannelKey.from_plot_marker(
+                int(first_match.group("ell")),
+                first_match.group("marker"),
+                self.is_relativistic,
+            )
+            data[channel]["rxpsh"] = float(header_line.split("=")[-1])
             for _, match in block:
-                ell = int(match.group("ell"))
-                if self.is_relativistic:
-                    spin_sign = 1 if match.group("spin_sign") == "-" or ell == 0 else -1
-                data[(ell, spin_sign)]["e"].append(float(match.group("e")))
-                data[(ell, spin_sign)]["log_deriv_ae"].append(
-                    float(match.group("log_deriv_ae"))
+                channel = ChannelKey.from_plot_marker(
+                    int(match.group("ell")), match.group("marker"), self.is_relativistic
                 )
-                data[(ell, spin_sign)]["log_deriv_ps"].append(
-                    float(match.group("log_deriv_ps"))
-                )
+                data[channel]["e"].append(float(match.group("e")))
+                data[channel]["log_deriv_ae"].append(float(match.group("log_deriv_ae")))
+                data[channel]["log_deriv_ps"].append(float(match.group("log_deriv_ps")))
         return [
-            {
-                **{
-                    "l": key[0],
-                    "spin_sign": key[1],
-                    "k": _kappa(ell=key[0], spin_sign=key[1]),
-                },
-                **{k: np.array(v) for k, v in value.items()},
-            }
-            for key, value in data.items()
+            {**channel.as_dict(), **{k: np.array(v) for k, v in value.items()}}
+            for channel, value in data.items()
         ]
 
     @cached_property

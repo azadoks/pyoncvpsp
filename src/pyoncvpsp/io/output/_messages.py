@@ -9,6 +9,8 @@ from dataclasses import dataclass, field, asdict
 from enum import StrEnum
 from typing import Any, Mapping
 
+from pyoncvpsp.channels import ChannelKey
+
 
 class Stage(StrEnum):
     """Stage of the ONCVPSP program, in execution order."""
@@ -206,12 +208,21 @@ class OncvpspMessage:
     l: int | None = None  # noqa: E741
     iproj: int | None = None
     n: int | None = None
-    spin_sign: int | None = None
+    j: float | None = None  # total angular momentum, if attributed to a j-channel
     config_index: int | None = (
         None  # as numbered by ONCVPSP: 0 = reference, k = test_configurations[k - 1]
     )
     implicated_parameters: list[str] = field(default_factory=list)
     groups: dict[str, str] = field(default_factory=dict)
+
+    @property
+    def channel(self) -> ChannelKey | None:
+        """l-channel or j-channel the message is attributed to, if any."""
+        return (
+            None
+            if self.l is None
+            else ChannelKey.from_record({"l": self.l, "j": self.j})
+        )
 
     @property
     def message_lines(self) -> list[str]:

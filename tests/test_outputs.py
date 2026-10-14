@@ -74,11 +74,12 @@ def test_completed_output_consistency(completed_output_name, parse_output):
             == wavefunction["wfn_ae"].shape
             == wavefunction["wfn_ps"].shape
         )
+        ell = wavefunction["l"]
         if not relativistic:
-            assert wavefunction["spin_sign"] == 0
+            assert wavefunction["j"] is None
         else:
             # j = l + 1/2 for l = 0
-            assert wavefunction["spin_sign"] in ((-1, 1) if wavefunction["l"] else (1,))
+            assert wavefunction["j"] in ((ell + 0.5, ell - 0.5) if ell else (0.5,))
     # All log-derivative blocks share one energy grid
     log_derivatives = parser.log_derivatives
     assert len({len(block["e"]) for block in log_derivatives}) == 1
@@ -95,7 +96,7 @@ def test_completed_output_consistency(completed_output_name, parse_output):
         # The local channel (nproj = 0) also has an all-electron state, e.g. for plotting
         assert 1 <= state["iproj"] <= max(nproj[state["l"]], 1)
     keys = [
-        (state["l"], state["spin_sign"], state["iproj"])
+        (state["l"], state["j"], state["iproj"])
         for state in parser.wellstate_metadata + parser.localized_bound_states
     ]
     assert len(keys) == len(set(keys))

@@ -306,7 +306,6 @@ def attribute_message(
         l=l,
         iproj=iproj,
         n=n,
-        spin_sign=None,
         config_index=config_index,
         implicated_parameters=implicated_parameters(
             stage, scope, l, iproj, config_index, input_data

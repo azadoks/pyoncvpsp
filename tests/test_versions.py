@@ -5,11 +5,12 @@ import math
 import numpy as np
 import pytest
 
+from pyoncvpsp.channels import ChannelKey
 from pyoncvpsp.io.output import OncvpspOutputError
 
 
 def _states(states: list[dict]) -> list[tuple]:
-    return [(s["n"], s["l"], s["spin_sign"], s["iproj"]) for s in states]
+    return [(s["n"], s["l"], s["j"], s["iproj"]) for s in states]
 
 
 def test_oncvpsp_v2_fully_relativistic_reference_configuration(parse_output):
@@ -17,13 +18,11 @@ def test_oncvpsp_v2_fully_relativistic_reference_configuration(parse_output):
     parser = parse_output("oncvpsp-2.1.1-fr_08_O_r")
     assert parser.program_information["version"] == "2.1.1"
     assert parser.is_relativistic
-    assert [
-        (c["n"], c["l"], c["spin_sign"]) for c in parser.reference_configuration
-    ] == [
-        (1, 0, 1),
-        (2, 0, 1),
-        (2, 1, 1),
-        (2, 1, -1),
+    assert [(c["n"], c["l"], c["j"]) for c in parser.reference_configuration] == [
+        (1, 0, 0.5),
+        (2, 0, 0.5),
+        (2, 1, 1.5),
+        (2, 1, 0.5),
     ]
     assert len(parser.log_derivatives) == 3
 
@@ -55,17 +54,17 @@ def test_oncvpsp_v3_fully_relativistic_negative_energy_states(parse_output):
         "wellstate_negative_energy_state"
     ] * 2
     localized = parser.localized_bound_states
-    assert _states(localized) == [(4, 3, 1, 1), (4, 3, -1, 1)]
-    assert [s["k"] for s in localized] == [-4, 3]
+    assert _states(localized) == [(4, 3, 3.5, 1), (4, 3, 2.5, 1)]
+    assert [ChannelKey.from_record(s).kappa for s in localized] == [-4, 3]
     assert [s["eig_ae"] for s in localized] == [-0.155292, -0.165419]
     # The second projectors are wellstates
-    assert (5, 3, 1, 2) in _states(parser.wellstate_metadata)
-    assert (5, 3, -1, 2) in _states(parser.wellstate_metadata)
+    assert (5, 3, 3.5, 2) in _states(parser.wellstate_metadata)
+    assert (5, 3, 2.5, 2) in _states(parser.wellstate_metadata)
     # One wavefunction per (l, j), at the energy of the first projector state
     f_states = [w for w in parser.wavefunctions if w["l"] == 3]
-    assert [(w["n"], w["spin_sign"], w["iproj"], w["is_bound"]) for w in f_states] == [
-        (4, 1, 1, True),
-        (4, -1, 1, True),
+    assert [(w["n"], w["j"], w["iproj"], w["is_bound"]) for w in f_states] == [
+        (4, 3.5, 1, True),
+        (4, 2.5, 1, True),
     ]
     assert [w["eig_ae"] for w in f_states] == [-0.155292, -0.165419]
 
@@ -74,7 +73,7 @@ def test_oncvpsp_v3_wellstate_for_local_channel(parse_output):
     # ONCVPSP v3 also computes an all-electron state for the local channel (nproj = 0)
     parser = parse_output("oncvpsp-3.2.2-sr_H.singleProjector")
     assert parser.input["vkb_projectors"]["nproj"] == [1, 0]
-    assert _states(parser.wellstate_metadata) == [(2, 1, 0, 1)]
+    assert _states(parser.wellstate_metadata) == [(2, 1, None, 1)]
     assert [
         (w["n"], w["l"], w["iproj"], w["is_bound"]) for w in parser.wavefunctions
     ] == [
@@ -86,7 +85,7 @@ def test_oncvpsp_v3_wellstate_for_local_channel(parse_output):
 def test_oncvpsp_v3_ghost_without_sign(parse_output):
     # ONCVPSP v3 only tests for bound ghosts, and does not print a sign
     parser = parse_output("oncvpsp-3.3.0-sr_Ba-sp-high")
-    assert [(g["l"], g["sign"], g["spin_sign"]) for g in parser.ghosts] == [(0, "-", 0)]
+    assert [(g["l"], g["sign"], g["j"]) for g in parser.ghosts] == [(0, "-", None)]
 
 
 def test_oncvpsp_v3_fused_atom_line(parse_output):
@@ -100,14 +99,14 @@ def test_oncvpsp_v4_fully_relativistic(parse_output):
     assert parser.program_information["relativistic_treatment"] == "relativistic"
     assert parser.is_relativistic
     # Log derivatives for l = 0..3, with both j for l > 0
-    assert [(ld["l"], ld["spin_sign"]) for ld in parser.log_derivatives] == [
-        (0, 1),
-        (1, 1),
-        (1, -1),
-        (2, 1),
-        (2, -1),
-        (3, 1),
-        (3, -1),
+    assert [(ld["l"], ld["j"]) for ld in parser.log_derivatives] == [
+        (0, 0.5),
+        (1, 1.5),
+        (1, 0.5),
+        (2, 2.5),
+        (2, 1.5),
+        (3, 3.5),
+        (3, 2.5),
     ]
     assert parser.vkb_spin_orbit_projector_coefficients
     # One plotted projector per wavefunction
@@ -134,7 +133,7 @@ def test_metapsp(parse_output):
     assert [w["name"] for w in parser.warnings] == [
         "localized_bound_state_for_projector"
     ]
-    assert _states(parser.localized_bound_states) == [(3, 2, 0, 1)]
+    assert _states(parser.localized_bound_states) == [(3, 2, None, 1)]
     (state,) = [w for w in parser.wavefunctions if (w["l"], w["iproj"]) == (2, 1)]
     assert state["is_bound"] and state["n"] == 3 and state["f"] == 0.0
     assert np.isclose(state["eig_ae"], -0.06614626)

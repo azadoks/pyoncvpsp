@@ -14,6 +14,8 @@ from dataclasses import dataclass, replace
 import re
 from typing import Iterator
 
+from pyoncvpsp.channels import ChannelKey
+
 from ._messages import Stage
 
 
@@ -38,7 +40,9 @@ class Block:
     line: int  # index of the header line in the raw lines
     l: int | None = None  # noqa: E741
     iproj: int | None = None
-    kappa: int | None = None
+    channel: ChannelKey | None = (
+        None  # VKB blocks: the l-channel or j-channel (from `kap`)
+    )
     config_index: int | None = None
 
 
@@ -174,8 +178,9 @@ def line_contexts(lines: list[str]) -> list[LineContext]:
         elif ctx.stage == Stage.VKB and (m := _RE["b_matrix"].match(line)):
             l = int(m["l"])  # noqa: E741
             kappa = int(m["kappa"]) if m["kappa"] is not None else None
+            channel = ChannelKey.from_printed_kappa(l, kappa)
             ctx = replace(
-                ctx, marker_l=l, block=Block(BlockKind.VKB, i, l=l, kappa=kappa)
+                ctx, marker_l=l, block=Block(BlockKind.VKB, i, l=l, channel=channel)
             )
         elif ctx.stage in (Stage.VKB, Stage.VKB_SOLVE) and (
             _RE["model_core"].match(line) or _RE["pseudoatom"].match(line)
