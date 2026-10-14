@@ -2,6 +2,7 @@
 
 import logging
 from math import floor
+import re
 from os import PathLike
 from typing import Annotated, Any, Iterator, TextIO
 import warnings
@@ -24,7 +25,7 @@ class OncvpspAtomInput(BaseModel):  # pylint: disable=too-few-public-methods
         z (float): Nuclear charge.
         nc (int): Number of core states.
         nv (int): Number of valence states.
-        iexc (int): Exchange-correlation functional. Negative values indicate Libxc; 1-4 are built-in functionals.
+        iexc (int): Exchange-correlation functional. Negative values indicate Libxc; 1-4 are built-in functionals; 5 is r2SCAN (METAPSP only).
         psfile (str): Pseudopotential output type.
     """
 
@@ -39,9 +40,10 @@ class OncvpspAtomInput(BaseModel):  # pylint: disable=too-few-public-methods
     iexc: Annotated[
         int,
         Field(
-            le=4,
+            le=5,
             description=(
                 "Exchange-correlation functional. Negative values indicate Libxc. 1-4 are built-in functionals."
+                " 5 is r2SCAN (METAPSP only)."
             ),
         ),
     ]
@@ -59,7 +61,7 @@ class OncvpspAtomInput(BaseModel):  # pylint: disable=too-few-public-methods
     def _check_exchange_correlation_type(self) -> "OncvpspAtomInput":
         if self.iexc == 0:
             raise ValueError(
-                "exchange_correlation_type can be negative (LibXC), 1-4 (built-in), but not 0"
+                "exchange_correlation_type can be negative (LibXC), 1-4 (built-in), 5 (METAPSP r2SCAN), but not 0"
             )
         return self
 
@@ -456,6 +458,9 @@ class ModelCoreChargeInput(BaseModel):  # pylint: disable=too-few-public-methods
             4) Optimized Teter model core charge where the Teter parameters are selected to minimize
                 the RMSE in the 2nd derivative of the exchange-correlation energy w.r.t. the all-electron
                 atom.
+            5) (METAPSP only) Polynomial model core charge and kinetic energy densities, with amplitudes
+                `fcfact` and `rcfact` times the maximum pseudo density at the origin and at the inner
+                matching region, respectively.
         fcfact (float): Used to determine the matching radius for `icmod in (1, 2)`. Unused for `icmod in (0, 3, 4)`.
         rcfact (float): Unused.
         teter_relative (bool): If True, `teter_amp*` and `teter_scale*` specify relative
@@ -468,7 +473,7 @@ class ModelCoreChargeInput(BaseModel):  # pylint: disable=too-few-public-methods
         teter_scale_step (None | float): Teter scale factor step size for grid search (relative or absolute).
     """
 
-    icmod: Annotated[int, Field(ge=0, le=4)]
+    icmod: Annotated[int, Field(ge=0, le=5)]
     fcfact: Annotated[float, Field(ge=0.0)] = 0.0
     rcfact: Annotated[float, Field(ge=0.0)] = 0.0
     teter_relative: Annotated[bool, Field()] = True
@@ -497,7 +502,7 @@ class ModelCoreChargeInput(BaseModel):  # pylint: disable=too-few-public-methods
             s = f"{self.icmod:>10d} {self.fcfact:>10.5f}"
             if with_comment:
                 s = f"# {'icmod':>8s} {'fcfact':>10s}\n" + s
-        elif self.icmod == 3:
+        elif self.icmod in (3, 5):
             s = f" {self.icmod:>10d} {self.fcfact:>10.5f} {self.rcfact:>10.5f}"
             if with_comment:
                 s = f"# {'icmod':>8s} {'fcfact':>10s} {'rcfact':>10s}\n" + s
@@ -820,6 +825,9 @@ class OncvpspInput(BaseModel):
         # ATOM AND REFERENCE CONFIGURATION
         # atsym, z, nc, nv, iexc, psfile
         words: list[str] = next(iter_).split()
+        # ONCVPSP echoes the input with format (a2,f6.2), which runs together e.g. "Og118.00"
+        if symbol_match := re.fullmatch(r"([A-Za-z]{1,2})([-+.\d].*)", words[0]):
+            words = [symbol_match.group(1), symbol_match.group(2), *words[1:]]
         atsym = words[0]
         z = float(words[1])
         nc = int(words[2])

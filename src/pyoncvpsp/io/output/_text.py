@@ -132,11 +132,13 @@ class OncvpspTextParser:
             if isinstance(context_window, int)
             else context_window
         )
+        patterns = [re.compile(definition["pattern"]) for definition in definitions]
         errors = []
         for i, line in enumerate(self._lines):
             line_number = i + 1
-            for definition in definitions:
-                if definition["match_string"] in line:
+            for definition, pattern in zip(definitions, patterns):
+                # The substring check is a fast pre-filter; the pattern distinguishes similar messages
+                if definition["match_string"] in line and pattern.search(line):
                     line_numbers = range(
                         line_number, line_number + definition.get("line_count", 1)
                     )
@@ -475,14 +477,19 @@ class OncvpspTextParser:
             pattern = re.compile(
                 nlf_pattern + rf"\s+(?P<eig>{RE_FLOAT})\s+(?P<eig_pbe>{RE_FLOAT})"
             )
-        elif (
-            self.program_information["version"].startswith("3") and self.is_relativistic
-        ):
-            header_match = self.search(
-                r"#   n    l    f        l\+1/2             l-1/2"
-            )
         else:
-            header_match = self.search(r"#   n    l    f        energy \(Ha\)")
+            header_match = self.search(
+                r"#\s+n\s+l\s+f\s+(?:energy \(Ha\)|l\+1/2\s+l-1/2)"
+            )
+            # ONCVPSP v2 prints a relativistic l+1/2, l-1/2 header after the energy header
+            if (
+                header_match
+                and self.is_relativistic
+                and re.match(
+                    r"#\s+n\s+l\s+f\s+l\+1/2", self.clean_lines[header_match[0] + 1]
+                )
+            ):
+                header_match = (header_match[0] + 1, header_match[1])
         if not header_match:
             raise RuntimeError(
                 "Failed to find reference configuration section in output."
@@ -515,6 +522,118 @@ class OncvpspTextParser:
         return data
 
     @cached_property
+    def _valence_projector_states(self) -> list[tuple[int, int, int, float]]:
+        """Valence states (n, l, spin_sign, eig_ae) from which projectors are built, in input order.
+
+        ONCVPSP v4 and METAPSP use every valence state of a given l. ONCVPSP v2/v3 use the first
+        valence state of a given l, and further valence states of that l only if they are occupied.
+        """
+        states = self.valence_quantum_numbers_and_ae_eig
+        if self.program_information["program"] != "ONCVPSP" or not self.program_information[
+            "version"
+        ].startswith(("2", "3")):
+            return states
+        config = self.input["reference_configuration"]
+        nc = self.input["oncvpsp"]["nc"]
+        occupations = {
+            (enn, ell): occ
+            for enn, ell, occ in zip(config["n"][nc:], config["l"][nc:], config["f"][nc:])
+        }
+        seen: set[tuple[int, int]] = set()
+        projector_states = []
+        for state in states:
+            enn, ell, spin_sign, _ = state
+            if (ell, spin_sign) not in seen or occupations[(enn, ell)] > 0.0:
+                projector_states.append(state)
+            seen.add((ell, spin_sign))
+        return projector_states
+
+    @cached_property
+    def _unoccupied_projector_states(self) -> list[dict]:
+        """Unoccupied states used to construct projectors, in the order in which they are reported:
+        wellstates and localized bound states (which ONCVPSP uses in place of a wellstate, reporting
+        them only in a "localized bound state found" warning).
+
+        Projectors at each l (and spin) are built from the valence states first (in input order),
+        then from these states, so `iproj` counts on from the number of valence states.
+        """
+        wellstate_pattern = re.compile(
+            r"\s+Wellstate for l =\s+(?P<ell>\d)  n =\s+(?P<enn>\d+)(?:\s+kap(?:pa)?=\s+(?P<kappa>-?\d+))?"
+        )
+        localized_pattern = re.compile(
+            r"WARNING wellstate: localized bound state found for n=\s*(?P<enn>\d+)\s+l=\s*(?P<ell>\d+)"
+        )
+        # ONCVPSP v3 uses the normal bound state if one is found for the maximum well barrier
+        negative_energy_pattern = re.compile(
+            r"wellstate: Negative-energy state for l=\s*(?P<ell>\d+) found for maximum barrier"
+        )
+        negative_energy_eig_pattern = re.compile(
+            rf"Normal bound state at ep=\s*(?P<eig>{RE_FLOAT})"
+        )
+        eig_pattern = re.compile(rf"\s+eigenvalue =\s*(?P<eig>{RE_FLOAT})")
+        localized_eig_pattern = re.compile(
+            rf"WARNING this state with energy\s*(?P<eig>{RE_FLOAT})"
+        )
+        ap_pattern = re.compile(rf"\s+asymptotic potential =\s*(?P<ap>{RE_FLOAT})")
+        hpr_pattern = re.compile(rf"\s+half-point radius =\s*(?P<hpr>{RE_FLOAT})")
+
+        def match_float(pattern: re.Pattern[str], i: int, group: str) -> float | None:
+            if i < len(self._lines) and (match := re.match(pattern, self._lines[i])):
+                return float(match.group(group))
+            return None
+
+        # Number of projectors already taken at each (l, spin_sign), starting with the valence states
+        n_taken: dict[tuple[int, int], int] = defaultdict(int)
+        for _, ell, spin_sign, _ in self._valence_projector_states:
+            n_taken[(ell, spin_sign)] += 1
+        states: list[dict] = []
+        # Localized bound state warnings are removed from `clean_lines`, so search the raw lines
+        for i, line in enumerate(self._lines):
+            if match := re.match(wellstate_pattern, line):
+                ell = int(match.group("ell"))
+                kappa = int(match.group("kappa")) if match.group("kappa") else 0
+                state = {
+                    "n": int(match.group("enn")),
+                    "is_bound": False,
+                    "eig_ae": match_float(eig_pattern, i + 1, "eig"),
+                    "asymptotic_potential": match_float(ap_pattern, i + 2, "ap"),
+                    "half_point_radius": match_float(hpr_pattern, i + 3, "hpr"),
+                }
+            elif match := re.match(localized_pattern, line):
+                ell = int(match.group("ell"))
+                # Only reported for the j = l + 1/2 (kappa = -(l + 1)) state if relativistic
+                kappa = -(ell + 1) if self.is_relativistic else 0
+                state = {
+                    "n": int(match.group("enn")),
+                    "is_bound": True,
+                    "eig_ae": match_float(localized_eig_pattern, i + 1, "eig"),
+                }
+            elif match := re.search(negative_energy_pattern, line):
+                ell = int(match.group("ell"))
+                # N.B. neither n nor kappa is reported; assume j = l + 1/2 if relativistic
+                kappa = -(ell + 1) if self.is_relativistic else 0
+                state = {
+                    "n": None,
+                    "is_bound": True,
+                    "eig_ae": match_float(negative_energy_eig_pattern, i + 1, "eig"),
+                }
+            else:
+                continue
+            spin_sign = 0 if kappa == 0 else (-1 if kappa > 0 else 1)
+            n_taken[(ell, spin_sign)] += 1
+            states.append(
+                {
+                    "n": state.pop("n"),
+                    "l": ell,
+                    "iproj": n_taken[(ell, spin_sign)],
+                    "k": kappa,
+                    "spin_sign": spin_sign,
+                    **state,
+                }
+            )
+        return states
+
+    @cached_property
     def wellstate_metadata(self) -> list[dict]:
         """Information about any wellstate solutions found in the output.
 
@@ -522,48 +641,41 @@ class OncvpspTextParser:
             dict:
                 n (int): Principal quantum number.
                 l (int): Angular momentum quantum number.
-                iproj (int): Projector index (n - l for ONCVPSP v3, else 0).
+                iproj (int): Projector index (1-based). Projectors at each l (and spin) are built
+                    from the valence states first, then from wellstates / localized bound states.
+                k (int): Dirac quantum number kappa (0 for non-relativistic).
+                spin_sign (int): Spin sign (+1 for j=l+1/2, -1 for j=l-1/2, 0 for non-relativistic).
+                eig_ae (float): All-electron eigenvalue (Ha). N.B.: for the j = l - 1/2 states of fully-
+                    relativistic ONCVPSP v4, this is the target energy printed before solving in the well
+                    potential of the j = l + 1/2 state, not the resulting eigenvalue.
+                asymptotic_potential (float | None): Asymptotic potential (Ha), if reported.
+                half_point_radius (float | None): Half-point radius (a.u.), if reported.
+        """
+        return [
+            {k: v for k, v in state.items() if k != "is_bound"}
+            for state in self._unoccupied_projector_states
+            if not state["is_bound"]
+        ]
+
+    @cached_property
+    def localized_bound_states(self) -> list[dict]:
+        """Unoccupied bound states which are sufficiently localized to be used for projectors
+        in place of wellstates.
+
+        Returns:
+            dict:
+                n (int): Principal quantum number.
+                l (int): Angular momentum quantum number.
+                iproj (int): Projector index (1-based).
                 k (int): Dirac quantum number kappa (0 for non-relativistic).
                 spin_sign (int): Spin sign (+1 for j=l+1/2, -1 for j=l-1/2, 0 for non-relativistic).
                 eig_ae (float): All-electron eigenvalue (Ha).
-                asymptotic_potential (float): Asymptotic potential (Ha).
-                half_point_radius (float): Half-point radius (a.u.).
         """
-        wellstate_metadata: list[dict] = []
-        matches = self.findall(
-            r"\s+Wellstate for l =\s+(?P<ell>\d)  n =\s+(?P<enn>\d+)(?:\s+kap(?:pa)?=\s+(?P<kappa>-?\d+))?"
-        )
-        eig_pattern = re.compile(rf"\s+eigenvalue =\s*(?P<eig>{RE_FLOAT})")
-        ap_pattern = re.compile(rf"\s+asymptotic potential =\s*(?P<ap>{RE_FLOAT})")
-        hpr_pattern = re.compile(rf"\s+half-point radius =\s*(?P<hpr>{RE_FLOAT})")
-        for i, match in matches:
-            eig_match = re.match(eig_pattern, self.clean_lines[i + 1])
-            ap_match = re.match(ap_pattern, self.clean_lines[i + 2])
-            hpr_match = re.match(hpr_pattern, self.clean_lines[i + 3])
-            enn = int(match.group("enn"))
-            ell = int(match.group("ell"))
-            kappa = int(match.group("kappa")) if match.group("kappa") is not None else 0
-            iproj = (
-                enn - ell if self.program_information["version"].startswith("3") else 0
-            )
-            spin_sign = 0 if kappa == 0 else (-1 if kappa > 0 else 1)
-            wellstate_metadata.append(
-                {
-                    "n": enn,
-                    "l": ell,
-                    "iproj": iproj,
-                    "k": kappa,
-                    "spin_sign": spin_sign,
-                    "eig_ae": float(eig_match.group("eig")) if eig_match else None,
-                    "asymptotic_potential": (
-                        float(ap_match.group("ap")) if ap_match else None
-                    ),
-                    "half_point_radius": (
-                        float(hpr_match.group("hpr")) if hpr_match else None
-                    ),
-                }
-            )
-        return wellstate_metadata
+        return [
+            {k: v for k, v in state.items() if k != "is_bound"}
+            for state in self._unoccupied_projector_states
+            if state["is_bound"]
+        ]
 
     @cached_property
     def _optimize_line_indices(self) -> list[tuple[int, int, int, int]]:
@@ -1009,7 +1121,7 @@ class OncvpspTextParser:
             r"\s+(?P<ell>\d)(?:\s+(?P<kap>-?\d))?"
             rf"\s+(?:(?P<r_rc>{RE_FLOAT})\s+)?"
             rf"(?P<eig>{RE_FLOAT})"
-            rf"\s+(?P<ecut>{RE_FLOAT})\s+WARNING - GHOST\((?P<sign>[+-])\)"
+            rf"\s+(?P<ecut>{RE_FLOAT})\s+WARNING - GHOST(?:\((?P<sign>[+-])\))?"
         )
         matches = self.findall(pattern)
         for _, match in matches:
@@ -1024,7 +1136,8 @@ class OncvpspTextParser:
                     else (-1 if int(match.group("kap")) > 0 else 1),
                     "eig": float(match.group("eig")),
                     "ecut": float(match.group("ecut")),
-                    "sign": match.group("sign"),
+                    # ONCVPSP v3 only tests for bound ghosts, and prints no sign
+                    "sign": match.group("sign") or "-",
                     "r_rc": float(match.group("r_rc"))
                     if match.group("r_rc") is not None
                     else None,
@@ -1307,15 +1420,22 @@ class OncvpspTextParser:
             (cfg["n"], cfg["l"], cfg["spin_sign"], cfg["eig_ae"]): cfg
             for cfg in self.reference_configuration
         }
-        wellstates = {
-            (
-                well["n"],
-                well["l"],
-                well["spin_sign"],
-                well["eig_ae"],
-            ): well
-            for well in self.wellstate_metadata
-        }
+        # States from which the projectors are built, keyed by (l, spin_sign, iproj):
+        # first the valence states (in input order), then wellstates / localized bound states
+        projector_states: dict[tuple[int, int, int], tuple[str, Any]] = {}
+        n_valence: dict[tuple[int, int], int] = defaultdict(int)
+        for state_key in self._valence_projector_states:
+            _, ell, spin_sign, _ = state_key
+            n_valence[(ell, spin_sign)] += 1
+            projector_states[(ell, spin_sign, n_valence[(ell, spin_sign)])] = (
+                "valence",
+                state_key,
+            )
+        for state in self._unoccupied_projector_states:
+            projector_states[(state["l"], state["spin_sign"], state["iproj"])] = (
+                "localized" if state["is_bound"] else "wellstate",
+                state,
+            )
         data: list[dict] = []
         for block in blocks:
             block_data: dict[str, Any] = defaultdict(list)
@@ -1363,21 +1483,10 @@ class OncvpspTextParser:
             else:
                 spin_sign = 0
                 block_data["k"] = 0
-            # Add additional information about the state from the wellstate metadata or reference configuration
-            # Order the state keys at this ell and kappa: first boundstates (sorted by enn), then wellstates (ditto)
-            state_keys = sorted(
-                [
-                    k
-                    for k in self.valence_quantum_numbers_and_ae_eig
-                    if k[1] == ell and k[2] == spin_sign
-                ],
-            ) + sorted(
-                [k for k in wellstates if k[1] == ell and k[2] == spin_sign],
-            )
-            state_key = (
-                state_keys[iproj - 1]
-                if (iproj - 1 < len(state_keys))
-                else (-1, -1, -10, 0.0)
+            # Add additional information about the state from the reference configuration,
+            # wellstate metadata, or localized bound state
+            state_kind, state = projector_states.get(
+                (ell, spin_sign, iproj), (None, None)
             )
             state_metadata = {
                 "is_bound": None,
@@ -1389,20 +1498,18 @@ class OncvpspTextParser:
                 "half_point_radius": np.nan,
                 "r_rc": np.nan,
             }  # Default empty metadata
-            if (
-                block_data["is_bound"] is not False  # pyrefly: ignore
-                and state_key in self.valence_quantum_numbers_and_ae_eig
-            ):
+            if state_kind == "valence" and block_data["is_bound"] is not False:  # pyrefly: ignore
                 # If we're sure this is not a wellstate, get a boundstate
-                state_metadata.update(test_config.get(state_key[:3], {}))
-                state_metadata.update(ref_config[state_key])
+                state_metadata.update(test_config.get(state[:3], {}))
+                state_metadata.update(ref_config[state])
                 state_metadata["is_bound"] = True
-            if (
-                block_data["is_bound"] is not True and state_key in wellstates  # type: ignore
-            ):
-                # If we're sure this is not a boundstate, get a wellstate
-                state_metadata.update(wellstates[state_key])
-                state_metadata["is_bound"] = False
+            elif state_kind == "localized" and block_data["is_bound"] is not False:  # pyrefly: ignore
+                state_metadata.update(state)
+                state_metadata["f"] = 0.0
+            elif state_kind == "wellstate":
+                # N.B. a wellstate can be bound in the well potential, in which case ONCVPSP v4
+                # plots it with a bound-state header
+                state_metadata.update(state)
                 state_metadata["f"] = 0.0
             block_data.update(state_metadata)
             # Finalize block data
@@ -1416,6 +1523,9 @@ class OncvpspTextParser:
     def vkb_projectors(self) -> list[dict]:
         """Vanderbilt-Kleinman-Bylander projectors.
 
+        N.B.: only ONCVPSP v4 and METAPSP plot the projectors (`!J` lines). The `@` lines of earlier
+        versions ("projector pseudo wave functions") are pseudo wavefunctions, not projectors.
+
         Returns:
             list[dict]:
                 r (np.ndarray): Radial grid points (a.u.).
@@ -1427,7 +1537,7 @@ class OncvpspTextParser:
         """
         max_nproj: int = max(self.input["vkb_projectors"]["nproj"])
         pattern = re.compile(
-            rf"(?:@|!J)\s+(?P<spin_sign>[\s-])(?P<ell>\d)\s+(?P<r>{RE_FLOAT})\s+(?P<proj_1>{RE_FLOAT})"
+            rf"!J\s+(?P<spin_sign>[\s-])(?P<ell>\d)\s+(?P<r>{RE_FLOAT})\s+(?P<proj_1>{RE_FLOAT})"
             + "".join(
                 rf"(?:\s+(?P<proj_{i}>{RE_FLOAT}))?" for i in range(2, max_nproj + 1)
             )
@@ -1650,6 +1760,7 @@ class OncvpspTextParser:
         output["input"] = self.input
         output["reference_configuration"] = self.reference_configuration
         output["wellstate_metadata"] = self.wellstate_metadata
+        output["localized_bound_states"] = self.localized_bound_states
         output["vkb_hermiticity_errors"] = self.vkb_hermiticity_errors
         output["vkb_scalar_projector_coefficients"] = (
             self.vkb_scalar_projector_coefficients
