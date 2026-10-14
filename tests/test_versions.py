@@ -193,3 +193,22 @@ def test_oncvpsp_v4_fully_relativistic_partner_wellstates(parse_output):
     assert layout is not None
     for state in parser.wellstate_metadata:
         assert layout.get(ProjectorKey.from_record(state)) is not None
+
+
+# The outputs below were generated from clean upstream builds: ONCVPSP 4.0.1 at oncvpsp/oncvpsp
+# dc150ab, the ONCVPSP 3.3.1 release tarball, and METAPSP at azadoks/metapsp bde6d65.
+
+
+def test_v3_fully_relativistic_negative_energy_second_projector_l1(parse_output):
+    # ep + debl < 0 for the second p projector of both j: each is solved as a bound 4p state and
+    # reported only in a warning (oncvpsp_r.f90:451-464); the s channel has a second valence state
+    parser = parse_output("oncvpsp-3.3.1-fr_20_Ca_negative_second")
+    assert parser.completed
+    assert [w["name"] for w in parser.warnings] == [
+        "negative_energy_second_projector"
+    ] * 2
+    assert [
+        (s["n"], s["l"], s["j"], s["iproj"], s["eig_ae"])
+        for s in parser.localized_bound_states
+    ] == [(4, 1, 1.5, 2, -0.052734), (4, 1, 0.5, 2, -0.053432)]
+    assert parser.wellstate_metadata == []

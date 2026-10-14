@@ -1,0 +1,1229 @@
+{
+ "completed": true,
+ "d2exc": {},
+ "d2exc_rmse": null,
+ "diagnostic_tests_semilocal": [
+  {
+   "e_in": -1.7205008,
+   "e_test": -1.7205003,
+   "j": 0.5,
+   "l": 0,
+   "norm_test": 1.0000022,
+   "rc": 1.9193903,
+   "rmatch": 2.037351,
+   "slope_test": 0.9999956
+  },
+  {
+   "e_in": -1.0232576,
+   "e_test": -1.0232579,
+   "j": 1.5,
+   "l": 1,
+   "norm_test": 0.9999987,
+   "rc": 2.2147742,
+   "rmatch": 2.3508884,
+   "slope_test": 0.9999992
+  },
+  {
+   "e_in": -1.0375537,
+   "e_test": -1.0375536,
+   "j": 0.5,
+   "l": 1,
+   "norm_test": 1.0000011,
+   "rc": 2.2147742,
+   "rmatch": 2.3508884,
+   "slope_test": 0.9999979
+  },
+  {
+   "e_in": -0.1421691,
+   "e_test": -0.1635204,
+   "j": 0.5,
+   "l": 0,
+   "norm_test": 0.8255474,
+   "rc": 1.9193903,
+   "rmatch": 2.037351,
+   "slope_test": 1.0852097
+  }
+ ],
+ "diagnostic_tests_vkb": [
+  {
+   "delta_e": null,
+   "e_in": -1.7205008,
+   "e_test": -1.7204992,
+   "j": 0.5,
+   "l": 0,
+   "norm_test": 1.0000149,
+   "rc": 1.9193903,
+   "rmatch": 2.037351,
+   "slope_test": 1.0000087
+  },
+  {
+   "delta_e": null,
+   "e_in": -1.0232576,
+   "e_test": -1.0232583,
+   "j": 1.5,
+   "l": 1,
+   "norm_test": 1.000007,
+   "rc": 2.2147742,
+   "rmatch": 2.3508884,
+   "slope_test": 1.000007
+  },
+  {
+   "delta_e": null,
+   "e_in": -1.0375537,
+   "e_test": -1.0375541,
+   "j": 0.5,
+   "l": 1,
+   "norm_test": 1.0000093,
+   "rc": 2.2147742,
+   "rmatch": 2.3508884,
+   "slope_test": 1.0000057
+  },
+  {
+   "delta_e": null,
+   "e_in": -0.1421691,
+   "e_test": -0.142168,
+   "j": 0.5,
+   "l": 0,
+   "norm_test": 1.0000078,
+   "rc": 1.9193903,
+   "rmatch": 2.037351,
+   "slope_test": 1.0000056
+  },
+  {
+   "delta_e": null,
+   "e_in": -0.0527345,
+   "e_test": -0.0527341,
+   "j": 1.5,
+   "l": 1,
+   "norm_test": 1.0000071,
+   "rc": 2.2147742,
+   "rmatch": 2.3508884,
+   "slope_test": 1.0000058
+  },
+  {
+   "delta_e": null,
+   "e_in": -0.0534316,
+   "e_test": -0.0534303,
+   "j": 0.5,
+   "l": 1,
+   "norm_test": 1.0000176,
+   "rc": 2.2147742,
+   "rmatch": 2.3508884,
+   "slope_test": 1.0000156
+  },
+  {
+   "delta_e": null,
+   "e_in": -1.7205008,
+   "e_test": -1.7204992,
+   "j": 0.5,
+   "l": 0,
+   "norm_test": 1.0000149,
+   "rc": 1.9193903,
+   "rmatch": 2.037351,
+   "slope_test": 1.0000087
+  },
+  {
+   "delta_e": null,
+   "e_in": -1.0232576,
+   "e_test": -1.0232581,
+   "j": 1.5,
+   "l": 1,
+   "norm_test": 1.0000071,
+   "rc": 2.2147742,
+   "rmatch": 2.3508884,
+   "slope_test": 1.0000073
+  },
+  {
+   "delta_e": null,
+   "e_in": -1.0375537,
+   "e_test": -1.0375539,
+   "j": 0.5,
+   "l": 1,
+   "norm_test": 1.0000095,
+   "rc": 2.2147742,
+   "rmatch": 2.3508884,
+   "slope_test": 1.000006
+  },
+  {
+   "delta_e": null,
+   "e_in": -0.1421691,
+   "e_test": -0.142168,
+   "j": 0.5,
+   "l": 0,
+   "norm_test": 1.0000078,
+   "rc": 1.9193903,
+   "rmatch": 2.037351,
+   "slope_test": 1.0000056
+  },
+  {
+   "delta_e": null,
+   "e_in": -0.0527345,
+   "e_test": -0.0527341,
+   "j": 1.5,
+   "l": 1,
+   "norm_test": 1.0000072,
+   "rc": 2.2147742,
+   "rmatch": 2.3508884,
+   "slope_test": 1.0000057
+  },
+  {
+   "delta_e": null,
+   "e_in": -0.0534316,
+   "e_test": -0.0534303,
+   "j": 0.5,
+   "l": 1,
+   "norm_test": 1.0000176,
+   "rc": 2.2147742,
+   "rmatch": 2.3508884,
+   "slope_test": 1.0000156
+  }
+ ],
+ "errors": [],
+ "ghosts": [],
+ "gnuplot_script": {
+  "len": 4921,
+  "sha256": "fa333b479e7ae64c384f63c36208f57af4ce9b84e8e443b58cbbb4d4e57346e3"
+ },
+ "input": {
+  "local_potential": {
+   "dvloc0": 0.0,
+   "lloc": 4,
+   "lpopt": 1,
+   "rcloc": 1.9
+  },
+  "log_derivative_analysis": {
+   "depsh": 0.05,
+   "epsh1": -2.0,
+   "epsh2": 1.0,
+   "rxpsh": null
+  },
+  "model_core_charge": {
+   "fcfact": 0.0,
+   "icmod": 0,
+   "rcfact": 0.0,
+   "teter_amp_max": null,
+   "teter_amp_min": null,
+   "teter_amp_step": null,
+   "teter_relative": true,
+   "teter_scale_max": null,
+   "teter_scale_min": null,
+   "teter_scale_step": null
+  },
+  "oncvpsp": {
+   "atsym": "Ca",
+   "iexc": 3,
+   "nc": 3,
+   "nv": 3,
+   "psfile": "psp8",
+   "z": 20.0
+  },
+  "output_grid": {
+   "drl": 0.06,
+   "rlmax": 3.0
+  },
+  "pseudopotentials": {
+   "ep": [
+    0.0,
+    0.0
+   ],
+   "l": [
+    0,
+    1
+   ],
+   "lmax": 1,
+   "nbas": [
+    7,
+    7
+   ],
+   "ncon": [
+    4,
+    4
+   ],
+   "qcut": [
+    6.0,
+    6.0
+   ],
+   "rc": [
+    1.9,
+    2.2
+   ]
+  },
+  "reference_configuration": {
+   "f": [
+    2.0,
+    2.0,
+    6.0,
+    2.0,
+    6.0,
+    2.0
+   ],
+   "l": [
+    0,
+    0,
+    1,
+    0,
+    1,
+    0
+   ],
+   "n": [
+    1,
+    2,
+    2,
+    3,
+    3,
+    4
+   ]
+  },
+  "test_configurations": [],
+  "vkb_projectors": {
+   "debl": [
+    1.5,
+    0.3
+   ],
+   "l": [
+    0,
+    1
+   ],
+   "nproj": [
+    2,
+    2
+   ]
+  }
+ },
+ "localized_bound_states": [
+  {
+   "asymptotic_potential": null,
+   "eig_ae": -0.052734,
+   "energy_guess": null,
+   "half_point_radius": null,
+   "iproj": 2,
+   "j": 1.5,
+   "l": 1,
+   "n": 4
+  },
+  {
+   "asymptotic_potential": null,
+   "eig_ae": -0.053432,
+   "energy_guess": null,
+   "half_point_radius": null,
+   "iproj": 2,
+   "j": 0.5,
+   "l": 1,
+   "n": 4
+  }
+ ],
+ "missing_plot_data": [],
+ "plot_data": {
+  "charge_densities": {
+   "r": {
+    "abs_sum": 246.7047362,
+    "nan": 0,
+    "shape": [
+     329
+    ],
+    "sum": 246.7047362
+   },
+   "rho_core": {
+    "abs_sum": 8775.675947900001,
+    "nan": 0,
+    "shape": [
+     329
+    ],
+    "sum": 8775.675947900001
+   },
+   "rho_model_core": {
+    "abs_sum": 0.0,
+    "nan": 0,
+    "shape": [
+     329
+    ],
+    "sum": 0.0
+   },
+   "rho_val": {
+    "abs_sum": 1684.1060773,
+    "nan": 0,
+    "shape": [
+     329
+    ],
+    "sum": 1684.1060773
+   }
+  },
+  "convergence_profiles": [
+   {
+    "ecut": {
+     "abs_sum": 47.54,
+     "nan": 0,
+     "shape": [
+      4
+     ],
+     "sum": 47.54
+    },
+    "eresid": {
+     "abs_sum": 0.011109999999999998,
+     "nan": 0,
+     "shape": [
+      4
+     ],
+     "sum": 0.011109999999999998
+    },
+    "iproj": 1,
+    "j": 0.5,
+    "l": 0
+   },
+   {
+    "ecut": {
+     "abs_sum": 45.040000000000006,
+     "nan": 0,
+     "shape": [
+      4
+     ],
+     "sum": 45.040000000000006
+    },
+    "eresid": {
+     "abs_sum": 0.011109999999999998,
+     "nan": 0,
+     "shape": [
+      4
+     ],
+     "sum": 0.011109999999999998
+    },
+    "iproj": 2,
+    "j": 0.5,
+    "l": 0
+   },
+   {
+    "ecut": {
+     "abs_sum": 54.32,
+     "nan": 0,
+     "shape": [
+      4
+     ],
+     "sum": 54.32
+    },
+    "eresid": {
+     "abs_sum": 0.011109999999999998,
+     "nan": 0,
+     "shape": [
+      4
+     ],
+     "sum": 0.011109999999999998
+    },
+    "iproj": 1,
+    "j": 1.5,
+    "l": 1
+   },
+   {
+    "ecut": {
+     "abs_sum": 44.06999999999999,
+     "nan": 0,
+     "shape": [
+      4
+     ],
+     "sum": 44.06999999999999
+    },
+    "eresid": {
+     "abs_sum": 0.011109999999999998,
+     "nan": 0,
+     "shape": [
+      4
+     ],
+     "sum": 0.011109999999999998
+    },
+    "iproj": 2,
+    "j": 1.5,
+    "l": 1
+   },
+   {
+    "ecut": {
+     "abs_sum": 54.58,
+     "nan": 0,
+     "shape": [
+      4
+     ],
+     "sum": 54.58
+    },
+    "eresid": {
+     "abs_sum": 0.011109999999999998,
+     "nan": 0,
+     "shape": [
+      4
+     ],
+     "sum": 0.011109999999999998
+    },
+    "iproj": 1,
+    "j": 0.5,
+    "l": 1
+   },
+   {
+    "ecut": {
+     "abs_sum": 44.42,
+     "nan": 0,
+     "shape": [
+      4
+     ],
+     "sum": 44.42
+    },
+    "eresid": {
+     "abs_sum": 0.011109999999999998,
+     "nan": 0,
+     "shape": [
+      4
+     ],
+     "sum": 0.011109999999999998
+    },
+    "iproj": 2,
+    "j": 0.5,
+    "l": 1
+   },
+   {
+    "ecut": {
+     "abs_sum": 85.739116,
+     "nan": 0,
+     "shape": [
+      7
+     ],
+     "sum": 85.739116
+    },
+    "eresid": {
+     "abs_sum": 0.014620000000000001,
+     "nan": 0,
+     "shape": [
+      7
+     ],
+     "sum": 0.014620000000000001
+    },
+    "iproj": 1,
+    "j": 0.5,
+    "l": 0
+   },
+   {
+    "ecut": {
+     "abs_sum": 95.340419,
+     "nan": 0,
+     "shape": [
+      7
+     ],
+     "sum": 95.340419
+    },
+    "eresid": {
+     "abs_sum": 0.014620000000000001,
+     "nan": 0,
+     "shape": [
+      7
+     ],
+     "sum": 0.014620000000000001
+    },
+    "iproj": 1,
+    "j": 1.5,
+    "l": 1
+   }
+  ],
+  "kinetic_energy_densities": {},
+  "kinetic_energy_potentials": {},
+  "local_potential": {
+   "dvloc0": 0.0,
+   "lloc": 4,
+   "lpopt": 1,
+   "r": {
+    "abs_sum": 246.7047362,
+    "nan": 0,
+    "shape": [
+     329
+    ],
+    "sum": 246.7047362
+   },
+   "rcloc": 1.9,
+   "v_loc": {
+    "abs_sum": 2965.9046086,
+    "nan": 0,
+    "shape": [
+     329
+    ],
+    "sum": -2965.9046086
+   }
+  },
+  "log_derivatives": [
+   {
+    "e": {
+     "abs_sum": 49.5,
+     "nan": 0,
+     "shape": [
+      60
+     ],
+     "sum": -28.5
+    },
+    "j": 0.5,
+    "l": 0,
+    "log_deriv_ae": {
+     "abs_sum": 255.240636,
+     "nan": 0,
+     "shape": [
+      60
+     ],
+     "sum": 255.240636
+    },
+    "log_deriv_ps": {
+     "abs_sum": 255.228089,
+     "nan": 0,
+     "shape": [
+      60
+     ],
+     "sum": 255.228089
+    },
+    "rxpsh": {
+     "abs_sum": 1.97,
+     "nan": 0,
+     "shape": [],
+     "sum": 1.97
+    }
+   },
+   {
+    "e": {
+     "abs_sum": 49.5,
+     "nan": 0,
+     "shape": [
+      60
+     ],
+     "sum": -28.5
+    },
+    "j": 1.5,
+    "l": 1,
+    "log_deriv_ae": {
+     "abs_sum": 110.169902,
+     "nan": 0,
+     "shape": [
+      60
+     ],
+     "sum": 102.528094
+    },
+    "log_deriv_ps": {
+     "abs_sum": 110.168272,
+     "nan": 0,
+     "shape": [
+      60
+     ],
+     "sum": 102.53319
+    },
+    "rxpsh": {
+     "abs_sum": 2.27,
+     "nan": 0,
+     "shape": [],
+     "sum": 2.27
+    }
+   },
+   {
+    "e": {
+     "abs_sum": 49.5,
+     "nan": 0,
+     "shape": [
+      60
+     ],
+     "sum": -28.5
+    },
+    "j": 0.5,
+    "l": 1,
+    "log_deriv_ae": {
+     "abs_sum": 109.280167,
+     "nan": 0,
+     "shape": [
+      60
+     ],
+     "sum": 101.019019
+    },
+    "log_deriv_ps": {
+     "abs_sum": 109.27848800000001,
+     "nan": 0,
+     "shape": [
+      60
+     ],
+     "sum": 101.02461200000002
+    },
+    "rxpsh": {
+     "abs_sum": 2.27,
+     "nan": 0,
+     "shape": [],
+     "sum": 2.27
+    }
+   },
+   {
+    "e": {
+     "abs_sum": 49.5,
+     "nan": 0,
+     "shape": [
+      60
+     ],
+     "sum": -28.5
+    },
+    "j": 2.5,
+    "l": 2,
+    "log_deriv_ae": {
+     "abs_sum": 73.065593,
+     "nan": 0,
+     "shape": [
+      60
+     ],
+     "sum": -5.594571000000003
+    },
+    "log_deriv_ps": {
+     "abs_sum": 58.838975000000005,
+     "nan": 0,
+     "shape": [
+      60
+     ],
+     "sum": 20.133810999999998
+    },
+    "rxpsh": {
+     "abs_sum": 2.27,
+     "nan": 0,
+     "shape": [],
+     "sum": 2.27
+    }
+   },
+   {
+    "e": {
+     "abs_sum": 49.5,
+     "nan": 0,
+     "shape": [
+      60
+     ],
+     "sum": -28.5
+    },
+    "j": 1.5,
+    "l": 2,
+    "log_deriv_ae": {
+     "abs_sum": 73.11569,
+     "nan": 0,
+     "shape": [
+      60
+     ],
+     "sum": -5.667514000000002
+    },
+    "log_deriv_ps": {
+     "abs_sum": 58.838975000000005,
+     "nan": 0,
+     "shape": [
+      60
+     ],
+     "sum": 20.133810999999998
+    },
+    "rxpsh": {
+     "abs_sum": 2.27,
+     "nan": 0,
+     "shape": [],
+     "sum": 2.27
+    }
+   },
+   {
+    "e": {
+     "abs_sum": 49.5,
+     "nan": 0,
+     "shape": [
+      60
+     ],
+     "sum": -28.5
+    },
+    "j": 3.5,
+    "l": 3,
+    "log_deriv_ae": {
+     "abs_sum": 62.070286,
+     "nan": 0,
+     "shape": [
+      60
+     ],
+     "sum": 61.370632
+    },
+    "log_deriv_ps": {
+     "abs_sum": 63.190407,
+     "nan": 0,
+     "shape": [
+      60
+     ],
+     "sum": 63.11242500000001
+    },
+    "rxpsh": {
+     "abs_sum": 2.27,
+     "nan": 0,
+     "shape": [],
+     "sum": 2.27
+    }
+   },
+   {
+    "e": {
+     "abs_sum": 49.5,
+     "nan": 0,
+     "shape": [
+      60
+     ],
+     "sum": -28.5
+    },
+    "j": 2.5,
+    "l": 3,
+    "log_deriv_ae": {
+     "abs_sum": 62.06847499999999,
+     "nan": 0,
+     "shape": [
+      60
+     ],
+     "sum": 61.36770699999999
+    },
+    "log_deriv_ps": {
+     "abs_sum": 63.190407,
+     "nan": 0,
+     "shape": [
+      60
+     ],
+     "sum": 63.11242500000001
+    },
+    "rxpsh": {
+     "abs_sum": 2.27,
+     "nan": 0,
+     "shape": [],
+     "sum": 2.27
+    }
+   }
+  ],
+  "semilocal_potentials": [],
+  "unscreened_semilocal_potentials": [
+   {
+    "j": null,
+    "l": 0,
+    "r": {
+     "abs_sum": 246.7047362,
+     "nan": 0,
+     "shape": [
+      329
+     ],
+     "sum": 246.7047362
+    },
+    "v_sl": {
+     "abs_sum": 2919.0110799,
+     "nan": 0,
+     "shape": [
+      329
+     ],
+     "sum": -2919.0110799
+    }
+   },
+   {
+    "j": null,
+    "l": 1,
+    "r": {
+     "abs_sum": 246.7047362,
+     "nan": 0,
+     "shape": [
+      329
+     ],
+     "sum": 246.7047362
+    },
+    "v_sl": {
+     "abs_sum": 3555.0596468999997,
+     "nan": 0,
+     "shape": [
+      329
+     ],
+     "sum": -3555.0596468999997
+    }
+   }
+  ],
+  "vkb_projectors": [],
+  "wavefunctions": [
+   {
+    "asymptotic_potential": "nan",
+    "eig_ae": -1.7205008,
+    "eig_ps": -1.72049925,
+    "f": 2.0,
+    "half_point_radius": "nan",
+    "iproj": 1,
+    "is_bound": true,
+    "j": 0.5,
+    "l": 0,
+    "n": 3,
+    "r": {
+     "abs_sum": 246.70473999999996,
+     "nan": 0,
+     "shape": [
+      329
+     ],
+     "sum": 246.70473999999996
+    },
+    "r_rc": "nan",
+    "wfn_ae": {
+     "abs_sum": 141.94030099999998,
+     "nan": 0,
+     "shape": [
+      329
+     ],
+     "sum": 58.956644999999995
+    },
+    "wfn_ps": {
+     "abs_sum": 147.497927,
+     "nan": 0,
+     "shape": [
+      329
+     ],
+     "sum": 147.497927
+    }
+   },
+   {
+    "asymptotic_potential": "nan",
+    "eig_ae": -1.0232576,
+    "eig_ps": -1.02325834,
+    "f": 6.0,
+    "half_point_radius": "nan",
+    "iproj": 1,
+    "is_bound": true,
+    "j": 1.5,
+    "l": 1,
+    "n": 3,
+    "r": {
+     "abs_sum": 246.70473999999996,
+     "nan": 0,
+     "shape": [
+      329
+     ],
+     "sum": 246.70473999999996
+    },
+    "r_rc": "nan",
+    "wfn_ae": {
+     "abs_sum": 150.45415100000002,
+     "nan": 0,
+     "shape": [
+      329
+     ],
+     "sum": 40.657177000000004
+    },
+    "wfn_ps": {
+     "abs_sum": 118.059376,
+     "nan": 0,
+     "shape": [
+      329
+     ],
+     "sum": 118.059376
+    }
+   },
+   {
+    "asymptotic_potential": "nan",
+    "eig_ae": -1.0375537,
+    "eig_ps": -1.03755412,
+    "f": 6.0,
+    "half_point_radius": "nan",
+    "iproj": 1,
+    "is_bound": true,
+    "j": 0.5,
+    "l": 1,
+    "n": 3,
+    "r": {
+     "abs_sum": 246.70473999999996,
+     "nan": 0,
+     "shape": [
+      329
+     ],
+     "sum": 246.70473999999996
+    },
+    "r_rc": "nan",
+    "wfn_ae": {
+     "abs_sum": 151.017667,
+     "nan": 0,
+     "shape": [
+      329
+     ],
+     "sum": 40.86457300000001
+    },
+    "wfn_ps": {
+     "abs_sum": 118.369727,
+     "nan": 0,
+     "shape": [
+      329
+     ],
+     "sum": 118.369727
+    }
+   },
+   {
+    "asymptotic_potential": "nan",
+    "eig_ae": -0.14216913,
+    "eig_ps": -0.14216803,
+    "f": 2.0,
+    "half_point_radius": "nan",
+    "iproj": 2,
+    "is_bound": true,
+    "j": 0.5,
+    "l": 0,
+    "n": 4,
+    "r": {
+     "abs_sum": 246.70473999999996,
+     "nan": 0,
+     "shape": [
+      329
+     ],
+     "sum": 246.70473999999996
+    },
+    "r_rc": "nan",
+    "wfn_ae": {
+     "abs_sum": 48.181143999999996,
+     "nan": 0,
+     "shape": [
+      329
+     ],
+     "sum": 13.562374
+    },
+    "wfn_ps": {
+     "abs_sum": 49.574255,
+     "nan": 0,
+     "shape": [
+      329
+     ],
+     "sum": -10.347507
+    }
+   }
+  ]
+ },
+ "program_information": {
+  "date": "12/12/2017",
+  "program": "ONCVPSP",
+  "relativistic_treatment": "fully-relativistic",
+  "version": "3.3.1"
+ },
+ "psp8": {
+  "len": 20364,
+  "sha256": "f8f0a2164ea9d1a7f43ccc3c9125cbf8f151e9ef0464f425cbcf556f8b4f101f"
+ },
+ "reference_configuration": [
+  {
+   "eig_ae": -144.69893,
+   "f": 2.0,
+   "j": 0.5,
+   "l": 0,
+   "n": 1
+  },
+  {
+   "eig_ae": -15.179124,
+   "f": 2.0,
+   "j": 0.5,
+   "l": 0,
+   "n": 2
+  },
+  {
+   "eig_ae": -12.247992,
+   "f": 6.0,
+   "j": 1.5,
+   "l": 1,
+   "n": 2
+  },
+  {
+   "eig_ae": -12.383115,
+   "f": 6.0,
+   "j": 0.5,
+   "l": 1,
+   "n": 2
+  },
+  {
+   "eig_ae": -1.7205008,
+   "f": 2.0,
+   "j": 0.5,
+   "l": 0,
+   "n": 3
+  },
+  {
+   "eig_ae": -1.0232576,
+   "f": 6.0,
+   "j": 1.5,
+   "l": 1,
+   "n": 3
+  },
+  {
+   "eig_ae": -1.0375537,
+   "f": 6.0,
+   "j": 0.5,
+   "l": 1,
+   "n": 3
+  },
+  {
+   "eig_ae": -0.14216913,
+   "f": 2.0,
+   "j": 0.5,
+   "l": 0,
+   "n": 4
+  }
+ ],
+ "test_configurations": [
+  [
+   {
+    "eig_ae": -144.69892945,
+    "eig_ps": null,
+    "f": 2.0,
+    "j": 0.5,
+    "l": 0,
+    "n": 1
+   },
+   {
+    "eig_ae": -15.1791238,
+    "eig_ps": null,
+    "f": 2.0,
+    "j": 0.5,
+    "l": 0,
+    "n": 2
+   },
+   {
+    "eig_ae": -12.24799217,
+    "eig_ps": null,
+    "f": 4.0,
+    "j": 1.5,
+    "l": 1,
+    "n": 2
+   },
+   {
+    "eig_ae": -12.38311547,
+    "eig_ps": null,
+    "f": 2.0,
+    "j": 0.5,
+    "l": 1,
+    "n": 2
+   },
+   {
+    "eig_ae": -1.72050078,
+    "eig_ps": -1.72049925,
+    "f": 2.0,
+    "j": 0.5,
+    "l": 0,
+    "n": 3
+   },
+   {
+    "eig_ae": -1.02325762,
+    "eig_ps": -1.02325834,
+    "f": 4.0,
+    "j": 1.5,
+    "l": 1,
+    "n": 3
+   },
+   {
+    "eig_ae": -1.03755375,
+    "eig_ps": -1.03755412,
+    "f": 2.0,
+    "j": 0.5,
+    "l": 1,
+    "n": 3
+   },
+   {
+    "eig_ae": -0.14216913,
+    "eig_ps": -0.14216803,
+    "f": 2.0,
+    "j": 0.5,
+    "l": 0,
+    "n": 4
+   }
+  ]
+ ],
+ "teter_coarse_grid": {},
+ "teter_parameters": {},
+ "upf": "",
+ "vkb_hermiticity_errors": [
+  {
+   "hermiticity_error": 7.6891e-05,
+   "iproj": 1,
+   "j": 0.5,
+   "jproj": 2,
+   "l": 0
+  },
+  {
+   "hermiticity_error": 2.9841e-05,
+   "iproj": 1,
+   "j": 1.5,
+   "jproj": 2,
+   "l": 1
+  },
+  {
+   "hermiticity_error": 3.0514e-05,
+   "iproj": 1,
+   "j": 0.5,
+   "jproj": 2,
+   "l": 1
+  }
+ ],
+ "vkb_scalar_projector_coefficients": [
+  {
+   "coefficients": {
+    "abs_sum": 2.0853811482830005,
+    "nan": 0,
+    "shape": [
+     4
+    ],
+    "sum": -2.0853811482830005
+   },
+   "j": null,
+   "l": 1
+  }
+ ],
+ "vkb_spin_orbit_projector_coefficients": [
+  {
+   "coefficients": {
+    "abs_sum": 0.036863030299999995,
+    "nan": 0,
+    "shape": [
+     4
+    ],
+    "sum": 0.0365819697
+   },
+   "j": null,
+   "l": 1
+  }
+ ],
+ "warnings": [
+  {
+   "context_line_numbers": [
+    131,
+    132,
+    133,
+    134,
+    135,
+    136,
+    137
+   ],
+   "context_lines": [
+    "  All-electron reference function large-component-only renormalization",
+    "    cnorm=   1.00006880  l=  1  n=  3  kap= -2",
+    "",
+    "WARNING: negative energy of  -0.728023 specified for second projector",
+    " Actual bound-state energy of  -0.052734 will be used",
+    " Action: debl should probably be increased",
+    ""
+   ],
+   "description": "Negative energy specified for the second projector; the actual bound-state energy is used instead (ONCVPSP v3).",
+   "line_numbers": [
+    134,
+    135,
+    136
+   ],
+   "name": "negative_energy_second_projector",
+   "subroutine": "oncvpsp"
+  },
+  {
+   "context_line_numbers": [
+    202,
+    203,
+    204,
+    205,
+    206,
+    207,
+    208
+   ],
+   "context_lines": [
+    "  All-electron reference function large-component-only renormalization",
+    "    cnorm=   1.00006953  l=  1  n=  3  kap=  1",
+    "",
+    "WARNING: negative energy of  -0.728023 specified for second projector",
+    " Actual bound-state energy of  -0.053432 will be used",
+    " Action: debl should probably be increased",
+    ""
+   ],
+   "description": "Negative energy specified for the second projector; the actual bound-state energy is used instead (ONCVPSP v3).",
+   "line_numbers": [
+    205,
+    206,
+    207
+   ],
+   "name": "negative_energy_second_projector",
+   "subroutine": "oncvpsp"
+  }
+ ],
+ "wellstate_metadata": []
+}
