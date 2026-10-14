@@ -20,7 +20,8 @@ from pyoncvpsp.io.output import (
     Scope,
     Stage,
 )
-from pyoncvpsp.io.output._attribution import LineContext, attribution_for, line_contexts
+from pyoncvpsp.io.output._attribution import attribution_for
+from pyoncvpsp.io.output._sections import LineContext, line_contexts
 
 DATA_DIR = Path(__file__).parent / "data" / "attribution"
 

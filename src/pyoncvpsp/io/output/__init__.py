@@ -9,7 +9,8 @@ from ._messages import (
     Scope,
     Stage,
 )
-from ._attribution import ATTRIBUTION, analyze_failure, attribute_messages, line_contexts
+from ._attribution import ATTRIBUTION, analyze_failure, attribute_messages
+from ._sections import line_contexts
 from ._text import OncvpspOutputError, OncvpspTextParser
 
 __all__: list[str] = [

@@ -14,7 +14,8 @@ from pyoncvpsp.io._utils import fort_float
 from pyoncvpsp.io.input._models import OncvpspInput
 from ._data import WARNINGS, ERRORS
 from ._messages import OncvpspFailure, OncvpspMessage, Stage
-from . import _attribution
+from . import _attribution, _sections
+from ._sections import Block, BlockKind, LineContext
 
 RE_FLOAT: str = r"[+-]?(?:\d+\.\d*|\.\d+|\d+)(?:[eEdD][+-]?\d+)?"
 
@@ -328,20 +329,42 @@ class OncvpspTextParser:
         return self._lines
 
     @cached_property
+    def _message_line_indices(self) -> set[int]:
+        """Indices of the raw lines corresponding to warnings and errors."""
+        return {
+            i - 1
+            for message in self.warnings + self.errors
+            for i in message["line_numbers"]
+        }
+
+    @cached_property
     def clean_lines(self) -> list[str]:
         """Lines of the output file, excluding those corresponding to warnings and errors."""
         # Remove lines corresponding to warnings and errors prior to parsing output quantities
         # because they may be inserted within formatted data blocks.
-        warning_line_indices = [
-            i - 1 for warning in self.warnings for i in warning["line_numbers"]
-        ]
-        error_line_indices = [
-            i - 1 for error in self.errors for i in error["line_numbers"]
-        ]
-        skip_line_indices = set(warning_line_indices + error_line_indices)
         return [
-            line for i, line in enumerate(self._lines) if i not in skip_line_indices
+            line
+            for i, line in enumerate(self._lines)
+            if i not in self._message_line_indices
         ]
+
+    @cached_property
+    def line_contexts(self) -> list[LineContext]:
+        """Program stage, channel and enclosing block at each of the raw lines."""
+        return _sections.line_contexts(self.raw_lines)
+
+    @cached_property
+    def _clean_line_contexts(self) -> list[LineContext]:
+        """Contexts of `clean_lines`."""
+        return [
+            ctx
+            for i, ctx in enumerate(self.line_contexts)
+            if i not in self._message_line_indices
+        ]
+
+    def _blocks(self, kind: str) -> list[tuple[Block, int, int]]:
+        """Blocks of a kind as `(block, start, stop)`, where `clean_lines[start:stop]` is the block."""
+        return list(_sections.blocks(self._clean_line_contexts, kind))
 
     @cached_property
     def program_information(self) -> dict:
@@ -723,34 +746,15 @@ class OncvpspTextParser:
         ]
 
     @cached_property
-    def _optimize_line_indices(self) -> list[tuple[int, int, int, int]]:
+    def _optimize_line_indices(self) -> list[tuple[int, int, int, int, int]]:
+        """Optimized projector blocks as `(l, iproj, spin_sign, start, stop)` (`clean_lines` indices)."""
         indices: dict = {}
-        # ONCVPSP v3
-        for start, match in self.findall(
-            r"Calculating (?P<proj_name>first|second) optimized projector for l=\s+(?P<ell>\d+)"
-        ):
-            ell = int(match.group("ell"))
-            iproj = 1 if match.group("proj_name") == "first" else 2
-            if (ell, iproj, -1) in indices:
-                spin_sign = +1
-            elif self.is_relativistic and ell == 0:
-                spin_sign = 1
-            elif self.is_relativistic and ell > 0:
-                spin_sign = -1
-            else:
-                spin_sign = 0
-            indices[(ell, iproj, spin_sign)] = start
-        # ONCVPSP v4 / METAPSP
-        for start, match in self.findall(
-            r"Calculating optimized projector #\s+(?P<iproj>\d+)"
-        ):
-            iproj = int(match.group("iproj"))
-            if ell_match := self.search(r" for l=\s+(?P<ell>\d+)", start=start):
-                ell = int(ell_match[1].group("ell"))
-            else:
+        for block, start, stop in self._blocks(BlockKind.PROJECTOR):
+            if block.l is None:
                 raise RuntimeError(
-                    f"Failed to find ang. mom. in `optimize` block starting at line {start + 1}"
+                    f"Failed to find ang. mom. in `optimize` block starting at line {block.line + 1}"
                 )
+            ell, iproj = block.l, block.iproj
             if (ell, iproj, -1) in indices:
                 spin_sign = +1
             elif self.is_relativistic and ell == 0:
@@ -759,10 +763,10 @@ class OncvpspTextParser:
                 spin_sign = -1
             else:
                 spin_sign = 0
-            indices[(ell, iproj, spin_sign)] = start
+            indices[(ell, iproj, spin_sign)] = (start, stop)
         return [
-            (ell, iproj, spin_sign, start)
-            for (ell, iproj, spin_sign), start in indices.items()
+            (ell, iproj, spin_sign, start, stop)
+            for (ell, iproj, spin_sign), (start, stop) in indices.items()
         ]
 
     @property
@@ -772,16 +776,17 @@ class OncvpspTextParser:
             rf"\s+(?P<eresid>{RE_FLOAT})\s+{RE_FLOAT}\s+(?P<ecut>{RE_FLOAT})"
         )
         data: dict[tuple, dict[str, list]] = defaultdict(lambda: defaultdict(list))
-        for ell, iproj, spin_sign, start in self._optimize_line_indices:
-            convergence_match = self.search(convergence_header_pattern, start=start)
-            if convergence_match:
+        for ell, iproj, spin_sign, start, stop in self._optimize_line_indices:
+            header_matches = self.findall(convergence_header_pattern, start, stop)
+            if header_matches:
+                header_index = header_matches[0][0]
                 # ONCVPSP prints an empty table when no residual threshold is reached;
                 # keep the (empty) profile so that `ecut_recommended` reflects it
                 data[(ell, iproj, spin_sign)].update({"eresid": [], "ecut": []})
                 for _, match in self.findall(
                     convergence_body_pattern,
-                    start=convergence_match[0],
-                    stop=convergence_match[0] + 5,
+                    start=header_index,
+                    stop=min(header_index + 5, stop),
                 ):
                     data[(ell, iproj, spin_sign)]["eresid"].append(
                         float(match.group("eresid"))
@@ -799,29 +804,20 @@ class OncvpspTextParser:
 
     @cached_property
     def _run_vkb_indices(self) -> list[tuple[int, int, int, int]]:
-        b_mat_pattern = re.compile(
-            r"B matrix(?: Hermiticity error)?, ll=\s+(?P<ell>\d+)(?:,)?(?:\s+kap=\s+(?P<kappa>-?\d+))?"
-        )
+        """VKB blocks as `(l, spin_sign, start, coefficients)`: the `clean_lines` indices of the
+        `B matrix` header and of the `Orthonormal projector coefficients` line. Blocks without
+        coefficients (truncated output) are skipped."""
         coeff_pattern = re.compile(
             rf"\s+Orthonormal projector coefficients(?:\s+{RE_FLOAT})+"
         )
-        blocks: list[tuple[int, int, int, int]] = []
-        for start, start_match in self.findall(b_mat_pattern):
-            if (_ := self.search(coeff_pattern, start=start + 1)) is None:
-                raise RuntimeError(
-                    f"Failed to find end of VKB block (starting at line {start + 1})"
-                )
-            else:
-                stop, _ = _
-            ell = int(start_match.group("ell"))
-            kappa = (
-                int(start_match.group("kappa"))
-                if start_match.group("kappa") is not None
-                else None
-            )
+        indices: list[tuple[int, int, int, int]] = []
+        for block, start, stop in self._blocks(BlockKind.VKB):
+            if not (coeff_matches := self.findall(coeff_pattern, start + 1, stop)):
+                continue
+            kappa = block.kappa
             spin_sign = 0 if kappa is None else (-1 if kappa > 0 else 1)
-            blocks.append((ell, spin_sign, start, stop))
-        return blocks
+            indices.append((block.l, spin_sign, start, coeff_matches[0][0]))
+        return indices
 
     @cached_property
     def vkb_projector_coefficients(self) -> list[dict]:
@@ -1057,13 +1053,6 @@ class OncvpspTextParser:
                 norm_test (float): Norm w/in rc of pseudo wavefunction / AE wavefunction.
                 slope_test (float): Slope at rc of pseudo wavefuction / AE wavefunction.
         """
-        start_match = self.search(r"Diagnostic tests using semi-local pseudopotentials")
-        stop_match = self.search(
-            r"Diagnostic tests using Vanderbilt-Kleinman-Bylander pseudopotentials",
-            start=start_match[0] if start_match else 0,
-        )
-        if not start_match or not stop_match:
-            return []
         pattern = re.compile(
             r"\s+(?P<ell>\d)(?:\s+(?P<kap>-?\d))?"
             rf"\s+(?P<rcore>{RE_FLOAT})"
@@ -1087,9 +1076,8 @@ class OncvpspTextParser:
                 "norm_test": float(match.group("norm_test")),
                 "slope_test": float(match.group("slope_test")),
             }
-            for _, match in self.findall(
-                pattern, start=start_match[0], stop=stop_match[0]
-            )
+            for _, start, stop in self._blocks(BlockKind.DIAG_SEMILOCAL)
+            for _, match in self.findall(pattern, start, stop)
         ]
 
     @cached_property
@@ -1109,12 +1097,6 @@ class OncvpspTextParser:
                 norm_test (float): Norm w/in rc of pseudo wavefunction / AE wavefunction.
                 slope_test (float): Slope at rc of pseudo wavefuction / AE wavefunction.
         """
-        start_match = self.search(
-            r"Diagnostic tests using Vanderbilt-Kleinman-Bylander pseudopotentials"
-        )
-        stop_match = self.search(r"\s*Test", start=start_match[0] if start_match else 0)
-        if not start_match or not stop_match:
-            return []
         is_v3 = self.program_information["version"].startswith("3")
         pattern = re.compile(
             r"\s+(?P<ell>\d)(?:\s+(?P<kap>-?\d))?"
@@ -1142,9 +1124,8 @@ class OncvpspTextParser:
                 "norm_test": float(match.group("norm_test")),
                 "slope_test": float(match.group("slope_test")),
             }
-            for _, match in self.findall(
-                pattern, start=start_match[0], stop=stop_match[0]
-            )
+            for _, start, stop in self._blocks(BlockKind.DIAG_VKB)
+            for _, match in self.findall(pattern, start, stop)
         ]
 
     @cached_property
@@ -1213,16 +1194,9 @@ class OncvpspTextParser:
             rf"(?:(?:\s+|(?=-))(?P<eig_ps>{RE_FLOAT}))?"
             rf"(?:\s+(?P<diff>{RE_FLOAT}))?"
         )
-        test_matches = self.findall(r"Test configuration\s+(?P<itest>\d+)")
-        for i, match in test_matches:
-            test_lines = self._get_lines_between(
-                start_pattern=self.clean_lines[i],
-                stop_pattern=rf"PSP excitation error=\s+(?:{RE_FLOAT}|NaN)",
-                include_start=True,
-                include_stop=True,
-            )
+        for block, start, stop in self._blocks(BlockKind.TEST_CONFIG):
             test_configuration: list[dict] = []
-            for line in test_lines:
+            for line in self.clean_lines[start:stop]:
                 if config_match := re.match(pattern, line):
                     enn = int(config_match.group("enn"))
                     ell = int(config_match.group("ell"))
@@ -1247,7 +1221,7 @@ class OncvpspTextParser:
                             ),
                         }
                     )
-            assert int(match.group("itest")) == len(test_configurations)
+            assert block.config_index == len(test_configurations)
             test_configurations.append(test_configuration)
         return test_configurations
 
@@ -1815,8 +1789,7 @@ class OncvpspTextParser:
     @cached_property
     def last_stage_reached(self) -> Stage:
         """Last stage of the program for which any output was found."""
-        contexts = _attribution.line_contexts(self.raw_lines)
-        return contexts[-1].stage if contexts else Stage.INPUT
+        return self.line_contexts[-1].stage if self.line_contexts else Stage.INPUT
 
     @cached_property
     def output(self) -> dict:

@@ -1,15 +1,11 @@
 """Attribute ONCVPSP messages to the program stage and the input parameters that produced them.
 
-ONCVPSP's stdout is stage-ordered, and within the semilocal stage it is ordered by angular momentum
-`l`. A state machine over the stage and per-`l` headers gives every line a context, which is used to
-attribute messages that do not print `l` themselves.
-
-The main program's loop over `l` calls `wellstate`, the `debl` check and `qroots` *before* printing
-the per-`l` header `Calculating optimized projector`, so their messages appear after the block of the
-previous `l` (`l_rule = "pending"`).
+Messages that do not print `l` themselves are attributed using the context of their line (see
+`_sections`). The main program's loop over `l` calls `wellstate`, the `debl` check and `qroots`
+*before* printing the per-`l` header `Calculating optimized projector`, so their messages appear
+after the block of the previous `l` (`l_rule = "pending"`).
 """
 
-from dataclasses import dataclass, replace
 import re
 from typing import TYPE_CHECKING, Any, Mapping
 
@@ -24,6 +20,7 @@ from ._messages import (
     Stage,
     implicated_parameters,
 )
+from ._sections import LineContext
 
 if TYPE_CHECKING:
     from ._text import OncvpspTextParser
@@ -178,158 +175,6 @@ def attribution_for(level: Level, name: str) -> dict[str, Any]:
     return ATTRIBUTION.get(f"{level.value}:{name}") or ATTRIBUTION.get(name) or {}
 
 
-# --- Line contexts -----------------------------------------------------------------------------------
-
-
-@dataclass(frozen=True)
-class LineContext:
-    """Program state at a line of the output."""
-
-    stage: Stage = Stage.INPUT
-    header_l: int | None = (
-        None  # l of the last `Calculating optimized projector` header (semilocal)
-    )
-    well_l: int | None = (
-        None  # l of the last `Wellstate for l =` block (printed before the header)
-    )
-    iproj: int | None = None  # projector of the last header (semilocal)
-    marker_l: int | None = (
-        None  # l of the last per-l marker in the VKB/diagnostics/plot stages
-    )
-    config_index: int | None = (
-        None  # test configuration as numbered by ONCVPSP (0 = reference configuration)
-    )
-
-    @property
-    def pending_l(self) -> int:
-        """Channel currently being processed by the main program *before* its header is printed."""
-        if self.well_l is not None and (
-            self.header_l is None or self.well_l > self.header_l
-        ):
-            return self.well_l
-        return self.header_l + 1 if self.header_l is not None else 0
-
-    @property
-    def current_l(self) -> int | None:
-        """Channel of the enclosing per-l block, if any."""
-        if self.stage == Stage.SEMILOCAL:
-            return self.header_l
-        return self.marker_l
-
-    @property
-    def last_l(self) -> int | None:
-        """Highest channel for which any per-l output was seen."""
-        candidates = [
-            x for x in (self.header_l, self.well_l, self.marker_l) if x is not None
-        ]
-        return max(candidates) if candidates else None
-
-
-_RE = {
-    "test_config_echo": re.compile(r"^# TEST CONFIGURATIONS"),
-    "echo_nlf": re.compile(r"^#\s+n\s+l\s+f\s*$"),
-    "ae_reference": re.compile(r"^Reference configu[fr]ation results"),
-    "semilocal": re.compile(
-        r"^Begin loop to\s+construct optimized pseudo wave functions"
-    ),
-    "wellstate": re.compile(r"^\s*Wellstate for l =\s*(?P<l>\d+)\s+n =\s*(?P<n>\d+)"),
-    "header_v4": re.compile(r"^Calculating optimized projector #\s*(?P<iproj>\d+)"),
-    "header_v4_l": re.compile(r"^\s*for l=\s*(?P<l>\d+)"),
-    "header_v3": re.compile(
-        r"^Calculating (?P<which>first|second) optimized projector for l=\s*(?P<l>\d+)"
-    ),
-    "vkb": re.compile(r"^Construct Vanderbilt / Klein+m+an+-Bylander projectors"),
-    "hermiticity": re.compile(r"^B matrix Hermiticity error, ll=\s*(?P<l>\d+)"),
-    "model_core": re.compile(
-        r"^(?:Model core correction analysis|Teter function model core charge|Polynomial model core charge|Model core charge)"
-    ),
-    "pseudoatom": re.compile(r"^Pseudoatom total energy"),
-    "diagnostics": re.compile(r"^Diagnostic tests using"),
-    "diag_row": re.compile(
-        r"^\s{2,}(?P<l>\d)\s+\d+\.\d{4,}\s+\d+\.\d{4,}\s+-?\d+\.\d{4,}"
-    ),
-    "test_config": re.compile(r"^Test configuration\s*(?P<index>\d+)"),
-    "plot": re.compile(r"^DATA FOR PLOTTING"),
-    "plot_wf": re.compile(r"^n=\s*\d+,\s+l=\s*(?P<l>\d+)"),
-    "plot_scat": re.compile(r"^scattering, iprj=\s*(?P<iproj>\d+),\s+l=\s*(?P<l>\d+)"),
-    "plot_logder": re.compile(r"^log derivativ+e data for plotting, l=\s*(?P<l>\d+)"),
-    "output": re.compile(
-        r"^(?:Begin PSP_UPF|Begin PSPCODE8|Begin PSP8|Begin PSML|<UPF |<PSML|<psml)"
-    ),
-}
-
-
-def line_contexts(lines: list[str]) -> list[LineContext]:
-    """Context of every line of the output (the state *after* processing the line's own markers)."""
-    ctx = LineContext()
-    contexts: list[LineContext] = []
-    seen_test_config_echo = False
-    for i, line in enumerate(lines):
-        if ctx.stage == Stage.INPUT:
-            if _RE["test_config_echo"].match(line):
-                seen_test_config_echo = True
-            elif seen_test_config_echo and _RE["echo_nlf"].match(line):
-                ctx = replace(ctx, stage=Stage.AE_REFERENCE)
-        if _RE["ae_reference"].match(line):
-            ctx = replace(ctx, stage=Stage.AE_REFERENCE)
-        elif _RE["semilocal"].match(line):
-            ctx = replace(ctx, stage=Stage.SEMILOCAL)
-        elif ctx.stage in (Stage.AE_REFERENCE, Stage.SEMILOCAL) and (
-            m := _RE["wellstate"].match(line)
-        ):
-            ctx = replace(ctx, stage=Stage.SEMILOCAL, well_l=int(m["l"]))
-        elif m := _RE["header_v4"].match(line):
-            # The format `(/a,i4)` reverts, so ` for l=` lands on its own line after a blank one
-            l = None  # noqa: E741
-            for j in range(i + 1, min(i + 4, len(lines))):
-                if ml := _RE["header_v4_l"].match(lines[j]):
-                    l = int(ml["l"])  # noqa: E741
-                    break
-            ctx = replace(ctx, stage=Stage.SEMILOCAL, header_l=l, iproj=int(m["iproj"]))
-        elif m := _RE["header_v3"].match(line):
-            ctx = replace(
-                ctx,
-                stage=Stage.SEMILOCAL,
-                header_l=int(m["l"]),
-                iproj=1 if m["which"] == "first" else 2,
-            )
-        elif _RE["vkb"].match(line):
-            ctx = replace(ctx, stage=Stage.VKB, marker_l=None, iproj=None)
-        elif ctx.stage == Stage.VKB and (m := _RE["hermiticity"].match(line)):
-            ctx = replace(ctx, marker_l=int(m["l"]))
-        elif ctx.stage in (Stage.VKB, Stage.VKB_SOLVE) and (
-            _RE["model_core"].match(line) or _RE["pseudoatom"].match(line)
-        ):
-            ctx = replace(ctx, stage=Stage.MODEL_CORE, marker_l=None)
-        elif _RE["diagnostics"].match(line):
-            ctx = replace(ctx, stage=Stage.DIAGNOSTICS, marker_l=None)
-        elif ctx.stage == Stage.DIAGNOSTICS and (m := _RE["diag_row"].match(line)):
-            ctx = replace(ctx, marker_l=int(m["l"]))
-        elif m := _RE["test_config"].match(line):
-            ctx = replace(
-                ctx,
-                stage=Stage.TEST_CONFIG,
-                config_index=int(m["index"]),
-                marker_l=None,
-            )
-        elif _RE["plot"].match(line):
-            ctx = replace(
-                ctx, stage=Stage.LOGDER_PLOT, marker_l=None, config_index=None
-            )
-        elif ctx.stage == Stage.LOGDER_PLOT and (
-            m := (_RE["plot_wf"].match(line) or _RE["plot_logder"].match(line))
-        ):
-            ctx = replace(ctx, marker_l=int(m["l"]))
-        elif ctx.stage == Stage.LOGDER_PLOT and (m := _RE["plot_scat"].match(line)):
-            ctx = replace(ctx, marker_l=int(m["l"]))
-        elif ctx.stage in (Stage.LOGDER_PLOT, Stage.OUTPUT) and _RE["output"].match(
-            line
-        ):
-            ctx = replace(ctx, stage=Stage.OUTPUT, marker_l=None)
-        contexts.append(ctx)
-    return contexts
-
-
 # --- Message attribution ---------------------------------------------------------------------------
 
 
@@ -480,7 +325,7 @@ def _safe_input(parser: "OncvpspTextParser") -> dict | None:
 def attribute_messages(parser: "OncvpspTextParser") -> list[OncvpspMessage]:
     """All warnings and errors of a parsed output, attributed and sorted by line."""
     lines = parser.raw_lines
-    contexts = line_contexts(lines)
+    contexts = parser.line_contexts
     input_data = _safe_input(parser)
     messages = [
         attribute_message(m, Level.WARNING, lines, contexts, input_data)
@@ -501,7 +346,7 @@ def analyze_failure(parser: "OncvpspTextParser") -> OncvpspFailure | None:
     if parser.completed:
         return None
     lines = parser.raw_lines
-    contexts = line_contexts(lines)
+    contexts = parser.line_contexts
     last = contexts[-1] if contexts else LineContext()
     errors = [m for m in attribute_messages(parser) if m.level == Level.ERROR]
     if errors:
@@ -556,10 +401,8 @@ def analyze_failure(parser: "OncvpspTextParser") -> OncvpspFailure | None:
 
 __all__ = [
     "ATTRIBUTION",
-    "LineContext",
     "analyze_failure",
     "attribute_message",
     "attribute_messages",
     "attribution_for",
-    "line_contexts",
 ]
