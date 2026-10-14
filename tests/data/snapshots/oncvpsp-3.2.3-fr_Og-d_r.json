@@ -466,8 +466,10 @@
  },
  "localized_bound_states": [
   {
+   "asymptotic_potential": null,
    "eig_ae": -0.052635,
    "energy_guess": null,
+   "half_point_radius": null,
    "iproj": 2,
    "j": 0.5,
    "l": 0,

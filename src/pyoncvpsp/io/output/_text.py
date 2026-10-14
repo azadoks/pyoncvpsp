@@ -670,6 +670,8 @@ class OncvpspTextParser:
                     "n": state.pop("n"),
                     **slot.projector.as_dict(),
                     "energy_guess": None,
+                    "asymptotic_potential": None,
+                    "half_point_radius": None,
                     **state,
                 }
             )
@@ -721,6 +723,8 @@ class OncvpspTextParser:
                 iproj (int): Projector index (1-based), from `projector_layout`.
                 eig_ae (float | None): All-electron eigenvalue (Ha); see `wellstate_metadata`.
                 energy_guess (float | None): See `wellstate_metadata`.
+                asymptotic_potential (None): Always None.
+                half_point_radius (None): Always None.
         """
         return [
             {k: v for k, v in state.items() if k != "is_bound"}

@@ -25,7 +25,7 @@ The pseudo-wavefunction optimized for one projector in the semilocal stage, toge
 _Avoid_: optimized projector (except when quoting ONCVPSP output)
 
 **Valence state**:
-A state of the reference configuration listed after the core states, whatever its occupation.
+A state of the reference configuration listed after the core states. Its occupation is always positive (the programs reject `f <= 0`), but may be tiny.
 _Avoid_: occupied state, bound state (as a synonym)
 
 **Projector state**:

@@ -71,9 +71,9 @@ V4 = [("ONCVPSP", "4.0.1"), ("METAPSP", "1.0.1")]
 
 
 @pytest.mark.parametrize("program, version", V4)
-def test_v4_unoccupied_valence_state_is_a_projector_state(program, version):
-    # Issue #1: every valence state of l is used, whatever its occupation
-    inp = make_input(CORE + [(3, 0, 2.0), (4, 0, 0.0)], nc=3, nproj=[2])
+def test_v4_every_valence_state_is_a_projector_state(program, version):
+    # However small its occupation (ONCVPSP rejects f <= 0)
+    inp = make_input(CORE + [(3, 0, 2.0), (4, 0, 0.01)], nc=3, nproj=[2])
     layout = predict_projector_layout(inp, program, version, relativistic=False)
     assert summary(layout, 0) == [
         (3, Solver.BOUND, Energy.VALENCE, 3),
@@ -85,7 +85,7 @@ def test_v4_unoccupied_valence_state_is_a_projector_state(program, version):
 @pytest.mark.parametrize("program, version", V4)
 def test_v4_valence_states_capped_at_nproj(program, version):
     # Issue #2: valence states beyond nproj are not projector states
-    inp = make_input(CORE + [(3, 0, 2.0), (4, 0, 1.0), (5, 0, 0.0)], nc=3, nproj=[2])
+    inp = make_input(CORE + [(3, 0, 2.0), (4, 0, 1.0), (5, 0, 0.01)], nc=3, nproj=[2])
     layout = predict_projector_layout(inp, program, version, relativistic=False)
     assert [s.valence_index for s in layout.channel(ChannelKey(0))] == [3, 4]
 
@@ -137,19 +137,18 @@ V3 = [("ONCVPSP", "3.3.1"), ("ONCVPSP", "2.1.1")]
 
 
 @pytest.mark.parametrize("program, version", V3)
-def test_v3_unoccupied_first_valence_state_uses_wellstate(program, version):
-    # Issue #3: an unoccupied first valence state is obtained with `wellstate` at its eigenvalue
-    inp = make_input(CORE + [(3, 0, 2.0), (3, 1, 0.0)], nc=3, nproj=[1, 2])
+def test_v3_first_valence_state_then_debl(program, version):
+    inp = make_input(CORE + [(3, 0, 2.0), (3, 1, 0.01)], nc=3, nproj=[1, 2])
     layout = predict_projector_layout(inp, program, version, relativistic=False)
     assert summary(layout, 1) == [
-        (3, Solver.WELLSTATE, Energy.VALENCE, 4),
+        (3, Solver.BOUND, Energy.VALENCE, 4),
         (4, Solver.BY_ENERGY, Energy.DEBL, None),
     ]
-    assert not layout.uses_ep(1)
+    assert not layout.uses_ep(1) and layout.uses_debl(1)
 
 
 @pytest.mark.parametrize("program, version", V3)
-def test_v3_occupied_second_valence_state_overrides_debl(program, version):
+def test_v3_second_valence_state_overrides_debl(program, version):
     inp = make_input(CORE + [(3, 0, 2.0), (4, 0, 1.0)], nc=3, nproj=[2])
     layout = predict_projector_layout(inp, program, version, relativistic=False)
     assert summary(layout, 0) == [
@@ -157,9 +156,9 @@ def test_v3_occupied_second_valence_state_overrides_debl(program, version):
         (4, Solver.BOUND, Energy.VALENCE, 4),
     ]
     assert not layout.uses_debl(0)
-    # The last further occupied valence state sets the energy, but n is one above the first:
-    # the bound state found is not that valence state unless their n agree
-    inp = make_input(CORE + [(3, 0, 2.0), (4, 0, 0.0), (5, 0, 1.0)], nc=3, nproj=[2])
+    # The last further valence state sets the energy, but n is one above the first: the bound
+    # state found is not that valence state unless their n agree
+    inp = make_input(CORE + [(3, 0, 2.0), (4, 0, 0.01), (5, 0, 1.0)], nc=3, nproj=[2])
     layout = predict_projector_layout(inp, program, version, relativistic=False)
     assert summary(layout, 0)[1] == (4, Solver.BY_ENERGY, Energy.VALENCE, 5)
     assert not layout.uses_debl(0)

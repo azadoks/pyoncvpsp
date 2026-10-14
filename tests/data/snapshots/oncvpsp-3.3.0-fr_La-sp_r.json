@@ -575,16 +575,20 @@
  },
  "localized_bound_states": [
   {
+   "asymptotic_potential": null,
    "eig_ae": -0.155292,
    "energy_guess": null,
+   "half_point_radius": null,
    "iproj": 1,
    "j": 3.5,
    "l": 3,
    "n": 4
   },
   {
+   "asymptotic_potential": null,
    "eig_ae": -0.165419,
    "energy_guess": null,
+   "half_point_radius": null,
    "iproj": 1,
    "j": 2.5,
    "l": 3,
@@ -1542,12 +1546,12 @@
     }
    },
    {
-    "asymptotic_potential": "nan",
+    "asymptotic_potential": null,
     "eig_ae": -0.155292,
     "eig_ps": "nan",
     "energy_guess": null,
     "f": 0.0,
-    "half_point_radius": "nan",
+    "half_point_radius": null,
     "iproj": 1,
     "is_bound": true,
     "j": 3.5,
@@ -1580,12 +1584,12 @@
     }
    },
    {
-    "asymptotic_potential": "nan",
+    "asymptotic_potential": null,
     "eig_ae": -0.165419,
     "eig_ps": "nan",
     "energy_guess": null,
     "f": 0.0,
-    "half_point_radius": "nan",
+    "half_point_radius": null,
     "iproj": 1,
     "is_bound": true,
     "j": 2.5,

@@ -131,8 +131,7 @@ def _v4_slots(
     inp: OncvpspInput, channel: ChannelKey, partner: bool
 ) -> list[ProjectorSlot]:
     """ONCVPSP 4.0.1 (`oncvpsp.F90:393-449`, `oncvpsp_r.F90:396-533`) and METAPSP
-    (`oncvpsp_m.f90`): every valence state of `l` in input order, whatever its occupation, up to
-    `nproj`; then wellstates, the first at `ep` if no valence state was used, the others at the
+    (`oncvpsp_m.f90`): every valence state of `l` in input order, up to `nproj`; then wellstates, the first at `ep` if no valence state was used, the others at the
     previous energy plus `debl`. The local channel has `nproj = 1`. In fully-relativistic runs,
     `wellstate` is called for j = l + 1/2 only, and j = l - 1/2 is solved in the same well."""
     config = list(inp.reference_configuration)
@@ -172,12 +171,16 @@ def _v3_slots(
     inp: OncvpspInput, channel: ChannelKey, partner: bool
 ) -> list[ProjectorSlot]:
     """ONCVPSP 3.3.1 (`oncvpsp.f90:259-310, 398-445`; per kappa in `oncvpsp_r.f90:330-504`): at
-    most two projectors. The first is the first valence state of `l`, solved as a bound state if
-    occupied and with `wellstate` at its eigenvalue otherwise; without a valence state of `l`, a
-    wellstate at `ep`. The second (`nproj = 2`) has `n` one above the first. Its energy is that of
-    the last further *occupied* valence state of `l` (which overrides `debl`), else the first
-    energy plus `debl`; it is solved as a bound state of that `n` if the energy is negative and
-    with `wellstate` otherwise. The first projector state is computed for the local channel too."""
+    most two projectors. The first is the first valence state of `l`, solved as a bound state;
+    without a valence state of `l`, a wellstate at `ep`. The second (`nproj = 2`) has `n` one above
+    the first. Its energy is that of the last further valence state of `l` (which overrides
+    `debl`), else the first energy plus `debl`; it is solved as a bound state of that `n` if the
+    energy is negative and with `wellstate` otherwise. The first projector state is computed for
+    the local channel too.
+
+    The source also handles unoccupied valence states (`fp(l1) > 0`, `fa(ii) > 0`), but
+    `check_data` rejects a reference configuration with any `f <= 0`, so every valence state is
+    occupied."""
     del partner  # every kappa calls `wellstate` itself
     config = list(inp.reference_configuration)
     l = channel.l  # noqa: E741
@@ -188,7 +191,7 @@ def _v3_slots(
             ProjectorSlot(
                 ProjectorKey(channel, 1),
                 config[first].n,
-                Solver.BOUND if config[first].f > 0.0 else Solver.WELLSTATE,
+                Solver.BOUND,
                 Energy.VALENCE,
                 first,
             )
@@ -201,11 +204,10 @@ def _v3_slots(
         ]
     if inp.vkb_projectors.nproj[l] == 2 and not _is_local(inp, l):
         n_second = slots[0].n + 1
-        occupied = [i for i in valence[1:] if config[i].f > 0.0]
-        if occupied:
+        if further := valence[1:]:
             # The valence state itself only if its n is `n_second`, else another bound state
             # (reported in a warning when its energy differs)
-            last = occupied[-1]
+            last = further[-1]
             slots.append(
                 ProjectorSlot(
                     ProjectorKey(channel, 2),
