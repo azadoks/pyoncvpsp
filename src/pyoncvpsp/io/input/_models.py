@@ -112,7 +112,7 @@ class AtomicStateInput(BaseModel):  # pylint: disable=too-few-public-methods
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, AtomicStateInput):
-            raise NotImplementedError(f"Cannot compare AtomicState with {type(other)}")
+            return NotImplemented
         if self.n != other.n:
             LOGGER.debug("n differs: %d != %d", self.n, other.n)
             return False
@@ -166,16 +166,17 @@ class AtomicConfigurationInput(BaseModel):  # pylint: disable=too-few-public-met
 
     @model_validator(mode="after")
     def _check(self) -> "AtomicConfigurationInput":
-        total_occupation = sum(self.f)
-        if total_occupation != self.charge:
+        if not len(self.n) == len(self.l) == len(self.f):
             raise ValueError(
-                f"Total occupation {total_occupation} does not match charge {self.charge}"
+                "n, l, and f must have the same length: "
+                f"len(n)={len(self.n)}, len(l)={len(self.l)}, len(f)={len(self.f)}"
             )
         return self
 
     def as_dat_string(self, with_comment: bool = False) -> str:
         """String representation of the atomic state in .dat file format."""
-        states = sorted(list(self), key=lambda s: (s.n, s.l))
+        # Order is significant: ONCVPSP treats the first `nc` states as core states
+        states = list(self)
         lines = [states[0].as_dat_string(with_comment)]
         if len(states) > 1:
             for state in states[1:]:
@@ -331,8 +332,9 @@ class LocalPotentialInput(BaseModel):  # pylint: disable=too-few-public-methods
     """
 
     lloc: Annotated[int, Field(ge=0)]
-    lpopt: None | Annotated[int, Field(ge=1, le=5)] = None
-    rcloc: None | Annotated[float, Field(gt=0.0)] = None
+    # lpopt, rcloc, and dvloc0 are ignored by ONCVPSP unless lloc=4, so they are only validated then
+    lpopt: None | int = None
+    rcloc: None | float = None
     dvloc0: None | float = None
 
     @model_validator(mode="after")
@@ -341,8 +343,16 @@ class LocalPotentialInput(BaseModel):  # pylint: disable=too-few-public-methods
             exceptions = []
             if self.lpopt is None:
                 exceptions.append(ValueError("lpopt must be set when lloc=4"))
+            elif not 1 <= self.lpopt <= 5:
+                exceptions.append(
+                    ValueError(f"lpopt must be between 1 and 5 when lloc=4: {self.lpopt}")
+                )
             if self.rcloc is None:
                 exceptions.append(ValueError("rcloc must be set when lloc=4"))
+            elif self.rcloc <= 0.0:
+                exceptions.append(
+                    ValueError(f"rcloc must be greater than 0 when lloc=4: {self.rcloc}")
+                )
             if self.dvloc0 is None:
                 exceptions.append(ValueError("dvloc0 must be set when lloc=4"))
             if exceptions:
@@ -664,7 +674,8 @@ class OncvpspInput(BaseModel):
             radial_mesh = self.radial_mesh
             rcloc = (
                 self.local_potential.rcloc
-                or self.pseudopotentials.rc[self.local_potential.lloc]
+                if self.local_potential.lloc == 4
+                else self.pseudopotentials.rc[self.local_potential.lloc]
             )
             rcloc_rounded = floor(1e5 * rcloc) / 1e5
             rxpsh_default = radial_mesh[radial_mesh >= rcloc_rounded][0]
@@ -858,11 +869,26 @@ class OncvpspInput(BaseModel):
             nproj[ell] = int(words[1])
             debl[ell] = float(words[2])
         # MODEL CORE CHARGE
-        # icmod, fcfact, (rcfact)
+        # icmod, fcfact, (rcfact), (fcfact_min, fcfact_max, fcfact_step, rcfact_min, rcfact_max, rcfact_step)
         words = next(iter_).split()
         icmod = int(words[0])
         fcfact = float(words[1])
         rcfact: float = 0.0 if len(words) < 3 else float(words[2])
+        teter_grid: dict[str, float] = {}
+        if icmod == 4 and len(words) >= 9:
+            teter_grid = dict(
+                zip(
+                    (
+                        "teter_amp_min",
+                        "teter_amp_max",
+                        "teter_amp_step",
+                        "teter_scale_min",
+                        "teter_scale_max",
+                        "teter_scale_step",
+                    ),
+                    (float(w) for w in words[3:9]),
+                )
+            )
         # LOG DERIVATIVE ANALYSIS
         # epsh1, epsh2, depsh, (rxpsh)
         words = next(iter_).split()
@@ -930,6 +956,7 @@ class OncvpspInput(BaseModel):
                 "icmod": icmod,
                 "fcfact": fcfact,
                 "rcfact": rcfact,
+                **teter_grid,
             },
             "log_derivative_analysis": {
                 "epsh1": epsh1,

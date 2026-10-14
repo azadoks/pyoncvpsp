@@ -243,7 +243,11 @@ class OncvpspTextParser:
         Raise an `ExceptionGroup` containing `OncvpspOutputError`s, if found.
 
         Args:
+            doraise (bool, optional): Raise an `ExceptionGroup` if any errors are found. Defaults to True.
             werror (bool, optional): Raise errors for any warnings encountered. Defaults to False.
+
+        Returns:
+            list[OncvpspOutputError]: Errors (and warnings, if `werror`) found in the output.
 
         Raises:
             ExceptionGroup: Group of `OncvpspOutputError`s describing errors and warnings encountered.
@@ -271,7 +275,7 @@ class OncvpspTextParser:
             )
         if exceptions and doraise:
             raise ExceptionGroup(
-                f"ONCVPSP reported {len(self.errors)} errors during execution.",
+                f"Found {len(exceptions)} error(s) in ONCVPSP output.",
                 exceptions,
             )
         return exceptions
@@ -780,7 +784,7 @@ class OncvpspTextParser:
     @cached_property
     def d2exc_rmse(self) -> float | None:
         """Root-mean-square error of PS d2Exc/dfi with non-linear core corrections w.r.t. AE d2Exc/dfi."""
-        pattern = re.compile(r"rms 2nd derivative error\s+(?P<rmse>{RE_FLOAT})")
+        pattern = re.compile(rf"rms 2nd derivative error\s+(?P<rmse>{RE_FLOAT})")
         match = self.search(pattern)
         return float(match[1].group("rmse")) if match else None
 
@@ -814,7 +818,7 @@ class OncvpspTextParser:
                     self.clean_lines[param_match[0] + 1].split()[1]
                 )
         match_match = self.search(
-            r"rmatch, rhocmatch\s+(?P<rmatch>{RE_FLOAT})\s+(?P<rhocmatch>{RE_FLOAT})"
+            rf"rmatch, rhocmatch\s+(?P<rmatch>{RE_FLOAT})\s+(?P<rhocmatch>{RE_FLOAT})"
         )
         if match_match:
             parameters["rmatch"] = float(match_match[1].group("rmatch"))
@@ -1009,18 +1013,19 @@ class OncvpspTextParser:
                 eig_ps (float | None): Pseudoeigenvalue (Ha), if available.
         """
         test_configurations: list[list[dict]] = []
+        # Large negative eigenvalues can run into the preceding column (e.g. `2.0000-1212.17912322`)
         pattern = re.compile(
             r"\s+(?P<enn>\d)\s+(?P<ell>\d)\s+(?:(?P<kappa>-?\d)\s+)?"
             rf"(?P<occ>{RE_FLOAT})"
-            rf"\s+(?P<eig_ae>{RE_FLOAT})"
-            rf"(?:\s+(?P<eig_ps>{RE_FLOAT}))?"
+            rf"(?:\s+|(?=-))(?P<eig_ae>{RE_FLOAT})"
+            rf"(?:(?:\s+|(?=-))(?P<eig_ps>{RE_FLOAT}))?"
             rf"(?:\s+(?P<diff>{RE_FLOAT}))?"
         )
         test_matches = self.findall(r"Test configuration\s+(?P<itest>\d+)")
         for i, match in test_matches:
             test_lines = self._get_lines_between(
                 start_pattern=self.clean_lines[i],
-                stop_pattern=rf"PSP excitation error=\s+{RE_FLOAT}",
+                stop_pattern=rf"PSP excitation error=\s+(?:{RE_FLOAT}|NaN)",
                 include_start=True,
                 include_stop=True,
             )
@@ -1254,9 +1259,11 @@ class OncvpspTextParser:
         blocks = self._get_plot_blocks(data_pattern)
         # Used to augment state data with metadata from reference configuration
         # Quantum number degeneracy is possible for wellstates, so add the eigenvalue to the key too
+        # Test configuration eigenvalues are printed with a different precision than the reference
+        # configuration eigenvalues, so they are keyed by quantum numbers only (bound states are unique)
         test_config = (
             {
-                (cfg["n"], cfg["l"], cfg["spin_sign"], cfg["eig_ae"]): cfg
+                (cfg["n"], cfg["l"], cfg["spin_sign"]): cfg
                 for cfg in self.test_configurations[0]
             }
             if self.test_configurations
@@ -1353,7 +1360,7 @@ class OncvpspTextParser:
                 and state_key in self.valence_quantum_numbers_and_ae_eig
             ):
                 # If we're sure this is not a wellstate, get a boundstate
-                state_metadata.update(test_config.get(state_key, {}))
+                state_metadata.update(test_config.get(state_key[:3], {}))
                 state_metadata.update(ref_config[state_key])
                 state_metadata["is_bound"] = True
             if (
@@ -1470,11 +1477,12 @@ class OncvpspTextParser:
 
     @cached_property
     def ecut_recommended(self) -> float:
-        """Recommended cutoff energy in Hartree. Determined as the maximum Ecut for the first projector
-        over angular momenta.
+        """Recommended cutoff energy in Hartree. Determined as the maximum, over all angular momenta
+        and projectors, of the Ecut at which the kinetic energy residual reaches 1e-5 Ha.
 
         Returns:
-            float: Recommended Ecut (Ha).
+            float: Recommended Ecut (Ha). `inf` if any convergence profile lacks a 1e-5 Ha entry;
+                `-inf` if no convergence profiles were found.
         """
         ecut = -np.inf
         for prof in self.convergence_profiles:
@@ -1524,9 +1532,7 @@ class OncvpspTextParser:
             for _, match in block:
                 ell = int(match.group("ell"))
                 if self.is_relativistic:
-                    spin_sign = (
-                        1 if first_match.group("spin_sign") == "-" or ell == 0 else -1
-                    )
+                    spin_sign = 1 if match.group("spin_sign") == "-" or ell == 0 else -1
                 data[(ell, spin_sign)]["e"].append(float(match.group("e")))
                 data[(ell, spin_sign)]["log_deriv_ae"].append(
                     float(match.group("log_deriv_ae"))
