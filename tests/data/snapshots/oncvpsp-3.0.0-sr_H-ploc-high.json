@@ -367,6 +367,50 @@
     }
    }
   ],
+  "optimized_pseudo_wavefunctions": [
+   {
+    "iproj": 1,
+    "j": null,
+    "l": 0,
+    "r": {
+     "abs_sum": 251.262263,
+     "nan": 0,
+     "shape": [
+      479
+     ],
+     "sum": 251.262263
+    },
+    "wfn_ps": {
+     "abs_sum": 149.408546,
+     "nan": 0,
+     "shape": [
+      479
+     ],
+     "sum": 149.408546
+    }
+   },
+   {
+    "iproj": 2,
+    "j": null,
+    "l": 0,
+    "r": {
+     "abs_sum": 251.262263,
+     "nan": 0,
+     "shape": [
+      479
+     ],
+     "sum": 251.262263
+    },
+    "wfn_ps": {
+     "abs_sum": 118.54769700000001,
+     "nan": 0,
+     "shape": [
+      479
+     ],
+     "sum": -65.78459500000001
+    }
+   }
+  ],
   "semilocal_potentials": [],
   "unscreened_semilocal_potentials": [
    {

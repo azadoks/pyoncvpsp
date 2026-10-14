@@ -526,7 +526,9 @@ class OncvpspTextParser:
         )
 
     @cached_property
-    def _valence_projector_states(self) -> dict[ProjectorKey, tuple[int, ChannelKey, float]]:
+    def _valence_projector_states(
+        self,
+    ) -> dict[ProjectorKey, tuple[int, ChannelKey, float]]:
         """Projectors built from a valence state solved as a bound state, with the state
         `(n, channel, eig_ae)` of the reference configuration."""
         if self.projector_layout is None:
@@ -568,7 +570,9 @@ class OncvpspTextParser:
             rf"Normal bound state at ep=\s*(?P<eig>{RE_FLOAT})"
         )
         # ONCVPSP v2/v3 solve a negative-energy second projector state as a bound state
-        second_projector_pattern = re.compile(r"WARNING: negative energy of\s*" + RE_FLOAT)
+        second_projector_pattern = re.compile(
+            r"WARNING: negative energy of\s*" + RE_FLOAT
+        )
         second_projector_eig_pattern = re.compile(
             rf"\s*Actual bound-state energy of\s*(?P<eig>{RE_FLOAT})"
         )
@@ -747,7 +751,9 @@ class OncvpspTextParser:
             if projector in indices and rest:
                 projector = ProjectorKey(rest[0], block.iproj)
             indices[projector] = (start, stop)
-        return [(projector, start, stop) for projector, (start, stop) in indices.items()]
+        return [
+            (projector, start, stop) for projector, (start, stop) in indices.items()
+        ]
 
     @property
     def _optimize_convergence_profiles(self) -> list[dict]:
@@ -755,7 +761,9 @@ class OncvpspTextParser:
         convergence_body_pattern = re.compile(
             rf"\s+(?P<eresid>{RE_FLOAT})\s+{RE_FLOAT}\s+(?P<ecut>{RE_FLOAT})"
         )
-        data: dict[ProjectorKey, dict[str, list]] = defaultdict(lambda: defaultdict(list))
+        data: dict[ProjectorKey, dict[str, list]] = defaultdict(
+            lambda: defaultdict(list)
+        )
         for projector, start, stop in self._optimize_line_indices:
             header_matches = self.findall(convergence_header_pattern, start, stop)
             if header_matches:
@@ -1120,7 +1128,9 @@ class OncvpspTextParser:
                 {
                     **ChannelKey.from_printed_kappa(
                         int(match.group("ell")),
-                        int(match.group("kap")) if match.group("kap") is not None else None,
+                        int(match.group("kap"))
+                        if match.group("kap") is not None
+                        else None,
                     ).as_dict(),
                     "eig": float(match.group("eig")),
                     "ecut": float(match.group("ecut")),
@@ -1490,6 +1500,50 @@ class OncvpspTextParser:
         return data
 
     @cached_property
+    def optimized_pseudo_wavefunctions(self) -> list[dict]:
+        """Optimized pseudo-wavefunctions of the channels with two projectors.
+
+        N.B.: only ONCVPSP v2/v3 plot them (`@` lines, "projector pseudo wave functions, well or 2nd
+        valence"), for every non-local channel with `nproj = 2` (`run_plot.f90`, `run_plot_r.f90`).
+        The `n` printed in their header is always `l + 1, l + 2`, so it is not reported.
+
+        Returns:
+            list[dict]:
+                l (int): Orbital angular momentum.
+                j (float | None): Total angular momentum, None for an l-channel.
+                iproj (int): Projector index (1-based).
+                r (np.ndarray): Radial grid points (a.u.).
+                wfn_ps (np.ndarray): Optimized pseudo-wavefunction values.
+        """
+        pattern = re.compile(
+            rf"@\s+(?P<marker>-?)(?P<ell>\d)\s+(?P<r>{RE_FLOAT})"
+            rf"\s+(?P<wfn_ps_1>{RE_FLOAT})\s+(?P<wfn_ps_2>{RE_FLOAT})"
+        )
+        data: list[dict] = []
+        for block in self._get_plot_blocks(pattern):
+            _, first_match = block[0]
+            channel = ChannelKey.from_plot_marker(
+                int(first_match.group("ell")),
+                first_match.group("marker"),
+                self.is_relativistic,
+            )
+            r = np.array([float(match.group("r")) for _, match in block])
+            for iproj in (1, 2):
+                data.append(
+                    {
+                        **ProjectorKey(channel, iproj).as_dict(),
+                        "r": r,
+                        "wfn_ps": np.array(
+                            [
+                                float(match.group(f"wfn_ps_{iproj}"))
+                                for _, match in block
+                            ]
+                        ),
+                    }
+                )
+        return data
+
+    @cached_property
     def vkb_projectors(self) -> list[dict]:
         """Vanderbilt-Kleinman-Bylander projectors.
 
@@ -1554,12 +1608,16 @@ class OncvpspTextParser:
             rf"!C\s+(?P<ell>\d)\s+(?P<ecut>{RE_FLOAT})\s+(?P<eresid>{RE_FLOAT})"
         )
         block = self.findall(pattern)
-        data: dict[ProjectorKey, dict[str, list]] = defaultdict(lambda: defaultdict(list))
+        data: dict[ProjectorKey, dict[str, list]] = defaultdict(
+            lambda: defaultdict(list)
+        )
         for _, match in block:
             # Plotted only for the first projector, and for j = l + 1/2 if fully-relativistic
             channel = j_channels(int(match.group("ell")), self.is_relativistic)[0]
             data[ProjectorKey(channel, 1)]["ecut"].append(float(match.group("ecut")))
-            data[ProjectorKey(channel, 1)]["eresid"].append(float(match.group("eresid")))
+            data[ProjectorKey(channel, 1)]["eresid"].append(
+                float(match.group("eresid"))
+            )
         return [
             {**projector.as_dict(), **{k: np.array(v) for k, v in value.items()}}
             for projector, value in data.items()
@@ -1652,6 +1710,8 @@ class OncvpspTextParser:
                 kinetic_energy_densities (dict): See `OncvpspTextParser.kinetic_energy_densities`.
                 kinetic_energy_potentials (dict): See `OncvpspTextParser.kinetic_energy_potentials`.
                 wavefunctions (dict): See `OncvpspTextParser.wavefunctions`.
+                optimized_pseudo_wavefunctions (dict): See
+                    `OncvpspTextParser.optimized_pseudo_wavefunctions`.
                 vkb_projectors (dict): See `OncvpspTextParser.vkb_projectors`.
                 convergence_profiles (dict): See `OncvpspTextParser.convergence_profiles`.
                 log_derivatives (dict): See `OncvpspTextParser.log_derivatives`.
@@ -1664,6 +1724,7 @@ class OncvpspTextParser:
             "kinetic_energy_densities": self.kinetic_energy_densities,
             "kinetic_energy_potentials": self.kinetic_energy_potentials,
             "wavefunctions": self.wavefunctions,
+            "optimized_pseudo_wavefunctions": self.optimized_pseudo_wavefunctions,
             "vkb_projectors": self.vkb_projectors,
             "convergence_profiles": self.convergence_profiles,
             "log_derivatives": self.log_derivatives,
@@ -1692,7 +1753,6 @@ class OncvpspTextParser:
     def psp8_string(self) -> str:
         """String containing the pseudopotential in Abinit PSP8 format."""
         return "\n".join(self._get_lines_between("Begin PSPCODE8", "</INPUT>"))
-
 
     # --- Attribution ---------------------------------------------------------------------------------
 

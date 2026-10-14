@@ -83,6 +83,32 @@ def test_completed_output_consistency(completed_output_name, parse_output):
         else:
             # j = l + 1/2 for l = 0
             assert wavefunction["j"] in ((ell + 0.5, ell - 0.5) if ell else (0.5,))
+    # ONCVPSP v2/v3 plot both optimized pseudo-wavefunctions of every non-local channel with two
+    # projectors
+    version = parser.program_information["version"]
+    two_projector_ls = [
+        ell
+        for ell, n in zip(inp["vkb_projectors"]["l"], inp["vkb_projectors"]["nproj"])
+        if n == 2 and ell != inp["local_potential"]["lloc"]
+    ]
+    expected = (
+        []
+        if parser.program_information["program"] == "METAPSP" or version.startswith("4")
+        else [
+            (ell, j, iproj)
+            for ell in two_projector_ls
+            for j in (
+                [None]
+                if not relativistic
+                else ([0.5] if ell == 0 else [ell + 0.5, ell - 0.5])
+            )
+            for iproj in (1, 2)
+        ]
+    )
+    optimized = parser.optimized_pseudo_wavefunctions
+    assert [(w["l"], w["j"], w["iproj"]) for w in optimized] == expected
+    for wavefunction in optimized:
+        assert wavefunction["r"].shape == wavefunction["wfn_ps"].shape
     # All log-derivative blocks share one energy grid
     log_derivatives = parser.log_derivatives
     assert len({len(block["e"]) for block in log_derivatives}) == 1

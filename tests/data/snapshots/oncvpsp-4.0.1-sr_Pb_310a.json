@@ -195,6 +195,7 @@
    "rcloc": 2.0759
   },
   "log_derivatives": [],
+  "optimized_pseudo_wavefunctions": [],
   "semilocal_potentials": [],
   "unscreened_semilocal_potentials": [],
   "vkb_projectors": [],
