@@ -118,7 +118,7 @@ class OncvpspTextParser:
                 lines = f.readlines()
         elif io is not None:
             lines = io.readlines()
-        else:
+        elif lines is None:
             raise RuntimeError("unreachable")
         self._lines = [line.rstrip() for line in lines]
         if check:
@@ -442,9 +442,13 @@ class OncvpspTextParser:
             list[tuple[int, int, int, float]]: Quantum number tuples (n, l, sign(s), eigenvalue)
         """
         vqn_eig = []
-        for (enn, ell, spin_sign) in self.valence_quantum_numbers:
+        for enn, ell, spin_sign in self.valence_quantum_numbers:
             for config in self.reference_configuration:
-                if (config["n"], config["l"], config["spin_sign"]) == (enn, ell, spin_sign):
+                if (config["n"], config["l"], config["spin_sign"]) == (
+                    enn,
+                    ell,
+                    spin_sign,
+                ):
                     vqn_eig.append((enn, ell, spin_sign, config["eig_ae"]))
         return vqn_eig
 
@@ -529,15 +533,19 @@ class OncvpspTextParser:
         valence state of a given l, and further valence states of that l only if they are occupied.
         """
         states = self.valence_quantum_numbers_and_ae_eig
-        if self.program_information["program"] != "ONCVPSP" or not self.program_information[
-            "version"
-        ].startswith(("2", "3")):
+        if self.program_information[
+            "program"
+        ] != "ONCVPSP" or not self.program_information["version"].startswith(
+            ("2", "3")
+        ):
             return states
         config = self.input["reference_configuration"]
         nc = self.input["oncvpsp"]["nc"]
         occupations = {
             (enn, ell): occ
-            for enn, ell, occ in zip(config["n"][nc:], config["l"][nc:], config["f"][nc:])
+            for enn, ell, occ in zip(
+                config["n"][nc:], config["l"][nc:], config["f"][nc:]
+            )
         }
         seen: set[tuple[int, int]] = set()
         projector_states = []
@@ -570,6 +578,10 @@ class OncvpspTextParser:
         negative_energy_eig_pattern = re.compile(
             rf"Normal bound state at ep=\s*(?P<eig>{RE_FLOAT})"
         )
+        # Fully-relativistic ONCVPSP v3 reports n and kappa when renormalizing the state
+        renormalization_pattern = re.compile(
+            rf"\s+cnorm=\s*{RE_FLOAT}\s+l{{1,2}}=\s*(?P<ell>\d+),?\s+n=\s*(?P<enn>\d+)\s+kap=\s*(?P<kappa>-?\d+)"
+        )
         eig_pattern = re.compile(rf"\s+eigenvalue =\s*(?P<eig>{RE_FLOAT})")
         localized_eig_pattern = re.compile(
             rf"WARNING this state with energy\s*(?P<eig>{RE_FLOAT})"
@@ -581,6 +593,19 @@ class OncvpspTextParser:
             if i < len(self._lines) and (match := re.match(pattern, self._lines[i])):
                 return float(match.group(group))
             return None
+
+        def v3_principal_quantum_number(ell: int) -> int:
+            """Principal quantum number `np(l)` of the first all-electron projector function in
+            ONCVPSP v3: the first valence state of this l, else one above the outermost core state
+            of this l, else l + 1. The second projector function has `np(l) + 1`."""
+            config = self.input["reference_configuration"]
+            nc = self.input["oncvpsp"]["nc"]
+            states = list(zip(config["n"], config["l"]))
+            if valence := [enn for enn, el in states[nc:] if el == ell]:
+                return valence[0]
+            if core := [enn for enn, el in states[:nc] if el == ell]:
+                return core[-1] + 1
+            return ell + 1
 
         # Number of projectors already taken at each (l, spin_sign), starting with the valence states
         n_taken: dict[tuple[int, int], int] = defaultdict(int)
@@ -610,10 +635,28 @@ class OncvpspTextParser:
                 }
             elif match := re.search(negative_energy_pattern, line):
                 ell = int(match.group("ell"))
-                # N.B. neither n nor kappa is reported; assume j = l + 1/2 if relativistic
-                kappa = -(ell + 1) if self.is_relativistic else 0
+                renormalization = next(
+                    (
+                        renormalization
+                        for j in range(i + 1, min(i + 6, len(self._lines)))
+                        if (
+                            renormalization := re.match(
+                                renormalization_pattern, self._lines[j]
+                            )
+                        )
+                    ),
+                    None,
+                )
+                if renormalization:
+                    enn = int(renormalization.group("enn"))
+                    kappa = int(renormalization.group("kappa"))
+                else:
+                    # Assume j = l + 1/2 if relativistic
+                    kappa = -(ell + 1) if self.is_relativistic else 0
+                    spin_sign = 0 if kappa == 0 else 1
+                    enn = v3_principal_quantum_number(ell) + n_taken[(ell, spin_sign)]
                 state = {
-                    "n": None,
+                    "n": enn,
                     "is_bound": True,
                     "eig_ae": match_float(negative_energy_eig_pattern, i + 1, "eig"),
                 }
@@ -1498,12 +1541,16 @@ class OncvpspTextParser:
                 "half_point_radius": np.nan,
                 "r_rc": np.nan,
             }  # Default empty metadata
-            if state_kind == "valence" and block_data["is_bound"] is not False:  # pyrefly: ignore
+            if (
+                state_kind == "valence" and block_data["is_bound"] is not False
+            ):  # pyrefly: ignore
                 # If we're sure this is not a wellstate, get a boundstate
                 state_metadata.update(test_config.get(state[:3], {}))
                 state_metadata.update(ref_config[state])
                 state_metadata["is_bound"] = True
-            elif state_kind == "localized" and block_data["is_bound"] is not False:  # pyrefly: ignore
+            elif (
+                state_kind == "localized" and block_data["is_bound"] is not False
+            ):  # pyrefly: ignore
                 state_metadata.update(state)
                 state_metadata["f"] = 0.0
             elif state_kind == "wellstate":

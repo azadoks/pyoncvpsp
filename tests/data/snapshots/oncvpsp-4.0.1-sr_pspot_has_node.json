@@ -1,0 +1,207 @@
+{
+ "completed": false,
+ "d2exc": {},
+ "d2exc_rmse": null,
+ "diagnostic_tests_semilocal": [],
+ "diagnostic_tests_vkb": [],
+ "errors": [
+  {
+   "context_line_numbers": [
+    80,
+    81,
+    82,
+    83,
+    84
+   ],
+   "context_lines": [
+    "    Optimizing pswf for qcut=  14.27 a_B^-1,  ecut= 101.79 Ha",
+    "    q_infinity defining residual KE= 20.00  (E_inf=  200.0 Ha)",
+    "    Residual kinetic energy error=  4.56D-11 Ha",
+    " ERROR pspot:  first pseudo wave function has node,          program will stop",
+    " ERROR pspot: try changing psp parameters for this l"
+   ],
+   "description": "First pseudo wavefunction has a node.",
+   "line_numbers": [
+    83,
+    84
+   ],
+   "name": "first_pswf_has_node",
+   "subroutine": "pspot"
+  }
+ ],
+ "ghosts": [],
+ "gnuplot_script": "",
+ "input": {
+  "local_potential": {
+   "dvloc0": 0.0,
+   "lloc": 4,
+   "lpopt": 5,
+   "rcloc": 1.1
+  },
+  "log_derivative_analysis": {
+   "depsh": 0.02,
+   "epsh1": -12.0,
+   "epsh2": 12.0,
+   "rxpsh": null
+  },
+  "model_core_charge": {
+   "fcfact": 0.0,
+   "icmod": 0,
+   "rcfact": 0.0,
+   "teter_amp_max": null,
+   "teter_amp_min": null,
+   "teter_amp_step": null,
+   "teter_relative": true,
+   "teter_scale_max": null,
+   "teter_scale_min": null,
+   "teter_scale_step": null
+  },
+  "oncvpsp": {
+   "atsym": "Li",
+   "iexc": 4,
+   "nc": 0,
+   "nv": 2,
+   "psfile": "upf",
+   "z": 3.0
+  },
+  "output_grid": {
+   "drl": 0.01,
+   "rlmax": 3.7612
+  },
+  "pseudopotentials": {
+   "ep": [
+    -0.0,
+    -0.0
+   ],
+   "l": [
+    0,
+    1
+   ],
+   "lmax": 1,
+   "nbas": [
+    8,
+    8
+   ],
+   "ncon": [
+    4,
+    4
+   ],
+   "qcut": [
+    14.25722,
+    9.0
+   ],
+   "rc": [
+    1.88062,
+    1.1
+   ]
+  },
+  "reference_configuration": {
+   "f": [
+    2.0,
+    1.0
+   ],
+   "l": [
+    0,
+    0
+   ],
+   "n": [
+    1,
+    2
+   ]
+  },
+  "test_configurations": [
+   {
+    "f": [
+     2.0
+    ],
+    "l": [
+     0
+    ],
+    "n": [
+     1
+    ]
+   },
+   {
+    "f": [
+     2.0,
+     1.0
+    ],
+    "l": [
+     0,
+     1
+    ],
+    "n": [
+     1,
+     2
+    ]
+   }
+  ],
+  "vkb_projectors": {
+   "debl": [
+    1.0,
+    1.0
+   ],
+   "l": [
+    0,
+    1
+   ],
+   "nproj": [
+    2,
+    2
+   ]
+  }
+ },
+ "localized_bound_states": [],
+ "missing_plot_data": [
+  "DATA FOR PLOTTING"
+ ],
+ "plot_data": {
+  "charge_densities": {},
+  "convergence_profiles": [],
+  "kinetic_energy_densities": {},
+  "kinetic_energy_potentials": {},
+  "local_potential": {
+   "dvloc0": 0.0,
+   "lloc": 4,
+   "lpopt": 5,
+   "rcloc": 1.1
+  },
+  "log_derivatives": [],
+  "semilocal_potentials": [],
+  "unscreened_semilocal_potentials": [],
+  "vkb_projectors": [],
+  "wavefunctions": []
+ },
+ "program_information": {
+  "date": "03/01/2019",
+  "program": "ONCVPSP",
+  "relativistic_treatment": "scalar-relativistic",
+  "version": "4.0.1"
+ },
+ "psp8": "",
+ "reference_configuration": [
+  {
+   "eig_ae": -1.9056244,
+   "f": 2.0,
+   "l": 0,
+   "n": 1,
+   "spin_sign": 0
+  },
+  {
+   "eig_ae": -0.10562447,
+   "f": 1.0,
+   "l": 0,
+   "n": 2,
+   "spin_sign": 0
+  }
+ ],
+ "test_configurations": [],
+ "teter_coarse_grid": {},
+ "teter_parameters": {},
+ "upf": "",
+ "vkb_hermiticity_errors": [],
+ "vkb_scalar_projector_coefficients": [],
+ "vkb_spin_orbit_projector_coefficients": [],
+ "warnings": [],
+ "wellstate_metadata": []
+}

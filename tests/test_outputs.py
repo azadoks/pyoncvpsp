@@ -1,0 +1,166 @@
+"""Regression and consistency tests over a minimal set of real ONCVPSP/METAPSP outputs.
+
+The outputs in `data/outputs` were selected to cover every program version, relativistic treatment,
+error, warning, and output feature seen in a large collection of runs (see `data/outputs/README.md`).
+Regenerate the snapshots with `pytest --update-snapshots` after an intended change to the parser.
+"""
+
+import json
+import re
+
+import pytest
+
+from pyoncvpsp.io.input import OncvpspInput
+from pyoncvpsp.io.output import OncvpspTextParser
+
+
+def test_snapshot(output_name, parse_output, snapshot):
+    snapshot(output_name, parse_output(output_name).output)
+
+
+def test_to_dict_is_json_serializable(output_name, parse_output):
+    json.dumps(parse_output(output_name).to_dict(), allow_nan=True)
+
+
+def test_check(output_name, parse_output, read_output):
+    parser = parse_output(output_name)
+    exceptions = parser.check(doraise=False)
+    names = [exception.name for exception in exceptions]
+    if parser.errors:
+        assert names == [error["name"] for error in parser.errors]
+    elif not parser.completed:
+        assert names == ["incomplete_output"]
+    else:
+        assert names == []
+    if exceptions:
+        with pytest.raises(ExceptionGroup):
+            OncvpspTextParser(text=read_output(output_name))
+    else:
+        OncvpspTextParser(text=read_output(output_name))
+    with_warnings = parser.check(doraise=False, werror=True)
+    assert len(with_warnings) == len(exceptions) + len(parser.warnings)
+
+
+def test_completed_matches_missing_plot_data(output_name, parse_output):
+    parser = parse_output(output_name)
+    assert parser.completed == (parser.missing_plot_data == [])
+
+
+def test_message_lines_removed_from_clean_lines(output_name, parse_output):
+    parser = parse_output(output_name)
+    message_lines = {
+        n
+        for message in parser.errors + parser.warnings
+        for n in message["line_numbers"]
+    }
+    assert len(parser.clean_lines) == len(parser.raw_lines) - len(message_lines)
+
+
+def test_completed_output_consistency(completed_output_name, parse_output):
+    parser = parse_output(completed_output_name)
+    inp = parser.input
+    relativistic = parser.is_relativistic
+    # Reference configuration: one entry per state, or per (state, j) when fully relativistic
+    n_states = sum(
+        1 if (not relativistic or ell == 0) else 2
+        for ell in inp["reference_configuration"]["l"]
+    )
+    assert len(parser.reference_configuration) == n_states
+    # Every plotted wavefunction is associated with a state
+    for wavefunction in parser.wavefunctions:
+        assert wavefunction["eig_ae"] is not None, wavefunction["l"]
+        assert (
+            wavefunction["r"].shape
+            == wavefunction["wfn_ae"].shape
+            == wavefunction["wfn_ps"].shape
+        )
+        if not relativistic:
+            assert wavefunction["spin_sign"] == 0
+        else:
+            # j = l + 1/2 for l = 0
+            assert wavefunction["spin_sign"] in ((-1, 1) if wavefunction["l"] else (1,))
+    # All log-derivative blocks share one energy grid
+    log_derivatives = parser.log_derivatives
+    assert len({len(block["e"]) for block in log_derivatives}) == 1
+    for block in log_derivatives:
+        assert (
+            block["e"].shape
+            == block["log_deriv_ae"].shape
+            == block["log_deriv_ps"].shape
+        )
+    # Wellstates and localized bound states are never both reported for the same projector
+    nproj = inp["vkb_projectors"]["nproj"]
+    for state in parser.wellstate_metadata + parser.localized_bound_states:
+        assert isinstance(state["n"], int)
+        # The local channel (nproj = 0) also has an all-electron state, e.g. for plotting
+        assert 1 <= state["iproj"] <= max(nproj[state["l"]], 1)
+    keys = [
+        (state["l"], state["spin_sign"], state["iproj"])
+        for state in parser.wellstate_metadata + parser.localized_bound_states
+    ]
+    assert len(keys) == len(set(keys))
+
+
+@pytest.mark.filterwarnings("ignore:`rxpsh` is not supported")
+def test_input_round_trip(output_name, parse_output):
+    parser = parse_output(output_name)
+    if not parser.input:
+        pytest.skip("no input echoed in output")
+    inp = OncvpspInput.from_dict(parser.input)
+    for with_comment in (True, False):
+        assert (
+            OncvpspInput.from_dat_string(inp.as_dat_string(with_comment=with_comment))
+            == inp
+        )
+    assert OncvpspInput.from_toml_string(inp.as_toml_string()) == inp
+
+
+def _truncations(lines: list[str]) -> list[tuple[str, int, list[str]]]:
+    """Points at which to truncate a completed output, with the sections then expected missing."""
+
+    def first(pattern: str) -> int:
+        return next(i for i, line in enumerate(lines) if re.match(pattern, line))
+
+    start = first(r"DATA FOR PLOTTING")
+    gnuscript = first(r"^GNUSCRIPT")
+    after = ["log_derivatives", "gnuplot_script"]
+    return [
+        ("before_plot_data", start, ["DATA FOR PLOTTING"]),
+        (
+            "potentials",
+            first(r"^!p\s"),
+            [
+                "unscreened_semilocal_potentials",
+                "charge_densities",
+                "wavefunctions",
+                "convergence_profiles",
+                *after,
+            ],
+        ),
+        (
+            "charge_densities",
+            first(r"^!r\s"),
+            ["charge_densities", "wavefunctions", "convergence_profiles", *after],
+        ),
+        (
+            "wavefunctions",
+            first(r"^&\s"),
+            ["wavefunctions", "convergence_profiles", *after],
+        ),
+        ("convergence_profiles", first(r"^!C\s"), ["convergence_profiles", *after]),
+        # Partway through the last log-derivative block
+        ("log_derivatives", gnuscript - 5, after),
+        ("gnuplot_script", gnuscript, ["gnuplot_script"]),
+    ]
+
+
+def test_truncated_output_is_incomplete(completed_output_name, read_output):
+    lines = read_output(completed_output_name).splitlines()
+    for label, stop, expected in _truncations(lines):
+        parser = OncvpspTextParser(lines=lines[:stop], check=False)
+        assert not parser.completed, label
+        assert parser.missing_plot_data == expected, label
+        if not parser.errors:
+            (exception,) = parser.check(doraise=False)
+            assert exception.name == "incomplete_output"
+            assert all(section in exception.description for section in expected)

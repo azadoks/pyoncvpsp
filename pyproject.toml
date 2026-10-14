@@ -26,6 +26,7 @@ build-backend = "uv_build"
 dev = [
     "pre-commit>=4.5.1",
     "pyrefly>=0.55.0",
+    "pytest>=9.1.1",
     "ruff>=0.15.4",
 ]
 
@@ -34,3 +35,6 @@ project-includes = [
     "**/*.py*",
     "**/*.ipynb",
 ]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

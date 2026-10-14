@@ -347,13 +347,17 @@ class LocalPotentialInput(BaseModel):  # pylint: disable=too-few-public-methods
                 exceptions.append(ValueError("lpopt must be set when lloc=4"))
             elif not 1 <= self.lpopt <= 5:
                 exceptions.append(
-                    ValueError(f"lpopt must be between 1 and 5 when lloc=4: {self.lpopt}")
+                    ValueError(
+                        f"lpopt must be between 1 and 5 when lloc=4: {self.lpopt}"
+                    )
                 )
             if self.rcloc is None:
                 exceptions.append(ValueError("rcloc must be set when lloc=4"))
             elif self.rcloc <= 0.0:
                 exceptions.append(
-                    ValueError(f"rcloc must be greater than 0 when lloc=4: {self.rcloc}")
+                    ValueError(
+                        f"rcloc must be greater than 0 when lloc=4: {self.rcloc}"
+                    )
                 )
             if self.dvloc0 is None:
                 exceptions.append(ValueError("dvloc0 must be set when lloc=4"))
@@ -565,7 +569,9 @@ class LogDerivativeInput(BaseModel):  # pylint: disable=too-few-public-methods
             if with_comment:
                 s = f"# {'epsh1':>8s} {'epsh2':>10s} {'depsh':>10}\n" + s
         else:
-            warnings.warn("`rxpsh` is not supported by all versions of ONCVPSP! Check that expected behavior is correct.")
+            warnings.warn(
+                "`rxpsh` is not supported by all versions of ONCVPSP! Check that expected behavior is correct."
+            )
             s = f"{self.epsh1:>10.5f} {self.epsh2:>10.5f} {self.depsh:>10.5f} {self.rxpsh:>10.5f}"
             if with_comment:
                 s = (

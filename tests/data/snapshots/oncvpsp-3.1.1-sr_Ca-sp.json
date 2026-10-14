@@ -1,0 +1,1048 @@
+{
+ "completed": true,
+ "d2exc": {
+  "ae": {
+   "abs_sum": 0.1517462599,
+   "nan": 0,
+   "shape": [
+    3,
+    3
+   ],
+   "sum": -0.1517462599
+  },
+  "ps": {
+   "abs_sum": 0.1592559182,
+   "nan": 0,
+   "shape": [
+    3,
+    3
+   ],
+   "sum": -0.1592559182
+  },
+  "ps_with_nlcc": {
+   "abs_sum": 0.15185957379999998,
+   "nan": 0,
+   "shape": [
+    3,
+    3
+   ],
+   "sum": -0.15185957379999998
+  }
+ },
+ "d2exc_rmse": 0.001151135,
+ "diagnostic_tests_semilocal": [
+  {
+   "e_in": -1.7305906,
+   "e_test": -1.7305957,
+   "k": 0,
+   "l": 0,
+   "norm_test": 0.9999964,
+   "rc": 1.4588529,
+   "rmatch": 1.5485102,
+   "slope_test": 1.0000054,
+   "spin_sign": 0
+  },
+  {
+   "e_in": -1.0292782,
+   "e_test": -1.0292857,
+   "k": 0,
+   "l": 1,
+   "norm_test": 0.9999965,
+   "rc": 1.4588529,
+   "rmatch": 1.5485102,
+   "slope_test": 1.000013,
+   "spin_sign": 0
+  },
+  {
+   "e_in": 0.0,
+   "e_test": 4e-07,
+   "k": 0,
+   "l": 2,
+   "norm_test": 1.0000006,
+   "rc": 1.851918,
+   "rmatch": 1.9657321,
+   "slope_test": 1.0000006,
+   "spin_sign": 0
+  },
+  {
+   "e_in": -0.1384123,
+   "e_test": -0.1404506,
+   "k": 0,
+   "l": 0,
+   "norm_test": 0.906789,
+   "rc": 1.4588529,
+   "rmatch": 1.5485102,
+   "slope_test": 0.9931202,
+   "spin_sign": 0
+  }
+ ],
+ "diagnostic_tests_vkb": [
+  {
+   "delta_e": null,
+   "e_in": -1.7305906,
+   "e_test": -1.7305932,
+   "k": 0,
+   "l": 0,
+   "norm_test": 1.000085,
+   "rc": 1.4588529,
+   "rmatch": 1.5485102,
+   "slope_test": 1.0000955,
+   "spin_sign": 0
+  },
+  {
+   "delta_e": null,
+   "e_in": -1.0292782,
+   "e_test": -1.029284,
+   "k": 0,
+   "l": 1,
+   "norm_test": 1.0000714,
+   "rc": 1.4588529,
+   "rmatch": 1.5485102,
+   "slope_test": 1.0000899,
+   "spin_sign": 0
+  },
+  {
+   "delta_e": null,
+   "e_in": 0.0,
+   "e_test": 0.0,
+   "k": 0,
+   "l": 2,
+   "norm_test": 1.0000445,
+   "rc": 1.851918,
+   "rmatch": 1.9657321,
+   "slope_test": 1.0000459,
+   "spin_sign": 0
+  },
+  {
+   "delta_e": null,
+   "e_in": -0.1384123,
+   "e_test": -0.1384102,
+   "k": 0,
+   "l": 0,
+   "norm_test": 1.0000436,
+   "rc": 1.4588529,
+   "rmatch": 1.5485102,
+   "slope_test": 1.000039,
+   "spin_sign": 0
+  },
+  {
+   "delta_e": null,
+   "e_in": 0.9707218,
+   "e_test": 0.9707326,
+   "k": 0,
+   "l": 1,
+   "norm_test": 1.0002202,
+   "rc": 1.4588529,
+   "rmatch": 1.5485102,
+   "slope_test": 1.0002202,
+   "spin_sign": 0
+  },
+  {
+   "delta_e": null,
+   "e_in": 2.0,
+   "e_test": 2.0000259,
+   "k": 0,
+   "l": 2,
+   "norm_test": 1.0001,
+   "rc": 1.851918,
+   "rmatch": 1.9657321,
+   "slope_test": 1.0001,
+   "spin_sign": 0
+  }
+ ],
+ "errors": [],
+ "ghosts": [],
+ "gnuplot_script": {
+  "len": 4012,
+  "sha256": "e8f7ed9bad86848fc1720405f1e77ac0c22991ada4da26313eae5ba2ef4b59a4"
+ },
+ "input": {
+  "local_potential": {
+   "dvloc0": 0.0,
+   "lloc": 4,
+   "lpopt": 5,
+   "rcloc": 1.3
+  },
+  "log_derivative_analysis": {
+   "depsh": 0.02,
+   "epsh1": -12.0,
+   "epsh2": 12.0,
+   "rxpsh": null
+  },
+  "model_core_charge": {
+   "fcfact": 0.0,
+   "icmod": 2,
+   "rcfact": 0.0,
+   "teter_amp_max": null,
+   "teter_amp_min": null,
+   "teter_amp_step": null,
+   "teter_relative": true,
+   "teter_scale_max": null,
+   "teter_scale_min": null,
+   "teter_scale_step": null
+  },
+  "oncvpsp": {
+   "atsym": "Ca",
+   "iexc": 4,
+   "nc": 3,
+   "nv": 3,
+   "psfile": "psp8",
+   "z": 20.0
+  },
+  "output_grid": {
+   "drl": 0.01,
+   "rlmax": 4.0
+  },
+  "pseudopotentials": {
+   "ep": [
+    -1.73,
+    -1.03,
+    0.0
+   ],
+   "l": [
+    0,
+    1,
+    2
+   ],
+   "lmax": 2,
+   "nbas": [
+    8,
+    8,
+    8
+   ],
+   "ncon": [
+    4,
+    4,
+    4
+   ],
+   "qcut": [
+    8.2,
+    8.4,
+    8.0
+   ],
+   "rc": [
+    1.45,
+    1.45,
+    1.85
+   ]
+  },
+  "reference_configuration": {
+   "f": [
+    2.0,
+    2.0,
+    6.0,
+    2.0,
+    6.0,
+    2.0
+   ],
+   "l": [
+    0,
+    0,
+    1,
+    0,
+    1,
+    0
+   ],
+   "n": [
+    1,
+    2,
+    2,
+    3,
+    3,
+    4
+   ]
+  },
+  "test_configurations": [],
+  "vkb_projectors": {
+   "debl": [
+    1.5922,
+    2.0,
+    2.0
+   ],
+   "l": [
+    0,
+    1,
+    2
+   ],
+   "nproj": [
+    2,
+    2,
+    2
+   ]
+  }
+ },
+ "localized_bound_states": [],
+ "missing_plot_data": [],
+ "plot_data": {
+  "charge_densities": {
+   "r": {
+    "abs_sum": 334.25900149999995,
+    "nan": 0,
+    "shape": [
+     502
+    ],
+    "sum": 334.25900149999995
+   },
+   "rho_core": {
+    "abs_sum": 15990.5663467,
+    "nan": 0,
+    "shape": [
+     502
+    ],
+    "sum": 15990.5663467
+   },
+   "rho_model_core": {
+    "abs_sum": 11781.492633,
+    "nan": 0,
+    "shape": [
+     502
+    ],
+    "sum": 11781.492633
+   },
+   "rho_val": {
+    "abs_sum": 1251.8324002000002,
+    "nan": 0,
+    "shape": [
+     502
+    ],
+    "sum": 1251.8324002000002
+   }
+  },
+  "convergence_profiles": [
+   {
+    "ecut": {
+     "abs_sum": 101.03,
+     "nan": 0,
+     "shape": [
+      4
+     ],
+     "sum": 101.03
+    },
+    "eresid": {
+     "abs_sum": 0.011109999999999998,
+     "nan": 0,
+     "shape": [
+      4
+     ],
+     "sum": 0.011109999999999998
+    },
+    "iproj": 1,
+    "l": 0,
+    "spin_sign": 0
+   },
+   {
+    "ecut": {
+     "abs_sum": 82.73,
+     "nan": 0,
+     "shape": [
+      4
+     ],
+     "sum": 82.73
+    },
+    "eresid": {
+     "abs_sum": 0.011109999999999998,
+     "nan": 0,
+     "shape": [
+      4
+     ],
+     "sum": 0.011109999999999998
+    },
+    "iproj": 2,
+    "l": 0,
+    "spin_sign": 0
+   },
+   {
+    "ecut": {
+     "abs_sum": 78.14,
+     "nan": 0,
+     "shape": [
+      4
+     ],
+     "sum": 78.14
+    },
+    "eresid": {
+     "abs_sum": 0.011109999999999998,
+     "nan": 0,
+     "shape": [
+      4
+     ],
+     "sum": 0.011109999999999998
+    },
+    "iproj": 1,
+    "l": 1,
+    "spin_sign": 0
+   },
+   {
+    "ecut": {
+     "abs_sum": 133.16,
+     "nan": 0,
+     "shape": [
+      4
+     ],
+     "sum": 133.16
+    },
+    "eresid": {
+     "abs_sum": 0.011109999999999998,
+     "nan": 0,
+     "shape": [
+      4
+     ],
+     "sum": 0.011109999999999998
+    },
+    "iproj": 2,
+    "l": 1,
+    "spin_sign": 0
+   },
+   {
+    "ecut": {
+     "abs_sum": 103.44,
+     "nan": 0,
+     "shape": [
+      4
+     ],
+     "sum": 103.44
+    },
+    "eresid": {
+     "abs_sum": 0.011109999999999998,
+     "nan": 0,
+     "shape": [
+      4
+     ],
+     "sum": 0.011109999999999998
+    },
+    "iproj": 1,
+    "l": 2,
+    "spin_sign": 0
+   },
+   {
+    "ecut": {
+     "abs_sum": 164.32,
+     "nan": 0,
+     "shape": [
+      4
+     ],
+     "sum": 164.32
+    },
+    "eresid": {
+     "abs_sum": 0.011109999999999998,
+     "nan": 0,
+     "shape": [
+      4
+     ],
+     "sum": 0.011109999999999998
+    },
+    "iproj": 2,
+    "l": 2,
+    "spin_sign": 0
+   },
+   {
+    "ecut": {
+     "abs_sum": 177.61406799999997,
+     "nan": 0,
+     "shape": [
+      7
+     ],
+     "sum": 177.61406799999997
+    },
+    "eresid": {
+     "abs_sum": 0.014620000000000001,
+     "nan": 0,
+     "shape": [
+      7
+     ],
+     "sum": 0.014620000000000001
+    },
+    "iproj": 1,
+    "l": 0,
+    "spin_sign": 0
+   },
+   {
+    "ecut": {
+     "abs_sum": 133.272971,
+     "nan": 0,
+     "shape": [
+      7
+     ],
+     "sum": 133.272971
+    },
+    "eresid": {
+     "abs_sum": 0.014620000000000001,
+     "nan": 0,
+     "shape": [
+      7
+     ],
+     "sum": 0.014620000000000001
+    },
+    "iproj": 1,
+    "l": 1,
+    "spin_sign": 0
+   },
+   {
+    "ecut": {
+     "abs_sum": 181.511696,
+     "nan": 0,
+     "shape": [
+      7
+     ],
+     "sum": 181.511696
+    },
+    "eresid": {
+     "abs_sum": 0.014620000000000001,
+     "nan": 0,
+     "shape": [
+      7
+     ],
+     "sum": 0.014620000000000001
+    },
+    "iproj": 1,
+    "l": 2,
+    "spin_sign": 0
+   }
+  ],
+  "kinetic_energy_densities": {},
+  "kinetic_energy_potentials": {},
+  "local_potential": {
+   "dvloc0": 0.0,
+   "lloc": 4,
+   "lpopt": 5,
+   "r": {
+    "abs_sum": 334.2689683,
+    "nan": 0,
+    "shape": [
+     503
+    ],
+    "sum": 334.2689683
+   },
+   "rcloc": 1.3,
+   "v_loc": {
+    "abs_sum": 6498.574059,
+    "nan": 0,
+    "shape": [
+     503
+    ],
+    "sum": -6498.574059
+   }
+  },
+  "log_derivatives": [
+   {
+    "e": {
+     "abs_sum": 7200.0,
+     "nan": 0,
+     "shape": [
+      1200
+     ],
+     "sum": 12.0
+    },
+    "k": 0,
+    "l": 0,
+    "log_deriv_ae": {
+     "abs_sum": 10627.660509000001,
+     "nan": 0,
+     "shape": [
+      1200
+     ],
+     "sum": 10627.660509000001
+    },
+    "log_deriv_ps": {
+     "abs_sum": 10591.964794,
+     "nan": 0,
+     "shape": [
+      1200
+     ],
+     "sum": 10587.923094
+    },
+    "rxpsh": {
+     "abs_sum": 2.81,
+     "nan": 0,
+     "shape": [],
+     "sum": 2.81
+    },
+    "spin_sign": 0
+   },
+   {
+    "e": {
+     "abs_sum": 7200.0,
+     "nan": 0,
+     "shape": [
+      1200
+     ],
+     "sum": 12.0
+    },
+    "k": 0,
+    "l": 1,
+    "log_deriv_ae": {
+     "abs_sum": 7744.102767999999,
+     "nan": 0,
+     "shape": [
+      1200
+     ],
+     "sum": 7115.398491999999
+    },
+    "log_deriv_ps": {
+     "abs_sum": 7747.62443,
+     "nan": 0,
+     "shape": [
+      1200
+     ],
+     "sum": 7100.236118000001
+    },
+    "rxpsh": {
+     "abs_sum": 2.81,
+     "nan": 0,
+     "shape": [],
+     "sum": 2.81
+    },
+    "spin_sign": 0
+   },
+   {
+    "e": {
+     "abs_sum": 7200.0,
+     "nan": 0,
+     "shape": [
+      1200
+     ],
+     "sum": 12.0
+    },
+    "k": 0,
+    "l": 2,
+    "log_deriv_ae": {
+     "abs_sum": 11189.813175000001,
+     "nan": 0,
+     "shape": [
+      1200
+     ],
+     "sum": 11189.813175000001
+    },
+    "log_deriv_ps": {
+     "abs_sum": 11221.956629999999,
+     "nan": 0,
+     "shape": [
+      1200
+     ],
+     "sum": 11221.956629999999
+    },
+    "rxpsh": {
+     "abs_sum": 2.81,
+     "nan": 0,
+     "shape": [],
+     "sum": 2.81
+    },
+    "spin_sign": 0
+   }
+  ],
+  "semilocal_potentials": [],
+  "unscreened_semilocal_potentials": [
+   {
+    "l": 0,
+    "r": {
+     "abs_sum": 334.2689683,
+     "nan": 0,
+     "shape": [
+      503
+     ],
+     "sum": 334.2689683
+    },
+    "v_sl": {
+     "abs_sum": 3330.3865263,
+     "nan": 0,
+     "shape": [
+      503
+     ],
+     "sum": 469.7335204999997
+    }
+   },
+   {
+    "l": 1,
+    "r": {
+     "abs_sum": 334.2689683,
+     "nan": 0,
+     "shape": [
+      503
+     ],
+     "sum": 334.2689683
+    },
+    "v_sl": {
+     "abs_sum": 5276.904026,
+     "nan": 0,
+     "shape": [
+      503
+     ],
+     "sum": -5276.904026
+    }
+   },
+   {
+    "l": 2,
+    "r": {
+     "abs_sum": 334.2689683,
+     "nan": 0,
+     "shape": [
+      503
+     ],
+     "sum": 334.2689683
+    },
+    "v_sl": {
+     "abs_sum": 7128.5872322,
+     "nan": 0,
+     "shape": [
+      503
+     ],
+     "sum": -7128.5872322
+    }
+   }
+  ],
+  "vkb_projectors": [],
+  "wavefunctions": [
+   {
+    "asymptotic_potential": "nan",
+    "eig_ae": -1.7305906,
+    "eig_ps": -1.73059317,
+    "f": 2.0,
+    "half_point_radius": "nan",
+    "iproj": 1,
+    "is_bound": true,
+    "k": 0,
+    "l": 0,
+    "n": 3,
+    "r": {
+     "abs_sum": 334.26897099999996,
+     "nan": 0,
+     "shape": [
+      503
+     ],
+     "sum": 334.26897099999996
+    },
+    "r_rc": "nan",
+    "spin_sign": 0,
+    "wfn_ae": {
+     "abs_sum": 179.098227,
+     "nan": 0,
+     "shape": [
+      503
+     ],
+     "sum": 96.66614899999999
+    },
+    "wfn_ps": {
+     "abs_sum": 128.466036,
+     "nan": 0,
+     "shape": [
+      503
+     ],
+     "sum": 128.466036
+    }
+   },
+   {
+    "asymptotic_potential": "nan",
+    "eig_ae": -1.0292782,
+    "eig_ps": -1.02928396,
+    "f": 6.0,
+    "half_point_radius": "nan",
+    "iproj": 1,
+    "is_bound": true,
+    "k": 0,
+    "l": 1,
+    "n": 3,
+    "r": {
+     "abs_sum": 334.26897099999996,
+     "nan": 0,
+     "shape": [
+      503
+     ],
+     "sum": 334.26897099999996
+    },
+    "r_rc": "nan",
+    "spin_sign": 0,
+    "wfn_ae": {
+     "abs_sum": 160.47217700000002,
+     "nan": 0,
+     "shape": [
+      503
+     ],
+     "sum": 34.677107000000014
+    },
+    "wfn_ps": {
+     "abs_sum": 121.31233900000001,
+     "nan": 0,
+     "shape": [
+      503
+     ],
+     "sum": 121.31233900000001
+    }
+   },
+   {
+    "asymptotic_potential": 0.8306,
+    "eig_ae": 0.0,
+    "eig_ps": "nan",
+    "f": 0.0,
+    "half_point_radius": 2.9643,
+    "iproj": 1,
+    "is_bound": false,
+    "k": 0,
+    "l": 2,
+    "n": 3,
+    "r": {
+     "abs_sum": 334.26897099999996,
+     "nan": 0,
+     "shape": [
+      503
+     ],
+     "sum": 334.26897099999996
+    },
+    "r_rc": "nan",
+    "spin_sign": 0,
+    "wfn_ae": {
+     "abs_sum": 120.807221,
+     "nan": 0,
+     "shape": [
+      503
+     ],
+     "sum": -120.054877
+    },
+    "wfn_ps": {
+     "abs_sum": 106.166343,
+     "nan": 0,
+     "shape": [
+      503
+     ],
+     "sum": -105.414055
+    }
+   },
+   {
+    "asymptotic_potential": "nan",
+    "eig_ae": -0.13841232,
+    "eig_ps": -0.13841023,
+    "f": 2.0,
+    "half_point_radius": "nan",
+    "iproj": 2,
+    "is_bound": true,
+    "k": 0,
+    "l": 0,
+    "n": 4,
+    "r": {
+     "abs_sum": 334.26897099999996,
+     "nan": 0,
+     "shape": [
+      503
+     ],
+     "sum": 334.26897099999996
+    },
+    "r_rc": "nan",
+    "spin_sign": 0,
+    "wfn_ae": {
+     "abs_sum": 69.541168,
+     "nan": 0,
+     "shape": [
+      503
+     ],
+     "sum": 16.479663999999996
+    },
+    "wfn_ps": {
+     "abs_sum": 56.431839,
+     "nan": 0,
+     "shape": [
+      503
+     ],
+     "sum": 7.996232999999995
+    }
+   }
+  ]
+ },
+ "program_information": {
+  "date": "04/06/2015",
+  "program": "ONCVPSP",
+  "relativistic_treatment": "scalar-relativistic",
+  "version": "3.1.1"
+ },
+ "psp8": "",
+ "reference_configuration": [
+  {
+   "eig_ae": -145.13812,
+   "f": 2.0,
+   "l": 0,
+   "n": 1,
+   "spin_sign": 0
+  },
+  {
+   "eig_ae": -15.227844,
+   "f": 2.0,
+   "l": 0,
+   "n": 2,
+   "spin_sign": 0
+  },
+  {
+   "eig_ae": -12.301412,
+   "f": 6.0,
+   "l": 1,
+   "n": 2,
+   "spin_sign": 0
+  },
+  {
+   "eig_ae": -1.7305906,
+   "f": 2.0,
+   "l": 0,
+   "n": 3,
+   "spin_sign": 0
+  },
+  {
+   "eig_ae": -1.0292782,
+   "f": 6.0,
+   "l": 1,
+   "n": 3,
+   "spin_sign": 0
+  },
+  {
+   "eig_ae": -0.13841232,
+   "f": 2.0,
+   "l": 0,
+   "n": 4,
+   "spin_sign": 0
+  }
+ ],
+ "test_configurations": [
+  [
+   {
+    "eig_ae": -145.13811844,
+    "eig_ps": null,
+    "f": 2.0,
+    "k": 0,
+    "l": 0,
+    "n": 1,
+    "spin_sign": 0
+   },
+   {
+    "eig_ae": -15.2278444,
+    "eig_ps": null,
+    "f": 2.0,
+    "k": 0,
+    "l": 0,
+    "n": 2,
+    "spin_sign": 0
+   },
+   {
+    "eig_ae": -12.30141198,
+    "eig_ps": null,
+    "f": 6.0,
+    "k": 0,
+    "l": 1,
+    "n": 2,
+    "spin_sign": 0
+   },
+   {
+    "eig_ae": -1.73059062,
+    "eig_ps": -1.73059317,
+    "f": 2.0,
+    "k": 0,
+    "l": 0,
+    "n": 3,
+    "spin_sign": 0
+   },
+   {
+    "eig_ae": -1.02927816,
+    "eig_ps": -1.02928396,
+    "f": 6.0,
+    "k": 0,
+    "l": 1,
+    "n": 3,
+    "spin_sign": 0
+   },
+   {
+    "eig_ae": -0.13841232,
+    "eig_ps": -0.13841023,
+    "f": 2.0,
+    "k": 0,
+    "l": 0,
+    "n": 4,
+    "spin_sign": 0
+   }
+  ]
+ ],
+ "teter_coarse_grid": {
+  "d2exc_rmse": {
+   "abs_sum": 137.251,
+   "nan": 0,
+   "shape": [
+    10,
+    10
+   ],
+   "sum": 137.251
+  },
+  "fcfact": {
+   "abs_sum": 37.5,
+   "nan": 0,
+   "shape": [
+    10
+   ],
+   "sum": 37.5
+  },
+  "rcfact": {
+   "abs_sum": 14.5,
+   "nan": 0,
+   "shape": [
+    10
+   ],
+   "sum": 14.5
+  }
+ },
+ "teter_parameters": {
+  "rhocmatch": 9.062,
+  "rmatch": 0.6255
+ },
+ "upf": "",
+ "vkb_hermiticity_errors": [
+  {
+   "hermiticity_error": 7.9502e-05,
+   "i": 1,
+   "j": 2,
+   "l": 0,
+   "spin_sign": 0
+  },
+  {
+   "hermiticity_error": 0.00021954,
+   "i": 1,
+   "j": 2,
+   "l": 1,
+   "spin_sign": 0
+  },
+  {
+   "hermiticity_error": 0.00015395,
+   "i": 1,
+   "j": 2,
+   "l": 2,
+   "spin_sign": 0
+  }
+ ],
+ "vkb_scalar_projector_coefficients": [],
+ "vkb_spin_orbit_projector_coefficients": [],
+ "warnings": [],
+ "wellstate_metadata": [
+  {
+   "asymptotic_potential": 1.8321,
+   "eig_ae": 0.9707,
+   "half_point_radius": 2.6273,
+   "iproj": 2,
+   "k": 0,
+   "l": 1,
+   "n": 4,
+   "spin_sign": 0
+  },
+  {
+   "asymptotic_potential": 0.8306,
+   "eig_ae": 0.0,
+   "half_point_radius": 2.9643,
+   "iproj": 1,
+   "k": 0,
+   "l": 2,
+   "n": 3,
+   "spin_sign": 0
+  },
+  {
+   "asymptotic_potential": 2.5131,
+   "eig_ae": 2.0,
+   "half_point_radius": 2.2039,
+   "iproj": 2,
+   "k": 0,
+   "l": 2,
+   "n": 4,
+   "spin_sign": 0
+  }
+ ]
+}
