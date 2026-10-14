@@ -238,3 +238,30 @@ def test_v3_fully_relativistic_negative_energy_second_projector_l1(parse_output)
         for s in parser.localized_bound_states
     ] == [(4, 1, 1.5, 2, -0.052734), (4, 1, 0.5, 2, -0.053432)]
     assert parser.wellstate_metadata == []
+
+
+def test_v4_fully_relativistic_localized_bound_state(parse_output):
+    # wellstate_r returns a localized bound 3d state for j = 5/2 (reported only in a warning), and
+    # j = 3/2 is solved in the same (unmodified) potential, so it is a localized bound state too;
+    # ONCVPSP prints only its target energy (oncvpsp_r.F90:483-503, wellstate_r.f90:83-91)
+    parser = parse_output("oncvpsp-4.0.1-fr_22_Ti_localized")
+    assert parser.completed
+    assert [
+        (s["n"], s["l"], s["j"], s["iproj"], s["eig_ae"], s["energy_guess"])
+        for s in parser.localized_bound_states
+    ] == [(3, 2, 2.5, 1, -1.13874299, None), (3, 2, 1.5, 1, None, 0.0)]
+    # The moderately localized (p) and negative-ep (d) fallbacks give wellstates at 0.05 and 0.25
+    assert [
+        (s["l"], s["j"], s["iproj"], s["eig_ae"], s["energy_guess"])
+        for s in parser.wellstate_metadata
+    ] == [
+        (1, 1.5, 2, 0.05, None),
+        (1, 0.5, 2, None, -0.9933),
+        (2, 2.5, 2, 0.25, None),
+        (2, 1.5, 2, None, -0.1413),
+    ]
+    d_first = [w for w in parser.wavefunctions if (w["l"], w["iproj"]) == (2, 1)]
+    assert [(w["j"], w["is_bound"], w["f"]) for w in d_first] == [
+        (2.5, True, 0.0),
+        (1.5, True, 0.0),
+    ]
