@@ -1048,6 +1048,39 @@
    "n": 3
   }
  ],
+ "test_configuration_energies": [
+  null
+ ],
+ "test_configuration_status": [
+  {
+   "completed": false,
+   "config_index": 0,
+   "messages": [
+    {
+     "level": "error",
+     "line_numbers": [
+      297
+     ],
+     "lines": [
+      "psatom: lschvkbb convergence error n,l,okb,iter=   1   0   1   2"
+     ],
+     "name": "lschvkbb_not_converged"
+    },
+    {
+     "level": "warning",
+     "line_numbers": [
+      298,
+      299
+     ],
+     "lines": [
+      "run_config: ERROR for fully non-local  PS atom,",
+      " no output for this configuration"
+     ],
+     "name": "fully_non_local_ps_atom_no_solution"
+    }
+   ]
+  }
+ ],
  "test_configurations": [
   []
  ],

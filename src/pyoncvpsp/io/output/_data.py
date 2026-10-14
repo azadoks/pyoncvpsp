@@ -35,7 +35,8 @@ WARNINGS = [
     },
     {
         "name": "ldiracfb_not_converged",
-        "pattern": r"runconfig: WARNING ldiracfb convergence ERROR n,l,kap,iter=\s*(?P<n>\d+)\s+(?P<l>\d+)",
+        # ONCVPSP v4 prints "n,l,kap,ierr=" for the j = l + 1/2 state and "n,l,kap,iter=" for j = l - 1/2
+        "pattern": r"runconfig: WARNING ldiracfb convergence ERROR n,l,kap,(?:iter|ierr)=\s*(?P<n>\d+)\s+(?P<l>\d+)",
         "match_string": "runconfig: WARNING ldiracfb convergence ERROR",
         "line_count": 1,
         "subroutine": "run_config_r",
@@ -62,11 +63,23 @@ WARNINGS = [
     {
         "name": "fully_non_local_ps_atom_no_solution",
         # ONCVPSP v3 prints "run_config: ERROR for fully non-local  PS atom,"
+        # Followed by " WARNING no output for configuration k" (v4), where k counts the reference
+        # configuration as 1 (the block is headed "Test configuration k-1"), or by
+        # " no output for this configuration" (v3)
         "pattern": r"run_config(?:_r)?: (?:WARNING|ERROR) for fully non-local\s+PS atom,",
         "match_string": "for fully non-local",
         "line_count": 2,
         "subroutine": "run_config(_r)",
         "description": "Pseudo-atom calculation failed for a test configuration; no output for that configuration.",
+    },
+    {
+        "name": "psatom_not_converged",
+        "pattern": r"psatom: potential failed to converge",
+        "match_string": "psatom: potential failed to converge",
+        "line_count": 1,
+        # Also printed by `psatom_r` of ONCVPSP v3
+        "subroutine": "psatom(_r)",
+        "description": "Pseudo-atom self-consistent potential did not converge for a test configuration.",
     },
     {
         "name": "psatom_r_not_converged",

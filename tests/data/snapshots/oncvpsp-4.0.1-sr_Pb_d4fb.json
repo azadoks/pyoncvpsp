@@ -1221,6 +1221,39 @@
    "n": 6
   }
  ],
+ "test_configuration_energies": [
+  null
+ ],
+ "test_configuration_status": [
+  {
+   "completed": false,
+   "config_index": 0,
+   "messages": [
+    {
+     "level": "error",
+     "line_numbers": [
+      352
+     ],
+     "lines": [
+      "psatom: WARNING lschvkbb convergence error n,l,iter=   1   0   1"
+     ],
+     "name": "lschvkbb_not_converged"
+    },
+    {
+     "level": "warning",
+     "line_numbers": [
+      354,
+      355
+     ],
+     "lines": [
+      "run_config: WARNING for fully non-local PS atom, stg. 1",
+      " WARNING no output for configuration 1"
+     ],
+     "name": "fully_non_local_ps_atom_no_solution"
+    }
+   ]
+  }
+ ],
  "test_configurations": [
   []
  ],

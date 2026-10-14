@@ -6,7 +6,7 @@ import numpy as np
 import pytest
 
 from pyoncvpsp.channels import ChannelKey, ProjectorKey
-from pyoncvpsp.io.output import OncvpspOutputError
+from pyoncvpsp.io.output import OncvpspOutputError, OncvpspTextParser
 
 
 def _states(states: list[dict]) -> list[tuple]:
@@ -35,8 +35,37 @@ def test_oncvpsp_v2_test_configuration_failure(parse_output):
     assert [w["name"] for w in parser.warnings] == [
         "fully_non_local_ps_atom_no_solution"
     ]
+    # The pseudopotential is not affected: the error is fatal only with `werror`
+    assert parser.check() == []
+    assert parser.failure is None
+    assert parser.test_configuration_status == [
+        {
+            "config_index": 0,
+            "completed": False,
+            "messages": [
+                {
+                    "name": "lschvkbb_not_converged",
+                    "level": "error",
+                    "line_numbers": [297],
+                    "lines": [
+                        "psatom: lschvkbb convergence error n,l,okb,iter=   1   0   1   2"
+                    ],
+                },
+                {
+                    "name": "fully_non_local_ps_atom_no_solution",
+                    "level": "warning",
+                    "line_numbers": [298, 299],
+                    "lines": [
+                        "run_config: ERROR for fully non-local  PS atom,",
+                        " no output for this configuration",
+                    ],
+                },
+            ],
+        }
+    ]
+    assert parser.test_configuration_energies == [None]
     with pytest.raises(ExceptionGroup):
-        parser.check()
+        parser.check(werror=True)
 
 
 def test_oncvpsp_v3_plots_no_projectors(parse_output):
@@ -268,3 +297,107 @@ def test_v4_fully_relativistic_localized_bound_state(parse_output):
         (2.5, True, 0.0),
         (1.5, True, 0.0),
     ]
+
+
+@pytest.mark.parametrize(
+    "name",
+    ["oncvpsp-4.0.1-sr_N_test_config_failed", "oncvpsp-4.0.1-fr_N_test_config_failed"],
+)
+def test_v4_failed_test_configuration(parse_output, read_output, name):
+    # The pseudo-atom of test configuration 3 does not converge; run_config prints a warning and
+    # moves on to configuration 4 (run_config.f90:239-246, run_config_r.f90:257-266)
+    parser = parse_output(name)
+    assert parser.completed and parser.failure is None
+    assert [len(states) for states in parser.test_configurations] == (
+        [4, 4, 4, 0, 4] if parser.is_relativistic else [3, 3, 3, 0, 3]
+    )
+    status = parser.test_configuration_status
+    assert [s["config_index"] for s in status] == [0, 1, 2, 3, 4]
+    assert [s["completed"] for s in status] == [True, True, True, False, True]
+    assert [s["messages"] for s in status if s["config_index"] != 3] == [[]] * 4
+    failed = status[3]["messages"]
+    assert [(m["name"], m["level"]) for m in failed] == [
+        ("lschvkbb_not_converged", "error"),
+        ("fully_non_local_ps_atom_no_solution", "warning"),
+    ]
+    # The main program numbers the header from 0 = reference (jj - 1), but run_config prints jj
+    assert failed[1]["lines"][-1] == " WARNING no output for configuration 4"
+    for message in parser.messages:
+        assert message.config_index == 3
+        assert message.implicated_parameters == ["test_configurations__2"]
+    energies = parser.test_configuration_energies
+    assert energies[3] is None
+    assert all(e is not None for i, e in enumerate(energies) if i != 3)
+    # The errors of a failed test configuration are not fatal
+    assert parser.check() == []
+    OncvpspTextParser(text=read_output(name))
+    assert [e.name for e in parser.check(doraise=False, werror=True)] == [
+        "lschvkbb_not_converged",
+        "fully_non_local_ps_atom_no_solution",
+    ]
+
+
+def test_test_configuration_energies(parse_output):
+    # run_config prints D exponents (run_config.f90:282-288)
+    parser = parse_output("oncvpsp-4.0.1-sr_N_test_config_failed")
+    energies = parser.test_configuration_energies
+    assert energies[1] == {
+        "etot_ae_ref": -5.44530351e01,
+        "etot_ae_test": -5.40301448e01,
+        "etot_ae_diff": 4.23e-01,
+        "etot_ps_ref": -9.66950850e00,
+        "etot_ps_test": -9.24688666e00,
+        "etot_ps_diff": 4.23e-01,
+        "excitation_error": 2.68e-04,
+    }
+    assert energies[0] is not None and energies[0]["etot_ae_diff"] == 0.0
+    assert [e["excitation_error"] for e in energies if e is not None] == [
+        1.42e-14,
+        2.68e-04,
+        3.69e-04,
+        6.49e-05,
+    ]
+    # The reference energies are the same for all configurations
+    assert len({(e["etot_ae_ref"], e["etot_ps_ref"]) for e in energies if e}) == 1
+
+
+def test_test_configuration_energies_fully_relativistic(parse_output):
+    # run_config_r of ONCVPSP v4 prints E exponents (run_config_r.f90:330-336)
+    parser = parse_output("oncvpsp-4.0.1-fr_74_W_r")
+    energies = parser.test_configuration_energies
+    assert len(energies) == len(parser.test_configurations) == 4
+    assert energies[1] is not None
+    assert energies[1]["etot_ae_ref"] == -1.61564270e04
+    assert energies[1]["etot_ae_test"] == -1.61560913e04
+    assert energies[1]["excitation_error"] == -1.32e-04
+
+
+@pytest.mark.parametrize(
+    "name", ["oncvpsp-2.1.1-fr_08_O_r", "oncvpsp-3.3.1-sr_F", "oncvpsp-4.0.1-sr_14_Si"]
+)
+def test_test_configuration_energies_are_consistent(parse_output, name):
+    parser = parse_output(name)
+    energies = parser.test_configuration_energies
+    assert len(energies) == len(parser.test_configurations)
+    for e in energies:
+        assert e is not None
+        # Differences and the excitation error are printed with 3 significant digits
+        assert math.isclose(
+            e["etot_ae_diff"],
+            e["etot_ae_test"] - e["etot_ae_ref"],
+            rel_tol=1e-2,
+            abs_tol=1e-9,
+        )
+        assert math.isclose(
+            e["etot_ps_diff"],
+            e["etot_ps_test"] - e["etot_ps_ref"],
+            rel_tol=1e-2,
+            abs_tol=1e-9,
+        )
+        assert math.isclose(
+            e["excitation_error"],
+            e["etot_ae_diff"] - e["etot_ps_diff"],
+            rel_tol=0.0,
+            abs_tol=2e-2 * max(abs(e["etot_ae_diff"]), 1e-9),
+        )
+    assert all(s["completed"] for s in parser.test_configuration_status)

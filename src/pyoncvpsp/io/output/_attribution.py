@@ -51,6 +51,7 @@ ATTRIBUTION: dict[str, dict[str, Any]] = {
         "stage": Stage.TEST_CONFIG,
         "scope": Scope.TEST_CONFIG,
     },
+    "psatom_not_converged": {"stage": Stage.TEST_CONFIG, "scope": Scope.TEST_CONFIG},
     "psatom_r_not_converged": {"stage": Stage.TEST_CONFIG, "scope": Scope.TEST_CONFIG},
     "localized_bound_state_for_projector": {
         "stage": Stage.SEMILOCAL,

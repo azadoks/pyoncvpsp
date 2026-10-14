@@ -266,6 +266,8 @@
    "n": 5
   }
  ],
+ "test_configuration_energies": [],
+ "test_configuration_status": [],
  "test_configurations": [],
  "teter_coarse_grid": {},
  "teter_parameters": {},

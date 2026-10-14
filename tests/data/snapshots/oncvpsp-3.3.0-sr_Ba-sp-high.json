@@ -1118,6 +1118,24 @@
    "n": 6
   }
  ],
+ "test_configuration_energies": [
+  {
+   "etot_ae_diff": 0.0,
+   "etot_ae_ref": -8132.36186,
+   "etot_ae_test": -8132.36186,
+   "etot_ps_diff": 1.07e-14,
+   "etot_ps_ref": -25.6445486,
+   "etot_ps_test": -25.6445486,
+   "excitation_error": 0.0
+  }
+ ],
+ "test_configuration_status": [
+  {
+   "completed": true,
+   "config_index": 0,
+   "messages": []
+  }
+ ],
  "test_configurations": [
   [
    {

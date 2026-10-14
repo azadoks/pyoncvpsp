@@ -26,8 +26,13 @@ def test_check(output_name, parse_output, read_output):
     parser = parse_output(output_name)
     exceptions = parser.check(doraise=False)
     names = [exception.name for exception in exceptions]
+    # Errors of a failed test configuration in a completed run are treated as warnings
+    test_config_errors = [
+        error for error in parser.errors if parser._is_test_configuration_error(error)
+    ]
+    fatal_errors = [error for error in parser.errors if error not in test_config_errors]
     if parser.errors:
-        assert names == [error["name"] for error in parser.errors]
+        assert names == [error["name"] for error in fatal_errors]
     elif not parser.completed:
         assert names == ["incomplete_output"]
     else:
@@ -38,7 +43,9 @@ def test_check(output_name, parse_output, read_output):
     else:
         OncvpspTextParser(text=read_output(output_name))
     with_warnings = parser.check(doraise=False, werror=True)
-    assert len(with_warnings) == len(exceptions) + len(parser.warnings)
+    assert len(with_warnings) == len(exceptions) + len(test_config_errors) + len(
+        parser.warnings
+    )
 
 
 def test_completed_matches_missing_plot_data(output_name, parse_output):

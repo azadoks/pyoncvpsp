@@ -23,12 +23,14 @@ features that no other file in the set covers.
 | `oncvpsp-3.3.0-sr_Ba-sp-high.out.gz` | code/pseudo_dojo/pseudo_dojo/pseudos/ONCVPSP-PBEsol-PDv0.4/Ba/Ba-sp-high.out | `prog:ONCVPSP-3.3.0:scalar-relativistic` |
 | `oncvpsp-3.3.1-sr_F.out.gz` | code/pseudo_dojo/pseudo_dojo/pseudos/ONCVPSP-PW-PDv0.4/F/F_regen_with_PW/F.out | `prog:ONCVPSP-3.3.1:scalar-relativistic` |
 | `oncvpsp-4.0.1-fr_74_W_r.out.gz` | oncvpsp/code/oncvpsp/tests/refs/74_W_r.out | `nproj_combo:(2, 3)`, `prog:ONCVPSP-4.0.1:relativistic`, `warn:moderately_localized_bound_state_for_projector` |
+| `oncvpsp-4.0.1-fr_N_test_config_failed.out.gz` | oncvpspr.x 4.0.1 on the input of `oncvpsp-4.0.1-sr_N_test_config_failed` (`psfile:upf`) | `test_config_failed:fr`, `binary_in_message` (`psatom_r` writes four integers with the format `(/a,3i4)`; format reversion prints the last one as raw bytes on a line of its own) |
 | `oncvpsp-4.0.1-sr_14_Si.out.gz` | data/examples/Si/14_Si.out | `rxpsh:True` |
 | `oncvpsp-4.0.1-sr_I_1582.out.gz` | AiiDA calculation a2/f1/1582-ff21-4760-890f-5a69f1443834 | `warn:icmod4_nm_not_converged` |
 | `oncvpsp-4.0.1-sr_I_f3c1.out.gz` | AiiDA calculation 30/71/f3c1-3044-4a72-b570-e28366a27058 | `err:ps0norm_gt_uunorm` |
 | `oncvpsp-4.0.1-sr_Li-low-00.out.gz` | code/ppego/checkin-2025-03-11/Li-low-00.out | `ncnf:1` |
 | `oncvpsp-4.0.1-sr_Li_fd77.out.gz` | AiiDA calculation 71/2a/fd77-f3ac-4f20-b85c-a8d2ca24c6e7 | `err:vkb_bound_state_not_converged` |
 | `oncvpsp-4.0.1-sr_N_84c0.out.gz` | AiiDA calculation 20/25/84c0-b486-47ef-932a-243d01159a33 | `err:too_few_qroots`, `warn:scattering_first_projector` |
+| `oncvpsp-4.0.1-sr_N_test_config_failed.out.gz` | oncvpsp-opt nitrogen run with 4 test configurations | `ncnf:4`, `test_config_failed:3` (pseudo-atom of test configuration 3 not converged, later configuration completed) |
 | `oncvpsp-4.0.1-sr_Pb_143e.out.gz` | AiiDA calculation de/5a/143e-78aa-4671-b9d8-bbc5e4f168a7 | `missing:log_derivatives,gnuplot_script` |
 | `oncvpsp-4.0.1-sr_Pb_310a.out.gz` | AiiDA calculation 43/2f/310a-bf93-4d5c-b8c2-f1c4fed92e7b | `err:wellstate_not_converged` |
 | `oncvpsp-4.0.1-sr_Pb_4190.out.gz` | AiiDA calculation f7/03/4190-e1bb-44e7-bec1-1a7e65ff7915 | `err:vkbout_dgesv_failed`, `missing:gnuplot_script`, `nld:1` |

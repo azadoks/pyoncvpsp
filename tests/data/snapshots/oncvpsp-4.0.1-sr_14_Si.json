@@ -1124,6 +1124,66 @@
    "n": 3
   }
  ],
+ "test_configuration_energies": [
+  {
+   "etot_ae_diff": 0.0,
+   "etot_ae_ref": -288.819811,
+   "etot_ae_test": -288.819811,
+   "etot_ps_diff": -4.44e-15,
+   "etot_ps_ref": -3.79202308,
+   "etot_ps_test": -3.79202308,
+   "excitation_error": 4.44e-15
+  },
+  {
+   "etot_ae_diff": 0.56,
+   "etot_ae_ref": -288.819811,
+   "etot_ae_test": -288.259671,
+   "etot_ps_diff": 0.56,
+   "etot_ps_ref": -3.79202308,
+   "etot_ps_test": -3.23173566,
+   "excitation_error": -0.000148
+  },
+  {
+   "etot_ae_diff": 0.288,
+   "etot_ae_ref": -288.819811,
+   "etot_ae_test": -288.532098,
+   "etot_ps_diff": 0.288,
+   "etot_ps_ref": -3.79202308,
+   "etot_ps_test": -3.50435974,
+   "excitation_error": 4.98e-05
+  },
+  {
+   "etot_ae_diff": 1.18,
+   "etot_ae_ref": -288.819811,
+   "etot_ae_test": -287.644617,
+   "etot_ps_diff": 1.18,
+   "etot_ps_ref": -3.79202308,
+   "etot_ps_test": -2.6169343,
+   "excitation_error": 0.000105
+  }
+ ],
+ "test_configuration_status": [
+  {
+   "completed": true,
+   "config_index": 0,
+   "messages": []
+  },
+  {
+   "completed": true,
+   "config_index": 1,
+   "messages": []
+  },
+  {
+   "completed": true,
+   "config_index": 2,
+   "messages": []
+  },
+  {
+   "completed": true,
+   "config_index": 3,
+   "messages": []
+  }
+ ],
  "test_configurations": [
   [
    {

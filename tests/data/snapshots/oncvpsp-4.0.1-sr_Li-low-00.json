@@ -827,6 +827,38 @@
    "n": 2
   }
  ],
+ "test_configuration_energies": [
+  {
+   "etot_ae_diff": 0.0,
+   "etot_ae_ref": -7.45219754,
+   "etot_ae_test": -7.45219754,
+   "etot_ps_diff": 6.11e-16,
+   "etot_ps_ref": -0.192770388,
+   "etot_ps_test": -0.192770388,
+   "excitation_error": 0.0
+  },
+  {
+   "etot_ae_diff": 0.0657,
+   "etot_ae_ref": -7.45219754,
+   "etot_ae_test": -7.38652277,
+   "etot_ps_diff": 0.0653,
+   "etot_ps_ref": -0.192770388,
+   "etot_ps_test": -0.127426004,
+   "excitation_error": 0.00033
+  }
+ ],
+ "test_configuration_status": [
+  {
+   "completed": true,
+   "config_index": 0,
+   "messages": []
+  },
+  {
+   "completed": true,
+   "config_index": 1,
+   "messages": []
+  }
+ ],
  "test_configurations": [
   [
    {

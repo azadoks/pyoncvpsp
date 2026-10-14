@@ -228,6 +228,8 @@ class OncvpspTextParser:
     ) -> list[OncvpspOutputError]:
         """Check the output for errors and warnings (if `werror`).
         Raise an `ExceptionGroup` containing `OncvpspOutputError`s, if found.
+        Errors printed for a failed test configuration of a completed run are treated as warnings
+        (see `test_configuration_status`).
 
         Args:
             doraise (bool, optional): Raise an `ExceptionGroup` if any errors are found. Defaults to True.
@@ -256,8 +258,22 @@ class OncvpspTextParser:
                     + ", ".join(self.missing_plot_data),
                 )
             )
-        exceptions.extend([OncvpspOutputError(**error) for error in self.errors])
+        # Errors which only cost a test configuration its results (ONCVPSP moves on to the next
+        # configuration) do not affect the pseudopotential: they are treated like warnings
+        errors = [
+            error
+            for error in self.errors
+            if not self._is_test_configuration_error(error)
+        ]
+        exceptions.extend([OncvpspOutputError(**error) for error in errors])
         if werror:
+            exceptions.extend(
+                [
+                    OncvpspOutputError(**error)
+                    for error in self.errors
+                    if self._is_test_configuration_error(error)
+                ]
+            )
             exceptions.extend(
                 [OncvpspOutputError(**warning) for warning in self.warnings]
             )
@@ -267,6 +283,16 @@ class OncvpspTextParser:
                 exceptions,
             )
         return exceptions
+
+    def _is_test_configuration_error(self, error: dict) -> bool:
+        """Whether an error was printed while calculating a test configuration of a run which
+        nonetheless completed."""
+        index = error["line_numbers"][0] - 1
+        return (
+            self.completed
+            and 0 <= index < len(self.line_contexts)
+            and self.line_contexts[index].stage == Stage.TEST_CONFIG
+        )
 
     @cached_property
     def completed(self) -> bool:
@@ -1193,6 +1219,100 @@ class OncvpspTextParser:
             test_configurations.append(test_configuration)
         return test_configurations
 
+    @cached_property
+    def test_configuration_energies(self) -> list[dict | None]:
+        """Total energies of the test configurations, indexed like `test_configurations`
+        (0 = reference configuration).
+
+        Returns:
+            list[dict | None]: `None` for a configuration without results (see
+            `test_configuration_status`), else:
+                etot_ae_ref (float): All-electron total energy of the reference configuration (Ha).
+                etot_ae_test (float): All-electron total energy of the test configuration (Ha).
+                etot_ae_diff (float): `etot_ae_test - etot_ae_ref` (Ha).
+                etot_ps_ref (float): Pseudo-atom total energy of the reference configuration (Ha).
+                etot_ps_test (float): Pseudo-atom total energy of the test configuration (Ha).
+                etot_ps_diff (float): `etot_ps_test - etot_ps_ref` (Ha).
+                excitation_error (float): PSP excitation error, `etot_ae_diff - etot_ps_diff` (Ha).
+        """
+        # `run_config` prints `D` exponents (`E` in the v4 fully-relativistic `run_config_r`)
+        patterns = {
+            kind: re.compile(
+                rf"^\s+{kind.upper()}_ref=\s*(?P<ref>{RE_FLOAT})"
+                rf"\s+{kind.upper()}_tst=\s*(?P<test>{RE_FLOAT})"
+                rf"\s+dif=\s*(?P<diff>{RE_FLOAT})"
+            )
+            for kind in ("ae", "ps")
+        }
+        excitation_pattern = re.compile(
+            rf"^\s+PSP excitation error=\s*(?P<error>{RE_FLOAT})"
+        )
+        energies: list[dict | None] = []
+        for _, start, stop in self._blocks(BlockKind.TEST_CONFIG):
+            config_energies: dict[str, float] = {}
+            for line in self.clean_lines[start:stop]:
+                for kind, pattern in patterns.items():
+                    if match := pattern.match(line):
+                        config_energies[f"etot_{kind}_ref"] = fort_float(match["ref"])
+                        config_energies[f"etot_{kind}_test"] = fort_float(match["test"])
+                        config_energies[f"etot_{kind}_diff"] = fort_float(match["diff"])
+                if match := excitation_pattern.match(line):
+                    config_energies["excitation_error"] = fort_float(match["error"])
+            energies.append(config_energies if len(config_energies) == 7 else None)
+        return energies
+
+    @cached_property
+    def test_configuration_status(self) -> list[dict]:
+        """Whether each test configuration produced results, and the messages printed while it was
+        calculated, indexed like `test_configurations` (0 = reference configuration).
+
+        When the all-electron or pseudo-atom calculation of a configuration fails, ONCVPSP prints
+        warnings (and, for some, error-worded messages) and moves on to the next configuration; the
+        pseudopotential is not affected. ONCVPSP v4 numbers the configuration in
+        ` WARNING no output for configuration k` from 1 = reference configuration, so it is the
+        block headed `Test configuration k - 1`.
+
+        Returns:
+            list[dict]:
+                config_index (int): Configuration as numbered by the `Test configuration` header
+                    (0 = reference configuration, k = input `test_configurations[k - 1]`).
+                completed (bool): Whether the total energies were printed.
+                messages (list[dict]): Warnings and errors of the configuration, in order:
+                    name (str): Message name (see `WARNINGS` and `ERRORS`).
+                    level (str): 'warning' or 'error'.
+                    line_numbers (list[int]): Line numbers of the message (1-based).
+                    lines (list[str]): Lines of the message.
+        """
+        messages: dict[int, list[dict]] = defaultdict(list)
+        for message in self.messages:
+            if message.stage == Stage.TEST_CONFIG and message.config_index is not None:
+                messages[message.config_index].append(
+                    {
+                        "name": message.name,
+                        "level": str(message.level.value),
+                        "line_numbers": list(message.line_numbers),
+                        "lines": [
+                            self._lines[i - 1]
+                            for i in message.line_numbers
+                            if 0 < i <= len(self._lines)
+                        ],
+                    }
+                )
+        status = []
+        for (block, _, _), energies in zip(
+            self._blocks(BlockKind.TEST_CONFIG), self.test_configuration_energies
+        ):
+            config_index = block.config_index
+            assert config_index is not None
+            status.append(
+                {
+                    "config_index": config_index,
+                    "completed": energies is not None,
+                    "messages": messages.get(config_index, []),
+                }
+            )
+        return status
+
     def _get_plot_blocks(
         self, pattern: re.Pattern[str]
     ) -> list[list[tuple[int, re.Match[str]]]]:
@@ -1801,6 +1921,8 @@ class OncvpspTextParser:
         output["diagnostic_tests_vkb"] = self.diagnostic_tests_vkb
         output["ghosts"] = self.ghosts
         output["test_configurations"] = self.test_configurations
+        output["test_configuration_energies"] = self.test_configuration_energies
+        output["test_configuration_status"] = self.test_configuration_status
         output["plot_data"] = self.plot_data
         output["gnuplot_script"] = self.gnuplot_script
         output["upf"] = self.upf_string

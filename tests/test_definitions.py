@@ -39,6 +39,10 @@ MESSAGES = [
         "ldiracfb_not_converged",
     ),
     (
+        "runconfig: WARNING ldiracfb convergence ERROR n,l,kap,ierr=   2   1  -2   1",
+        "ldiracfb_not_converged",
+    ),
+    (
         "relatom: ldiracfb convergence ERROR n,l,kap,iter,ierr=   3   1  -2   5   1",
         "ldiracfb_not_converged",
     ),
@@ -114,6 +118,7 @@ MESSAGES = [
     ("exc_libxc_stub: ERROR iexc =  -001012 requires libxc", "libxc_not_available"),
     ("vout: ERROR bad input mode =   3", "vout_bad_input"),
     ("psatom_r: WARNING potential failed to converge", "psatom_r_not_converged"),
+    ("psatom: potential failed to converge", "psatom_not_converged"),
     ("vkbout: dgesv ERROR, stopping info =   2", "vkbout_dgesv_failed"),
     ("WARNING - modcore not conveged", "icmod1_not_converged"),
     ("run_config: WARNING  for AE atom,", "ae_atom_no_solution"),
@@ -287,13 +292,25 @@ MESSAGES = [
     # check_data complaints (ONCVPSP 4.0.1 check_data.f90), each followed by the `bad_input` summary
     ("test_data: must have rc>0.0, l=   1", "input_rc_nonpositive"),
     ("test_data: must have 3 <= ncon <= 5, l=   2", "input_ncon_out_of_range"),
-    ("test_data: must have ncon+3 <= nbas <= ncon+5, l=   1", "input_nbas_out_of_range"),
-    ("test_data: must have ncon+2 <= nbas <= ncon+5, l=   1", "input_nbas_out_of_range"),
+    (
+        "test_data: must have ncon+3 <= nbas <= ncon+5, l=   1",
+        "input_nbas_out_of_range",
+    ),
+    (
+        "test_data: must have ncon+2 <= nbas <= ncon+5, l=   1",
+        "input_nbas_out_of_range",
+    ),
     ("test_data: must have qcut>0.0, l=   0", "input_qcut_nonpositive"),
     ("test_data: rc < rc(lloc) for l = 0.  Not allowed.", "input_rc_lt_rcloc"),
     ("test_data: must have debl>0.0)   2", "input_debl_negative"),
-    ("test_data: must have nproj in [1,5] (0 OK lloc=4 or   2)", "input_nproj_out_of_range"),
-    ("test_data: must have 0 <= lloc <= lmax or lloc == 4", "input_local_potential_invalid"),
+    (
+        "test_data: must have nproj in [1,5] (0 OK lloc=4 or   2)",
+        "input_nproj_out_of_range",
+    ),
+    (
+        "test_data: must have 0 <= lloc <= lmax or lloc == 4",
+        "input_local_potential_invalid",
+    ),
     ("test_data: for lloc==4, must have rc > 0.0", "input_local_potential_invalid"),
     ("test_data: must have 1 <= lpopt <= 5", "input_local_potential_invalid"),
     ("test_data: must have 0<= icmod <=4", "input_model_core_invalid"),
@@ -307,8 +324,14 @@ MESSAGES = [
         "Fortran runtime error: Expected REAL for item 10 in formatted transfer, got CHARACTER",
         "fortran_runtime_error",
     ),
-    ("forrtl: severe (174): SIGSEGV, segmentation fault occurred", "fortran_runtime_error"),
-    ("Program received signal SIGFPE: Floating-point exception - erroneous arithmetic operation.", "fortran_runtime_error"),
+    (
+        "forrtl: severe (174): SIGSEGV, segmentation fault occurred",
+        "fortran_runtime_error",
+    ),
+    (
+        "Program received signal SIGFPE: Floating-point exception - erroneous arithmetic operation.",
+        "fortran_runtime_error",
+    ),
 ]
 
 # Lines which resemble errors or warnings but are not reported as such
