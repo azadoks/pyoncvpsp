@@ -459,6 +459,25 @@ ERRORS: list[dict[str, Any]] = [
         "description": "Budgeted model core (icmod 6) of an atom without core charge.",
     },
     {
+        "name": "modcore_budget_waves_unconverged",
+        "pattern": (
+            rf"modcore_budget_ecut: ERROR stop - residual kinetic energy above\s*(?P<error>{RE_FLOAT})"
+            rf" Ha at\s*(?P<ecut>{RE_FLOAT}) Ha, the end of its tables"
+        ),
+        "match_string": "modcore_budget_ecut: ERROR stop - residual kinetic energy above",
+        "line_count": 1,
+        "subroutine": "modcore_budget_ecut",
+        "description": "The pseudo-waves do not converge to the error of the budgeted model core (icmod 6, fcfact <= 0) within their residual energy tables.",
+    },
+    {
+        "name": "modcore_budget_no_waves",
+        "pattern": r"modcore_budget_ecut: ERROR stop - no residual energy curves",
+        "match_string": "modcore_budget_ecut: ERROR stop - no residual energy curves",
+        "line_count": 1,
+        "subroutine": "modcore_budget_ecut",
+        "description": "No pseudo-wave residual energy curves for the budget of the budgeted model core (icmod 6, fcfact <= 0).",
+    },
+    {
         "name": "modcore_budget_ecut_too_large",
         "pattern": rf"modcore_budget: ERROR stop - ecut beyond\s*(?P<ecut_max>{RE_FLOAT}) Ha",
         "match_string": "modcore_budget: ERROR stop - ecut beyond",

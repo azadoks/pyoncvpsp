@@ -155,6 +155,11 @@ ATTRIBUTION: dict[str, dict[str, Any]] = {
         "stage": Stage.MODEL_CORE,
         "scope": Scope.MODEL_CORE,
     },
+    "modcore_budget_waves_unconverged": {
+        "stage": Stage.MODEL_CORE,
+        "scope": Scope.MODEL_CORE,
+    },
+    "modcore_budget_no_waves": {"stage": Stage.MODEL_CORE, "scope": Scope.MODEL_CORE},
     "modcore_budget_ecut_too_large": {
         "stage": Stage.MODEL_CORE,
         "scope": Scope.MODEL_CORE,

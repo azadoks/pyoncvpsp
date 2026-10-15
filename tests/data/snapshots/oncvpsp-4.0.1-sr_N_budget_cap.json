@@ -5,7 +5,9 @@
   "c": 1.07678712,
   "ecut": 20.0,
   "ecut_needed": 19.845,
+  "ecut_pseudo_waves": null,
   "error": 0.0001,
+  "factor": null,
   "r_core_max": 2.873894,
   "r_s": 1.137061,
   "rc_min": 3.200622

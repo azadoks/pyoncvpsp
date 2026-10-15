@@ -26,6 +26,7 @@ features that no other file in the set covers.
 | `oncvpsp-4.0.1-fr_N_test_config_failed.out.gz` | oncvpspr.x 4.0.1 on the input of `oncvpsp-4.0.1-sr_N_test_config_failed` (`psfile:upf`) | `test_config_failed:fr`, `binary_in_message` (`psatom_r` writes four integers with the format `(/a,3i4)`; format reversion prints the last one as raw bytes on a line of its own) |
 | `oncvpsp-4.0.1-nr_08_O_build_info.out.gz` | `oncvpspnr.x` of azadoks/oncvpsp 1f11258 (branch `oncvpsp-opt`, then named `ae-pseudo-split`) on `tests/data/08_O.dat` | `prog:ONCVPSP-4.0.1:non-relativistic`, `build_line` (the header says scalar-relativistic; the build line gives the executable and its relativistic treatment) |
 | `oncvpsp-4.0.1-sr_14_Si_bc.out.gz` | `oncvpsp.x` of azadoks/oncvpsp a4046c0 (branch `oncvpsp-opt`) on its `tests/data/14_Si_bc.dat` | `icmod:6` (budgeted Martins model core) |
+| `oncvpsp-4.0.1-sr_14_Si_bca.out.gz` | `oncvpsp.x` of azadoks/oncvpsp f098dc9 (branch `icmod6-auto`) on its `tests/data/14_Si_bca.dat` | `budgeted_core:ecut_pseudo_waves` (icmod 6 budget taken from the pseudo-waves, `fcfact` 0) |
 | `oncvpsp-4.0.1-sr_N_budget_cap.out.gz` | `oncvpsp.x` of azadoks/oncvpsp a4046c0 on N with rc 3.2, icmod 6, cutoff budget 20 Ha | `budgeted_core:r_core_max` (rc beyond the last radius with core charge) |
 | `oncvpsp-4.0.1-sr_N_budget_too_small.out.gz` | `oncvpsp.x` of azadoks/oncvpsp a4046c0 on N with rc 1.5, icmod 6, cutoff budget 2 Ha | `err:modcore_budget_no_model` |
 | `oncvpsp-4.0.1-sr_14_Si.out.gz` | data/examples/Si/14_Si.out | `rxpsh:True` |

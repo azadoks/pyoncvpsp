@@ -180,6 +180,15 @@ MESSAGES = [
         "modcore_budget_no_core_charge",
     ),
     (
+        "modcore_budget_ecut: ERROR stop - residual kinetic energy above  1.00E-04 Ha at"
+        "    112.50 Ha, the end of its tables",
+        "modcore_budget_waves_unconverged",
+    ),
+    (
+        "modcore_budget_ecut: ERROR stop - no residual energy curves",
+        "modcore_budget_no_waves",
+    ),
+    (
         "modcore_budget: ERROR stop - ecut beyond    200.00 Ha",
         "modcore_budget_ecut_too_large",
     ),

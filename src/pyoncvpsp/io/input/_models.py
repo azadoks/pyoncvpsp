@@ -469,8 +469,11 @@ class ModelCoreChargeInput(BaseModel):  # pylint: disable=too-few-public-methods
                 charge beyond the smallest radius r_s at which a Martins function
                 :math:`\exp(a + b r^2 + c r^4)` matched to it needs no more than the plane-wave
                 cutoff `fcfact` (Ha) for an exchange-correlation energy error of `rcfact` (Ha).
+                With `fcfact <= 0` the cutoff is instead that of the pseudo-waves for the same
+                error, times `-fcfact` (times 1 for `fcfact == 0`).
         fcfact (float): Used to determine the matching radius for `icmod in (1, 2)`. Unused for `icmod in (0, 3, 4)`.
-            Plane-wave cutoff (Ha) for `icmod == 6`.
+            Plane-wave cutoff (Ha) for `icmod == 6` if positive; else 0 for the cutoff of the
+            pseudo-waves, or minus its multiple. Negative only for `icmod == 6`.
         rcfact (float): Exchange-correlation energy error (Ha) for `icmod == 6`, where 0 means the
             ONCVPSP default of 1e-4 Ha.
         teter_relative (bool): If True, `teter_amp*` and `teter_scale*` specify relative
@@ -484,7 +487,7 @@ class ModelCoreChargeInput(BaseModel):  # pylint: disable=too-few-public-methods
     """
 
     icmod: Annotated[int, Field(ge=0, le=6)]
-    fcfact: Annotated[float, Field(ge=0.0)] = 0.0
+    fcfact: Annotated[float, Field()] = 0.0
     rcfact: Annotated[float, Field(ge=0.0)] = 0.0
     teter_relative: Annotated[bool, Field()] = True
     teter_amp_min: None | Annotated[float, Field()] = None
@@ -502,11 +505,8 @@ class ModelCoreChargeInput(BaseModel):  # pylint: disable=too-few-public-methods
         if self.icmod == 3:
             if self.rcfact == 0.0:
                 raise ValueError("rcfact must be greater than 0 for icmod 3")
-        if self.icmod == 6:
-            if self.fcfact == 0.0:
-                raise ValueError(
-                    "fcfact (the plane-wave cutoff) must be greater than 0 for icmod 6"
-                )
+        if self.icmod != 6 and self.fcfact < 0.0:
+            raise ValueError("fcfact must not be negative except for icmod 6")
         return self
 
     def as_dat_string(self, with_comment: bool = False) -> str:

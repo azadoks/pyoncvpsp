@@ -208,6 +208,8 @@ def test_budgeted_core(parse_output):
     assert budgeted == {
         "ecut": 25.0,
         "error": 1.0e-4,
+        "ecut_pseudo_waves": None,
+        "factor": None,
         "r_s": 0.695197,
         "rc_min": 2.703023,
         "r_core_max": None,
@@ -224,3 +226,9 @@ def test_budgeted_core(parse_output):
     assert stopped.budgeted_core is None
     assert [error["name"] for error in stopped.errors] == ["modcore_budget_no_model"]
     assert parse_output("oncvpsp-4.0.1-sr_14_Si").budgeted_core is None
+    auto = parse_output("oncvpsp-4.0.1-sr_14_Si_bca").budgeted_core
+    assert auto is not None
+    assert auto["ecut_pseudo_waves"] == 33.5528
+    assert auto["factor"] == 1.0
+    assert auto["ecut"] == auto["ecut_pseudo_waves"]
+    assert auto["ecut_needed"] <= auto["ecut"]

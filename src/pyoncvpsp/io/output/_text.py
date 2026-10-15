@@ -1102,6 +1102,9 @@ class OncvpspTextParser:
         Returns:
             dict | None: None if the output has no budgeted model core, else
                 ecut (float): Cutoff budget (Ha).
+                ecut_pseudo_waves (float | None): Cutoff the pseudo-waves need for `error` (Ha),
+                    when the budget is taken from it (`fcfact <= 0`), else None.
+                factor (float | None): Multiple of `ecut_pseudo_waves` that is the budget, else None.
                 error (float): Exchange-correlation energy error (Ha) that defines the needed cutoff.
                 r_s (float): Radius of the model (a.u.).
                 rc_min (float): Smallest core radius rc (a.u.).
@@ -1130,12 +1133,20 @@ class OncvpspTextParser:
         )
         if not (budget and radius and coefficients and needed):
             return None
+        waves = self.search(
+            rf"pseudo-wave cutoff\s+(?P<ecut>{RE_FLOAT}) Ha, times\s+(?P<factor>{RE_FLOAT})",
+            i,
+        )
+        if waves and waves[0] > budget[0]:
+            waves = None
         core_max = self.search(rf"last radius with core charge\s+(?P<r>{RE_FLOAT})", i)
         if core_max and core_max[0] > coefficients[0]:
             core_max = None
         return {
             "ecut": fort_float(budget[1]["ecut"]),
             "error": fort_float(budget[1]["error"]),
+            "ecut_pseudo_waves": fort_float(waves[1]["ecut"]) if waves else None,
+            "factor": fort_float(waves[1]["factor"]) if waves else None,
             "r_s": fort_float(radius[1]["r_s"]),
             "rc_min": fort_float(radius[1]["rc_min"]),
             "r_core_max": fort_float(core_max[1]["r"]) if core_max else None,
