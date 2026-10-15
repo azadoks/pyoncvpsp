@@ -1588,7 +1588,7 @@ class OncvpspTextParser:
             # wellstate metadata, or localized bound state
             no_state: tuple[str | None, Any] = (None, None)
             state_kind, state = projector_states.get(projector, no_state)
-            state_metadata = {
+            state_metadata: dict[str, Any] = {
                 "is_bound": None,
                 "n": 0,
                 "f": np.nan,
