@@ -3,6 +3,7 @@
 import io
 
 import pytest
+import toml
 from pydantic import ValidationError
 
 from pyoncvpsp.io.input import OncvpspInput
@@ -97,6 +98,117 @@ def test_toml_and_dict_round_trip(nitrogen):
     nitrogen.to_toml_file(buffer)
     buffer.seek(0)
     assert OncvpspInput.from_toml_file(buffer) == nitrogen
+
+
+# ONCVPSP's tests/data/toml/07_N.toml, the TOML form of 07_N.dat made by its
+# scripts/input_text_to_toml.py, which oncvpsp.x reads with -t
+N_TOML = """\
+[[test_configurations]]
+n = [ 2, 2,]
+l = [ 0, 1,]
+f = [ 2.0, 2.0,]
+
+[[test_configurations]]
+n = [ 2, 2,]
+l = [ 0, 1,]
+f = [ 1.0, 3.0,]
+
+[[test_configurations]]
+n = [ 2, 2,]
+l = [ 0, 1,]
+f = [ 1.0, 2.0,]
+
+[oncvpsp]
+atsym = "N"
+z = 7.0
+nc = 1
+nv = 2
+iexc = 3
+
+[linear_mesh]
+a = 0.01
+rmax = 4.0
+
+[reference_configuration]
+n = [ 1, 2, 2,]
+l = [ 0, 0, 1,]
+f = [ 2.0, 2.0, 3.0,]
+
+[pseudopotentials]
+lmax = 1
+l = [ 0, 1,]
+rc = [ 1.7, 1.7,]
+ep = [ 0.0, 0.0,]
+ncon = [ 4, 4,]
+nbas = [ 8, 8,]
+qcut = [ 8.0, 8.0,]
+
+[local_potential]
+lloc = 4
+lpopt = 5
+rcloc = 1.5
+dvloc0 = 0.0
+
+[vkb_projectors]
+l = [ 0, 1,]
+nproj = [ 2, 2,]
+debl = [ 1.5, 1.5,]
+
+[model_core_charge]
+icmod = 0
+
+[log_derivative_analysis]
+epsh1 = -2.0
+epsh2 = 3.0
+depsh = 0.02
+
+[pp_output]
+psfile = "psp8"
+"""
+
+
+def test_toml_layout_matches_oncvpsp(nitrogen):
+    data = toml.loads(nitrogen.as_toml_string())
+    assert data["linear_mesh"] == {"a": 0.01, "rmax": 4.0}
+    assert data["pp_output"] == {"psfile": "psp8"}
+    assert "output_grid" not in data
+    assert "psfile" not in data["oncvpsp"]
+
+
+def test_reads_oncvpsp_toml(nitrogen):
+    # 07_N.dat gives fcfact 0.1 with icmod 0, which the TOML form leaves out
+    assert OncvpspInput.from_toml_string(N_TOML) == nitrogen.merge(
+        model_core_charge={"fcfact": 0.0}
+    )
+
+
+def test_reads_previous_toml_layout(nitrogen):
+    # pyoncvpsp wrote the model's fields as they are before it wrote ONCVPSP's layout
+    assert OncvpspInput.from_toml_string(toml.dumps(nitrogen.model_dump())) == nitrogen
+
+
+def test_toml_teter_grid_keys(nitrogen):
+    grid = {
+        "teter_amp_min": 1.0,
+        "teter_amp_max": 4.0,
+        "teter_amp_step": 0.5,
+        "teter_scale_min": 1.0,
+        "teter_scale_max": 1.5,
+        "teter_scale_step": 0.1,
+    }
+    teter = nitrogen.merge(model_core_charge={"icmod": 4, **grid})
+    core = toml.loads(teter.as_toml_string())["model_core_charge"]
+    assert {
+        key: core[key] for key in core if key.endswith(("_min", "_max", "_step"))
+    } == {
+        "fcfact_min": 1.0,
+        "fcfact_max": 4.0,
+        "fcfact_step": 0.5,
+        "rcfact_min": 1.0,
+        "rcfact_max": 1.5,
+        "rcfact_step": 0.1,
+    }
+    assert OncvpspInput.from_toml_string(teter.as_toml_string()) == teter
 
 
 @pytest.mark.parametrize(

@@ -1,6 +1,7 @@
 """ONVPSP input file handling."""
 
 import logging
+from copy import deepcopy
 from math import floor
 import re
 from os import PathLike
@@ -601,6 +602,51 @@ class OutputGridInput(BaseModel):  # pylint: disable=too-few-public-methods
         return s
 
 
+# Keys of the Teter grid of icmod 4 in the TOML input of ONCVPSP, by field name
+_TOML_TETER_GRID_KEYS = {
+    "teter_amp_min": "fcfact_min",
+    "teter_amp_max": "fcfact_max",
+    "teter_amp_step": "fcfact_step",
+    "teter_scale_min": "rcfact_min",
+    "teter_scale_max": "rcfact_max",
+    "teter_scale_step": "rcfact_step",
+}
+
+
+def _to_oncvpsp_toml(data: dict[str, Any]) -> dict[str, Any]:
+    """Arrange the fields of `OncvpspInput.model_dump()` as the TOML input of ONCVPSP
+    (`oncvpsp.x -t`, src/input_toml_m.f90): `psfile` in `[pp_output]`, the output grid as
+    `[linear_mesh]` `a` (drl) and `rmax` (rlmax), and the icmod 4 Teter grid as `fcfact_*` and
+    `rcfact_*`. ONCVPSP ignores the keys it does not read, such as `teter_relative`."""
+    data = deepcopy(data)
+    data["pp_output"] = {"psfile": data["oncvpsp"].pop("psfile")}
+    output_grid = data.pop("output_grid")
+    data["linear_mesh"] = {"a": output_grid["drl"], "rmax": output_grid["rlmax"]}
+    core = data["model_core_charge"]
+    for field, key in _TOML_TETER_GRID_KEYS.items():
+        value = core.pop(field, None)
+        if value is not None:
+            core[key] = value
+    return data
+
+
+def _from_oncvpsp_toml(data: dict[str, Any]) -> dict[str, Any]:
+    """Arrange the TOML input of ONCVPSP as the fields of `OncvpspInput`; the inverse of
+    `_to_oncvpsp_toml`. Data already arranged as the fields (as pyoncvpsp wrote TOML before)
+    are returned as they are."""
+    data = deepcopy(data)
+    if "pp_output" in data:
+        data.setdefault("oncvpsp", {})["psfile"] = data.pop("pp_output")["psfile"]
+    if "linear_mesh" in data:
+        linear_mesh = data.pop("linear_mesh")
+        data["output_grid"] = {"rlmax": linear_mesh["rmax"], "drl": linear_mesh["a"]}
+    core = data.get("model_core_charge", {})
+    for field, key in _TOML_TETER_GRID_KEYS.items():
+        if key in core:
+            core[field] = core.pop(key)
+    return data
+
+
 class OncvpspInput(BaseModel):
     """ONCVPSP Input parameters"""
 
@@ -957,13 +1003,13 @@ class OncvpspInput(BaseModel):
         return cls(**data)
 
     def as_toml_string(self) -> str:
-        """Return the ONCVPSP input parameters as a TOML string.
+        """Return the ONCVPSP input parameters as a TOML string, in the layout that ONCVPSP
+        reads with `-t`.
 
         Returns:
             str: ONCVPSP input parameters in TOML format.
         """
-        data = self.model_dump()
-        return toml.dumps(data)
+        return toml.dumps(_to_oncvpsp_toml(self.model_dump()))
 
     @classmethod
     def from_toml_string(cls, s: str) -> "OncvpspInput":
@@ -975,19 +1021,21 @@ class OncvpspInput(BaseModel):
             OncvpspInput: ONCVPSP input parameters.
         """
         data = toml.loads(s)
-        return cls(**data)
+        return cls(**_from_oncvpsp_toml(data))
 
     def to_toml_file(self, file: str | PathLike | TextIO) -> None:
-        """Write the ONCVPSP input parameters to a TOML file.
+        """Write the ONCVPSP input parameters to a TOML file, in the layout that ONCVPSP reads
+        with `-t`.
 
         Args:
             file (PathLike | TextIO): Path to TOML file or file-like object.
         """
+        data = _to_oncvpsp_toml(self.model_dump())
         if isinstance(file, (str, PathLike)):
             with open(file, "w", encoding="utf-8") as fp:
-                toml.dump(self.model_dump(), fp)
+                toml.dump(data, fp)
         else:
-            toml.dump(self.model_dump(), file)
+            toml.dump(data, file)
 
     @classmethod
     def from_toml_file(cls, file: str | PathLike | TextIO) -> "OncvpspInput":
@@ -1003,7 +1051,7 @@ class OncvpspInput(BaseModel):
                 data = toml.load(fp)
         else:
             data = toml.load(file)
-        return cls(**data)
+        return cls(**_from_oncvpsp_toml(data))
 
     @model_validator(mode="after")
     def _check_number_of_states(self) -> "OncvpspInput":
