@@ -465,8 +465,14 @@ class ModelCoreChargeInput(BaseModel):  # pylint: disable=too-few-public-methods
             5) (METAPSP only) Polynomial model core charge and kinetic energy densities, with amplitudes
                 `fcfact` and `rcfact` times the maximum pseudo density at the origin and at the inner
                 matching region, respectively.
+            6) (azadoks/oncvpsp only) Budgeted Martins model core charge: the all-electron core
+                charge beyond the smallest radius r_s at which a Martins function
+                :math:`\exp(a + b r^2 + c r^4)` matched to it needs no more than the plane-wave
+                cutoff `fcfact` (Ha) for an exchange-correlation energy error of `rcfact` (Ha).
         fcfact (float): Used to determine the matching radius for `icmod in (1, 2)`. Unused for `icmod in (0, 3, 4)`.
-        rcfact (float): Unused.
+            Plane-wave cutoff (Ha) for `icmod == 6`.
+        rcfact (float): Exchange-correlation energy error (Ha) for `icmod == 6`, where 0 means the
+            ONCVPSP default of 1e-4 Ha.
         teter_relative (bool): If True, `teter_amp*` and `teter_scale*` specify relative
             ranges for optimizing the Teter parameters. If False, they specify absolute ranges.
         teter_amp_min (None | float): Minimum Teter amplitude for grid search (relative or absolute).
@@ -477,7 +483,7 @@ class ModelCoreChargeInput(BaseModel):  # pylint: disable=too-few-public-methods
         teter_scale_step (None | float): Teter scale factor step size for grid search (relative or absolute).
     """
 
-    icmod: Annotated[int, Field(ge=0, le=5)]
+    icmod: Annotated[int, Field(ge=0, le=6)]
     fcfact: Annotated[float, Field(ge=0.0)] = 0.0
     rcfact: Annotated[float, Field(ge=0.0)] = 0.0
     teter_relative: Annotated[bool, Field()] = True
@@ -496,6 +502,11 @@ class ModelCoreChargeInput(BaseModel):  # pylint: disable=too-few-public-methods
         if self.icmod == 3:
             if self.rcfact == 0.0:
                 raise ValueError("rcfact must be greater than 0 for icmod 3")
+        if self.icmod == 6:
+            if self.fcfact == 0.0:
+                raise ValueError(
+                    "fcfact (the plane-wave cutoff) must be greater than 0 for icmod 6"
+                )
         return self
 
     def as_dat_string(self, with_comment: bool = False) -> str:
@@ -510,6 +521,16 @@ class ModelCoreChargeInput(BaseModel):  # pylint: disable=too-few-public-methods
             s = f" {self.icmod:>10d} {self.fcfact:>10.5f} {self.rcfact:>10.5f}"
             if with_comment:
                 s = f"# {'icmod':>8s} {'fcfact':>10s} {'rcfact':>10s}\n" + s
+        elif self.icmod == 6:
+            # rcfact is an energy error (Ha), often below the resolution of %10.5f
+            if self.rcfact == 0.0:
+                s = f"{self.icmod:>10d} {self.fcfact:>10.5f}"
+                if with_comment:
+                    s = f"# {'icmod':>8s} {'fcfact':>10s}\n" + s
+            else:
+                s = f" {self.icmod:>10d} {self.fcfact:>10.5f} {self.rcfact:>12.5e}"
+                if with_comment:
+                    s = f"# {'icmod':>8s} {'fcfact':>10s} {'rcfact':>12s}\n" + s
         else:
             teter_grid_params = (
                 self.teter_amp_min,

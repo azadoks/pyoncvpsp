@@ -1,0 +1,321 @@
+{
+ "budgeted_core": null,
+ "completed": false,
+ "d2exc": {},
+ "d2exc_rmse": null,
+ "diagnostic_tests_semilocal": [],
+ "diagnostic_tests_vkb": [],
+ "errors": [
+  {
+   "context_line_numbers": [
+    202,
+    203,
+    204,
+    205
+   ],
+   "context_lines": [
+    "",
+    "  Orthonormal projector coefficients -4.1783E+00 -1.8608E+00",
+    "",
+    "modcore_budget: ERROR stop - no model core inside r =  1.506221 needs less than    2.0000 Ha for an error of  1.00E-04 Ha"
+   ],
+   "description": "Even the largest budgeted model core (icmod 6) needs more than the cutoff budget.",
+   "line_numbers": [
+    205
+   ],
+   "name": "modcore_budget_no_model",
+   "subroutine": "modcore_budget"
+  }
+ ],
+ "ghosts": [],
+ "gnuplot_script": "",
+ "input": {
+  "local_potential": {
+   "dvloc0": 0.0,
+   "lloc": 4,
+   "lpopt": 5,
+   "rcloc": 1.5
+  },
+  "log_derivative_analysis": {
+   "depsh": 0.02,
+   "epsh1": -2.0,
+   "epsh2": 2.0,
+   "rxpsh": null
+  },
+  "model_core_charge": {
+   "fcfact": 2.0,
+   "icmod": 6,
+   "rcfact": 0.0001,
+   "teter_amp_max": null,
+   "teter_amp_min": null,
+   "teter_amp_step": null,
+   "teter_relative": true,
+   "teter_scale_max": null,
+   "teter_scale_min": null,
+   "teter_scale_step": null
+  },
+  "oncvpsp": {
+   "atsym": "N",
+   "iexc": 4,
+   "nc": 1,
+   "nv": 2,
+   "psfile": "none",
+   "z": 7.0
+  },
+  "output_grid": {
+   "drl": 0.01,
+   "rlmax": 5.0
+  },
+  "pseudopotentials": {
+   "ep": [
+    0.0,
+    0.0
+   ],
+   "l": [
+    0,
+    1
+   ],
+   "lmax": 1,
+   "nbas": [
+    8,
+    8
+   ],
+   "ncon": [
+    4,
+    4
+   ],
+   "qcut": [
+    6.0,
+    6.0
+   ],
+   "rc": [
+    1.5,
+    1.5
+   ]
+  },
+  "reference_configuration": {
+   "f": [
+    2.0,
+    2.0,
+    3.0
+   ],
+   "l": [
+    0,
+    0,
+    1
+   ],
+   "n": [
+    1,
+    2,
+    2
+   ]
+  },
+  "test_configurations": [],
+  "vkb_projectors": {
+   "debl": [
+    1.0,
+    1.0
+   ],
+   "l": [
+    0,
+    1
+   ],
+   "nproj": [
+    2,
+    2
+   ]
+  }
+ },
+ "localized_bound_states": [],
+ "missing_plot_data": [
+  "DATA FOR PLOTTING"
+ ],
+ "plot_data": {
+  "charge_densities": {},
+  "convergence_profiles": [
+   {
+    "ecut": {
+     "abs_sum": 103.2,
+     "nan": 0,
+     "shape": [
+      4
+     ],
+     "sum": 103.2
+    },
+    "eresid": {
+     "abs_sum": 0.011109999999999998,
+     "nan": 0,
+     "shape": [
+      4
+     ],
+     "sum": 0.011109999999999998
+    },
+    "iproj": 1,
+    "j": null,
+    "l": 0
+   },
+   {
+    "ecut": {
+     "abs_sum": 60.16,
+     "nan": 0,
+     "shape": [
+      4
+     ],
+     "sum": 60.16
+    },
+    "eresid": {
+     "abs_sum": 0.011109999999999998,
+     "nan": 0,
+     "shape": [
+      4
+     ],
+     "sum": 0.011109999999999998
+    },
+    "iproj": 2,
+    "j": null,
+    "l": 0
+   },
+   {
+    "ecut": {
+     "abs_sum": 225.70999999999998,
+     "nan": 0,
+     "shape": [
+      4
+     ],
+     "sum": 225.70999999999998
+    },
+    "eresid": {
+     "abs_sum": 0.011109999999999998,
+     "nan": 0,
+     "shape": [
+      4
+     ],
+     "sum": 0.011109999999999998
+    },
+    "iproj": 1,
+    "j": null,
+    "l": 1
+   },
+   {
+    "ecut": {
+     "abs_sum": 169.86,
+     "nan": 0,
+     "shape": [
+      4
+     ],
+     "sum": 169.86
+    },
+    "eresid": {
+     "abs_sum": 0.011109999999999998,
+     "nan": 0,
+     "shape": [
+      4
+     ],
+     "sum": 0.011109999999999998
+    },
+    "iproj": 2,
+    "j": null,
+    "l": 1
+   }
+  ],
+  "kinetic_energy_densities": {},
+  "kinetic_energy_potentials": {},
+  "local_potential": {
+   "dvloc0": 0.0,
+   "lloc": 4,
+   "lpopt": 5,
+   "rcloc": 1.5
+  },
+  "log_derivatives": [],
+  "optimized_pseudo_wavefunctions": [],
+  "semilocal_potentials": [],
+  "unscreened_semilocal_potentials": [],
+  "vkb_projectors": [],
+  "wavefunctions": []
+ },
+ "program_information": {
+  "build": {
+   "commit": "a4046c0166da5cc4219c4b9ea899037fd689f570",
+   "compiled": "2026-10-15T15:18:55Z",
+   "executable": "oncvpsp.x",
+   "relativistic_treatment": "scalar-relativistic",
+   "source": "clean",
+   "source_diff": null
+  },
+  "date": "03/01/2019",
+  "program": "ONCVPSP",
+  "relativistic_treatment": "scalar-relativistic",
+  "version": "4.0.1"
+ },
+ "psp8": "",
+ "reference_configuration": [
+  {
+   "eig_ae": -14.138222,
+   "f": 2.0,
+   "j": null,
+   "l": 0,
+   "n": 1
+  },
+  {
+   "eig_ae": -0.68290674,
+   "f": 2.0,
+   "j": null,
+   "l": 0,
+   "n": 2
+  },
+  {
+   "eig_ae": -0.26054783,
+   "f": 3.0,
+   "j": null,
+   "l": 1,
+   "n": 2
+  }
+ ],
+ "test_configuration_energies": [],
+ "test_configuration_status": [],
+ "test_configurations": [],
+ "teter_coarse_grid": {},
+ "teter_parameters": {},
+ "upf": "",
+ "vkb_hermiticity_errors": [
+  {
+   "hermiticity_error": 3.8469e-05,
+   "iproj": 1,
+   "j": null,
+   "jproj": 2,
+   "l": 0
+  },
+  {
+   "hermiticity_error": 4.3233e-05,
+   "iproj": 1,
+   "j": null,
+   "jproj": 2,
+   "l": 1
+  }
+ ],
+ "vkb_scalar_projector_coefficients": [],
+ "vkb_spin_orbit_projector_coefficients": [],
+ "warnings": [],
+ "wellstate_metadata": [
+  {
+   "asymptotic_potential": 0.8171,
+   "eig_ae": 0.3171,
+   "energy_guess": null,
+   "half_point_radius": 4.3438,
+   "iproj": 2,
+   "j": null,
+   "l": 0,
+   "n": 3
+  },
+  {
+   "asymptotic_potential": 1.2395,
+   "eig_ae": 0.7395,
+   "energy_guess": null,
+   "half_point_radius": 3.3711,
+   "iproj": 2,
+   "j": null,
+   "l": 1,
+   "n": 3
+  }
+ ]
+}

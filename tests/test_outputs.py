@@ -201,3 +201,26 @@ def test_truncated_output_is_incomplete(completed_output_name, read_output):
             (exception,) = parser.check(doraise=False)
             assert exception.name == "incomplete_output"
             assert all(section in exception.description for section in expected)
+
+
+def test_budgeted_core(parse_output):
+    budgeted = parse_output("oncvpsp-4.0.1-sr_14_Si_bc").budgeted_core
+    assert budgeted == {
+        "ecut": 25.0,
+        "error": 1.0e-4,
+        "r_s": 0.695197,
+        "rc_min": 2.703023,
+        "r_core_max": None,
+        "a": 5.36621515,
+        "b": -6.23065052,
+        "c": 1.87082158,
+        "ecut_needed": 24.8513,
+    }
+    capped = parse_output("oncvpsp-4.0.1-sr_N_budget_cap").budgeted_core
+    assert capped is not None
+    assert capped["r_core_max"] == 2.873894
+    assert capped["r_s"] < capped["r_core_max"] < capped["rc_min"]
+    stopped = parse_output("oncvpsp-4.0.1-sr_N_budget_too_small")
+    assert stopped.budgeted_core is None
+    assert [error["name"] for error in stopped.errors] == ["modcore_budget_no_model"]
+    assert parse_output("oncvpsp-4.0.1-sr_14_Si").budgeted_core is None

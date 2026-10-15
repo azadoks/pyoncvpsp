@@ -125,6 +125,15 @@ def test_metapsp_r2scan_and_icmod5_round_trip(nitrogen):
     assert OncvpspInput.from_dat_string(dat) == metapsp
 
 
+@pytest.mark.parametrize("rcfact", [0.0, 1.0e-4, 3.0e-7])
+def test_icmod6_round_trip(nitrogen, rcfact):
+    budgeted = nitrogen.merge(
+        model_core_charge={"icmod": 6, "fcfact": 25.0, "rcfact": rcfact}
+    )
+    dat = budgeted.as_dat_string()
+    assert OncvpspInput.from_dat_string(dat) == budgeted
+
+
 @pytest.mark.parametrize(
     "update",
     [
@@ -132,7 +141,8 @@ def test_metapsp_r2scan_and_icmod5_round_trip(nitrogen):
         {"oncvpsp": {"iexc": 6}},
         {"oncvpsp": {"psfile": "xml"}},
         {"oncvpsp": {"atsym": "Abc"}},
-        {"model_core_charge": {"icmod": 6}},
+        {"model_core_charge": {"icmod": 6, "fcfact": 0.0}},
+        {"model_core_charge": {"icmod": 7, "fcfact": 25.0}},
         {"model_core_charge": {"icmod": 1, "fcfact": 0.0}},
         {"output_grid": {"rlmax": 1.0}},
     ],

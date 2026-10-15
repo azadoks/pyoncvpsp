@@ -150,6 +150,15 @@ ATTRIBUTION: dict[str, dict[str, Any]] = {
     # --- errors: model core charge
     "no_core_valence_crossing": {"stage": Stage.MODEL_CORE, "scope": Scope.MODEL_CORE},
     "modcore_dgesv_failed": {"stage": Stage.MODEL_CORE, "scope": Scope.MODEL_CORE},
+    "modcore_budget_no_model": {"stage": Stage.MODEL_CORE, "scope": Scope.MODEL_CORE},
+    "modcore_budget_no_core_charge": {
+        "stage": Stage.MODEL_CORE,
+        "scope": Scope.MODEL_CORE,
+    },
+    "modcore_budget_ecut_too_large": {
+        "stage": Stage.MODEL_CORE,
+        "scope": Scope.MODEL_CORE,
+    },
     # --- errors: diagnostics
     "ghost_lschpsbar_error": {"stage": Stage.DIAGNOSTICS, "scope": Scope.ELL_AND_LOCAL},
     # --- errors: test configurations (ONCVPSP 4 continues after these; fatal only if incomplete)

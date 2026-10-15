@@ -439,6 +439,34 @@ ERRORS: list[dict[str, Any]] = [
         "description": "Linear solve for polynomial model core charge coefficients failed.",
     },
     {
+        "name": "modcore_budget_no_model",
+        "pattern": (
+            rf"modcore_budget: ERROR stop - no model core inside r(?:c)? =\s*(?P<r>{RE_FLOAT})"
+            rf" needs less than\s*(?P<ecut>{RE_FLOAT}) Ha for an error of\s*(?P<error>{RE_FLOAT}) Ha"
+        ),
+        "match_string": "modcore_budget: ERROR stop - no model core",
+        "line_count": 1,
+        "subroutine": "modcore_budget",
+        "description": "Even the largest budgeted model core (icmod 6) needs more than the cutoff budget.",
+    },
+    {
+        "name": "modcore_budget_no_core_charge",
+        # azadoks/oncvpsp 8fef166 prints "no core charge at rc"
+        "pattern": r"modcore_budget: ERROR stop - no core charge",
+        "match_string": "modcore_budget: ERROR stop - no core charge",
+        "line_count": 1,
+        "subroutine": "modcore_budget",
+        "description": "Budgeted model core (icmod 6) of an atom without core charge.",
+    },
+    {
+        "name": "modcore_budget_ecut_too_large",
+        "pattern": rf"modcore_budget: ERROR stop - ecut beyond\s*(?P<ecut_max>{RE_FLOAT}) Ha",
+        "match_string": "modcore_budget: ERROR stop - ecut beyond",
+        "line_count": 1,
+        "subroutine": "modcore_budget",
+        "description": "Cutoff budget of the budgeted model core (icmod 6) beyond the largest density cutoff it checks.",
+    },
+    {
         "name": "dpnint_interpolation_error",
         "pattern": r"dp[n3]int: interpolation ERROR",
         "match_string": ": interpolation ERROR",
@@ -580,7 +608,11 @@ ERRORS += [
     },
     {
         "name": "input_model_core_invalid",
-        "pattern": r"test_data: must have (?:0<= icmod <=4|fcfact>0\.0 for icmod|rcfact>0\.0 for icmod)",
+        # azadoks/oncvpsp: "0<= icmod <=4 or icmod=6", "fcfact>0.0 and rcfact>0.0 for icmod= 6"
+        "pattern": (
+            r"test_data: must have (?:0<= icmod <=4|fcfact>0\.0 (?:and rcfact>0\.0 )?for icmod"
+            r"|rcfact>0\.0 for icmod)"
+        ),
         "match_string": "test_data: must have",
         "line_count": 1,
         "subroutine": "check_data",

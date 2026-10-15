@@ -1091,6 +1091,61 @@ class OncvpspTextParser:
         return {k: np.array(v) for k, v in grid.items()}
 
     @cached_property
+    def budgeted_core(self) -> dict | None:
+        """Budgeted Martins model core charge of azadoks/oncvpsp (icmod 6).
+
+        Inside the radius r_s the model core charge is exp(a + b r^2 + c r^4), matched to the
+        all-electron core charge and its first two derivatives at r_s; beyond r_s it is the
+        all-electron core charge. r_s is the smallest radius whose model needs no more than the
+        cutoff budget for the exchange-correlation energy error.
+
+        Returns:
+            dict | None: None if the output has no budgeted model core, else
+                ecut (float): Cutoff budget (Ha).
+                error (float): Exchange-correlation energy error (Ha) that defines the needed cutoff.
+                r_s (float): Radius of the model (a.u.).
+                rc_min (float): Smallest core radius rc (a.u.).
+                r_core_max (float | None): Last radius with core charge (a.u.), when smaller than
+                    `rc_min` (it then bounds r_s instead of `rc_min`), else None.
+                a, b, c (float): Martins coefficients (a.u.).
+                ecut_needed (float): Cutoff the model core needs (Ha).
+        """
+        start = self.search(r"^Model core correction: budgeted Martins core")
+        if not start:
+            return None
+        i = start[0]
+        budget = self.search(
+            rf"cutoff budget\s+(?P<ecut>{RE_FLOAT}) Ha for an xc energy error of\s+(?P<error>{RE_FLOAT}) Ha",
+            i,
+        )
+        radius = self.search(
+            rf"model radius r_s\s+(?P<r_s>{RE_FLOAT})\s+smallest rc\s+(?P<rc_min>{RE_FLOAT})",
+            i,
+        )
+        coefficients = self.search(
+            rf"a, b, c\s+(?P<a>{RE_FLOAT})\s+(?P<b>{RE_FLOAT})\s+(?P<c>{RE_FLOAT})", i
+        )
+        needed = self.search(
+            rf"cutoff the model core needs\s+(?P<ecut_needed>{RE_FLOAT}) Ha", i
+        )
+        if not (budget and radius and coefficients and needed):
+            return None
+        core_max = self.search(rf"last radius with core charge\s+(?P<r>{RE_FLOAT})", i)
+        if core_max and core_max[0] > coefficients[0]:
+            core_max = None
+        return {
+            "ecut": fort_float(budget[1]["ecut"]),
+            "error": fort_float(budget[1]["error"]),
+            "r_s": fort_float(radius[1]["r_s"]),
+            "rc_min": fort_float(radius[1]["rc_min"]),
+            "r_core_max": fort_float(core_max[1]["r"]) if core_max else None,
+            "a": fort_float(coefficients[1]["a"]),
+            "b": fort_float(coefficients[1]["b"]),
+            "c": fort_float(coefficients[1]["c"]),
+            "ecut_needed": fort_float(needed[1]["ecut_needed"]),
+        }
+
+    @cached_property
     def diagnostic_tests_semilocal(self) -> list[dict]:
         """Diagnostic test information when solving for states in the semilocal pseudopotential.
 
@@ -1964,6 +2019,7 @@ class OncvpspTextParser:
         output["d2exc_rmse"] = self.d2exc_rmse
         output["teter_parameters"] = self.teter_parameters
         output["teter_coarse_grid"] = self.teter_coarse_grid
+        output["budgeted_core"] = self.budgeted_core
         output["diagnostic_tests_semilocal"] = self.diagnostic_tests_semilocal
         output["diagnostic_tests_vkb"] = self.diagnostic_tests_vkb
         output["ghosts"] = self.ghosts

@@ -163,6 +163,26 @@ MESSAGES = [
         "no_core_valence_crossing",
     ),
     ("modcore: ERROR stop - dgesv input error  -1", "modcore_dgesv_failed"),
+    # azadoks/oncvpsp
+    (
+        "modcore_budget: ERROR stop - no model core inside r =  2.703023 needs less than"
+        "    5.0000 Ha for an error of  1.00E-04 Ha",
+        "modcore_budget_no_model",
+    ),
+    (
+        "modcore_budget: ERROR stop - no model core inside rc =  3.200622 needs less than"
+        "   20.0000 Ha for an error of  1.00E-04 Ha",
+        "modcore_budget_no_model",
+    ),
+    ("modcore_budget: ERROR stop - no core charge", "modcore_budget_no_core_charge"),
+    (
+        "modcore_budget: ERROR stop - no core charge at rc",
+        "modcore_budget_no_core_charge",
+    ),
+    (
+        "modcore_budget: ERROR stop - ecut beyond    200.00 Ha",
+        "modcore_budget_ecut_too_large",
+    ),
     ("run_config: WARNING  for AE atom,", "ae_atom_no_solution"),
     (
         "run_config: ERROR for fully non-local PS atom,",
@@ -315,6 +335,12 @@ MESSAGES = [
     ("test_data: must have 1 <= lpopt <= 5", "input_local_potential_invalid"),
     ("test_data: must have 0<= icmod <=4", "input_model_core_invalid"),
     ("test_data: must have fcfact>0.0 for icmod= 1 or 3", "input_model_core_invalid"),
+    # azadoks/oncvpsp
+    ("test_data: must have 0<= icmod <=4 or icmod=6", "input_model_core_invalid"),
+    (
+        "test_data: must have fcfact>0.0 and rcfact>0.0 for icmod= 6",
+        "input_model_core_invalid",
+    ),
     ("test_data: must have rlmax>rcmax", "input_rlmax_too_small"),
     ("test_data: must have positive atomic number z", "input_invalid"),
     ("test_data: l > n, reference configuration line   3", "input_invalid"),
