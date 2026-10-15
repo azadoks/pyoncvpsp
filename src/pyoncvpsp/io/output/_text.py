@@ -25,6 +25,15 @@ from . import _attribution, _sections
 from ._sections import Block, BlockKind, LineContext
 
 RE_FLOAT: str = r"[+-]?(?:\d+\.\d*|\.\d+|\d+)(?:[eEdD][+-]?\d+)?"
+# Build line printed after the citation notice by builds of azadoks/oncvpsp (see its
+# cmake/BuildInfo.cmake), e.g.
+#   build: oncvpspr.x (fully-relativistic), commit <sha>, source clean, compiled 2026-10-15T10:11:10Z
+# `source` is `clean`, `modified (diff <hash>)` or `unknown`.
+RE_BUILD_LINE: re.Pattern[str] = re.compile(
+    r"^build: (?P<executable>\S+) \((?P<relativistic_treatment>[a-z-]+)\), "
+    r"commit (?P<commit>\S+), source (?P<source>clean|unknown|modified \(diff (?P<diff>\w+)\)), "
+    r"compiled (?P<compiled>\S+)$"
+)
 
 
 class OncvpspOutputError(Exception):
@@ -378,8 +387,43 @@ class OncvpspTextParser:
         return list(_sections.blocks(self._clean_line_contexts, kind))
 
     @cached_property
+    def build_information(self) -> dict | None:
+        """Executable, relativistic treatment and build of the program, from the build line which
+        builds of azadoks/oncvpsp print after the citation notice (`None` if there is none).
+
+        Returns:
+            dict | None:
+                executable (str): Name of the executable (e.g. `oncvpspr_ps.x`).
+                relativistic_treatment (str): `non-relativistic`, `scalar-relativistic` or
+                    `fully-relativistic`.
+                commit (str): Git commit of the source, or `unknown` outside a git checkout.
+                source (str): `clean` if the source is that commit, `modified` if it differs from
+                    it, or `unknown`.
+                source_diff (str | None): Hash of the differences of a `modified` source.
+                compiled (str): Build time (UTC, ISO 8601).
+        """
+        # The build line is in the header, before the input echo
+        for line in self.clean_lines:
+            if line.startswith("#"):
+                break
+            if match := RE_BUILD_LINE.match(line):
+                return {
+                    "executable": match["executable"],
+                    "relativistic_treatment": match["relativistic_treatment"],
+                    "commit": match["commit"],
+                    "source": match["source"].split()[0],
+                    "source_diff": match["diff"],
+                    "compiled": match["compiled"],
+                }
+        return None
+
+    @cached_property
     def program_information(self) -> dict:
         """Description of the program (name, version, relativistic treatment, etc.)
+
+        The relativistic treatment is taken from the build line if there is one (see
+        `build_information`), since the header of the non-relativistic ONCVPSP 4.0.1 executable
+        says scalar-relativistic; otherwise from the header.
 
         Raises:
             ValueError: If the program name is unknown.
@@ -390,6 +434,7 @@ class OncvpspTextParser:
                 version (str): Version of the program.
                 date (str): Date of the program run.
                 relativistic_treatment (str): Relativistic treatment used.
+                build (dict | None): `build_information`.
         """
         program: str = self.clean_lines[0].strip().split()[0]
         if program == "ONCVPSP":
@@ -404,11 +449,15 @@ class OncvpspTextParser:
         version: str = version_match.group(1) if version_match else "0.0.0"
         date_match: re.Match[str] | None = re.search(r"(\d{2}/\d{2}/\d{4})", line)
         date: str = date_match.group(1) if date_match else "00/00/0000"
+        build = self.build_information
+        if build is not None:
+            relativistic_treatment = build["relativistic_treatment"]
         return {
             "program": program,
             "version": version,
             "date": date,
             "relativistic_treatment": relativistic_treatment,
+            "build": build,
         }
 
     @cached_property

@@ -401,3 +401,45 @@ def test_test_configuration_energies_are_consistent(parse_output, name):
             abs_tol=2e-2 * max(abs(e["etot_ae_diff"]), 1e-9),
         )
     assert all(s["completed"] for s in parser.test_configuration_status)
+
+
+def test_build_line_relativistic_treatment_is_trusted(parse_output):
+    # The non-relativistic ONCVPSP 4.0.1 executable says scalar-relativistic in its header; the
+    # build line printed by azadoks/oncvpsp builds names the executable and its real treatment
+    parser = parse_output("oncvpsp-4.0.1-nr_08_O_build_info")
+    assert parser.raw_lines[1].startswith("scalar-relativistic version 4.0.1")
+    assert parser.program_information["relativistic_treatment"] == "non-relativistic"
+    assert not parser.is_relativistic
+    assert parser.build_information == {
+        "executable": "oncvpspnr.x",
+        "relativistic_treatment": "non-relativistic",
+        "commit": "1f1125869b08df3cea3de95cc7c0ce84d1983f99",
+        "source": "clean",
+        "source_diff": None,
+        "compiled": "2026-10-15T10:11:10Z",
+    }
+    assert parser.program_information["build"] == parser.build_information
+
+
+def test_build_line_modified_source(read_output):
+    lines = read_output("oncvpsp-4.0.1-sr_14_Si").splitlines()
+    build = (
+        "build: oncvpspr_ps.x (fully-relativistic), commit 1f1125869b08df3cea3de95cc7c0ce84d1983f99,"
+        " source modified (diff b7a4a15da1ec), compiled 2026-10-15T10:06:21Z"
+    )
+    parser = OncvpspTextParser(
+        lines=lines[:9] + [build, "", ""] + lines[9:], check=False
+    )
+    build = parser.build_information
+    assert build is not None
+    assert build["source"] == "modified"
+    assert build["source_diff"] == "b7a4a15da1ec"
+    assert parser.program_information["relativistic_treatment"] == "fully-relativistic"
+    assert parser.is_relativistic
+
+
+def test_no_build_line(parse_output):
+    parser = parse_output("oncvpsp-4.0.1-sr_14_Si")
+    assert parser.build_information is None
+    assert parser.program_information["build"] is None
+    assert parser.program_information["relativistic_treatment"] == "scalar-relativistic"

@@ -24,6 +24,7 @@ features that no other file in the set covers.
 | `oncvpsp-3.3.1-sr_F.out.gz` | code/pseudo_dojo/pseudo_dojo/pseudos/ONCVPSP-PW-PDv0.4/F/F_regen_with_PW/F.out | `prog:ONCVPSP-3.3.1:scalar-relativistic` |
 | `oncvpsp-4.0.1-fr_74_W_r.out.gz` | oncvpsp/code/oncvpsp/tests/refs/74_W_r.out | `nproj_combo:(2, 3)`, `prog:ONCVPSP-4.0.1:relativistic`, `warn:moderately_localized_bound_state_for_projector` |
 | `oncvpsp-4.0.1-fr_N_test_config_failed.out.gz` | oncvpspr.x 4.0.1 on the input of `oncvpsp-4.0.1-sr_N_test_config_failed` (`psfile:upf`) | `test_config_failed:fr`, `binary_in_message` (`psatom_r` writes four integers with the format `(/a,3i4)`; format reversion prints the last one as raw bytes on a line of its own) |
+| `oncvpsp-4.0.1-nr_08_O_build_info.out.gz` | `oncvpspnr.x` of azadoks/oncvpsp 1f11258 (branch `ae-pseudo-split`) on `tests/data/08_O.dat` | `prog:ONCVPSP-4.0.1:non-relativistic`, `build_line` (the header says scalar-relativistic; the build line gives the executable and its relativistic treatment) |
 | `oncvpsp-4.0.1-sr_14_Si.out.gz` | data/examples/Si/14_Si.out | `rxpsh:True` |
 | `oncvpsp-4.0.1-sr_I_1582.out.gz` | AiiDA calculation a2/f1/1582-ff21-4760-890f-5a69f1443834 | `warn:icmod4_nm_not_converged` |
 | `oncvpsp-4.0.1-sr_I_f3c1.out.gz` | AiiDA calculation 30/71/f3c1-3044-4a72-b570-e28366a27058 | `err:ps0norm_gt_uunorm` |
