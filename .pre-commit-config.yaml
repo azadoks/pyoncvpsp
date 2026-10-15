@@ -19,4 +19,4 @@ repos:
       - id: pyrefly-check
         name: Pyrefly (type checking)
         pass_filenames: false
-        additional_dependencies: [ "click", "numpy", "pydantic", "pydantic-numpy", "toml" ]  # Your project's dependencies
+        additional_dependencies: [ "click", "numpy", "pydantic", "pydantic-numpy", "pytest", "toml" ]  # Your project's dependencies
