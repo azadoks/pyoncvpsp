@@ -263,8 +263,12 @@ class OncvpspTextParser:
                     ),
                     name="incomplete_output",
                     subroutine="main",
-                    description="Missing or truncated plotting data: "
-                    + ", ".join(self.missing_plot_data),
+                    description=(
+                        "The all-electron data file was not written"
+                        if self.stage == "ae"
+                        else "Missing or truncated plotting data: "
+                        + ", ".join(self.missing_plot_data)
+                    ),
                 )
             )
         # Errors which only cost a test configuration its results (ONCVPSP moves on to the next
@@ -305,8 +309,31 @@ class OncvpspTextParser:
 
     @cached_property
     def completed(self) -> bool:
-        """Whether ONCVPSP/METAPSP successfully pseudized the atom and wrote all plotting data."""
+        """Whether ONCVPSP/METAPSP successfully pseudized the atom and wrote all plotting data, or,
+        for the all-electron stage (`stage == "ae"`), wrote the all-electron data file."""
+        if self.stage == "ae":
+            return self.ae_data_file is not None
         return not self.missing_plot_data
+
+    @cached_property
+    def stage(self) -> str | None:
+        """Stage of the split run of azadoks/oncvpsp, from the executable of the build line: `"ae"`
+        for `oncvpsp{,nr,r}_ae.x`, which solves the all-electron reference atom and test
+        configurations and writes them to a file, `"ps"` for `oncvpsp{,nr,r}_ps.x`, which reads
+        that file and prints what the whole program prints, or `None` for the whole program (or a
+        build without a build line)."""
+        build = self.build_information
+        if build is None:
+            return None
+        match = re.search(r"_(ae|ps)\.x$", build["executable"])
+        return match.group(1) if match else None
+
+    @cached_property
+    def ae_data_file(self) -> str | None:
+        """Name of the all-electron data file written by the all-electron stage (`None` if none was
+        written)."""
+        match = self.search(r"^All-electron data written to (?P<file>\S+)")
+        return match[1]["file"] if match else None
 
     @cached_property
     def missing_plot_data(self) -> list[str]:
@@ -315,8 +342,11 @@ class OncvpspTextParser:
         as its output may be disabled.
 
         Returns:
-            list[str]: Names of the missing or truncated sections; empty if all were written.
+            list[str]: Names of the missing or truncated sections; empty if all were written,
+                and for the all-electron stage, which writes none.
         """
+        if self.stage == "ae":
+            return []
         start_match = self.search("DATA FOR PLOTTING")
         if not start_match:
             return ["DATA FOR PLOTTING"]
@@ -2074,6 +2104,8 @@ class OncvpspTextParser:
         """Parsed output as a dictionary."""
         output: dict[str, Any] = {}
         output["completed"] = self.completed
+        output["stage"] = self.stage
+        output["ae_data_file"] = self.ae_data_file
         output["missing_plot_data"] = self.missing_plot_data
         output["errors"] = self.errors
         output["warnings"] = self.warnings

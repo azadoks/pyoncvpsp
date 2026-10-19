@@ -51,7 +51,12 @@ def pytest_generate_tests(metafunc):
     if "output_name" in metafunc.fixturenames:
         metafunc.parametrize("output_name", OUTPUT_NAMES)
     if "completed_output_name" in metafunc.fixturenames:
-        completed = [name for name in OUTPUT_NAMES if parse_output(name).completed]
+        # the all-electron stage completes without pseudizing the atom
+        completed = [
+            name
+            for name in OUTPUT_NAMES
+            if parse_output(name).completed and parse_output(name).stage != "ae"
+        ]
         metafunc.parametrize("completed_output_name", completed)
 
 

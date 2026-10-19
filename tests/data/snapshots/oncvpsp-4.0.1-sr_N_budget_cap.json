@@ -1,4 +1,5 @@
 {
+ "ae_data_file": null,
  "budgeted_core": {
   "a": 2.00171222,
   "b": -8.01646495,
@@ -830,6 +831,7 @@
    "n": 2
   }
  ],
+ "stage": null,
  "test_configuration_energies": [
   {
    "etot_ae_diff": 0.0,

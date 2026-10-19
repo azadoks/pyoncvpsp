@@ -255,3 +255,25 @@ def test_log_mesh(parse_output):
             "rr1": None,
             "rmax": None,
         }
+
+
+def test_split_stages(parse_output, read_output):
+    # oncvpsp_ae.x writes the all-electron atom and test configurations to a file, which
+    # oncvpsp_ps.x reads and then prints what oncvpsp.x prints
+    ae = parse_output("oncvpsp-4.0.1-sr_14_Si_ae")
+    assert ae.stage == "ae"
+    assert ae.completed
+    assert ae.ae_data_file == "si.ae"
+    assert ae.missing_plot_data == []
+    assert ae.check(doraise=False) == []
+    ps = parse_output("oncvpsp-4.0.1-sr_14_Si_ps")
+    assert ps.stage == "ps"
+    assert ps.completed
+    assert ps.ae_data_file is None
+    assert ps.reference_configuration == ae.reference_configuration
+    assert parse_output("oncvpsp-4.0.1-sr_14_Si").stage is None
+    lines = read_output("oncvpsp-4.0.1-sr_14_Si_ae").splitlines()[:-1]
+    truncated = OncvpspTextParser(lines=lines, check=False)
+    assert not truncated.completed
+    (exception,) = truncated.check(doraise=False)
+    assert exception.name == "incomplete_output"

@@ -1,4 +1,5 @@
 {
+ "ae_data_file": null,
  "budgeted_core": null,
  "completed": true,
  "d2exc": {},
@@ -1056,6 +1057,7 @@
    "n": 3
   }
  ],
+ "stage": null,
  "test_configuration_energies": [
   null
  ],

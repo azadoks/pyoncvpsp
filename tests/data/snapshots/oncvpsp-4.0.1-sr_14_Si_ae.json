@@ -1,0 +1,257 @@
+{
+ "ae_data_file": "si.ae",
+ "budgeted_core": null,
+ "completed": true,
+ "d2exc": {},
+ "d2exc_rmse": null,
+ "diagnostic_tests_semilocal": [],
+ "diagnostic_tests_vkb": [],
+ "errors": [],
+ "ghosts": [],
+ "gnuplot_script": "",
+ "input": {
+  "local_potential": {
+   "dvloc0": 0.0,
+   "lloc": 4,
+   "lpopt": 5,
+   "rcloc": 2.7
+  },
+  "log_derivative_analysis": {
+   "depsh": 0.02,
+   "epsh1": -2.0,
+   "epsh2": 2.0,
+   "rxpsh": null
+  },
+  "log_mesh": {
+   "amesh": null,
+   "rmax": null,
+   "rr1": null
+  },
+  "model_core_charge": {
+   "fcfact": 0.25,
+   "icmod": 1,
+   "rcfact": 0.0,
+   "slack": 1.0,
+   "teter_amp_max": null,
+   "teter_amp_min": null,
+   "teter_amp_step": null,
+   "teter_relative": true,
+   "teter_scale_max": null,
+   "teter_scale_min": null,
+   "teter_scale_step": null
+  },
+  "oncvpsp": {
+   "atsym": "Si",
+   "iexc": 3,
+   "nc": 3,
+   "nv": 2,
+   "psfile": "psp8",
+   "z": 14.0
+  },
+  "output_grid": {
+   "drl": 0.01,
+   "rlmax": 5.0
+  },
+  "pseudopotentials": {
+   "ep": [
+    0.0,
+    0.0,
+    0.1
+   ],
+   "l": [
+    0,
+    1,
+    2
+   ],
+   "lmax": 2,
+   "nbas": [
+    8,
+    8,
+    8
+   ],
+   "ncon": [
+    5,
+    5,
+    5
+   ],
+   "qcut": [
+    5.0,
+    5.0,
+    5.0
+   ],
+   "rc": [
+    2.7,
+    2.7,
+    2.7
+   ]
+  },
+  "reference_configuration": {
+   "f": [
+    2.0,
+    2.0,
+    6.0,
+    2.0,
+    2.0
+   ],
+   "l": [
+    0,
+    0,
+    1,
+    0,
+    1
+   ],
+   "n": [
+    1,
+    2,
+    2,
+    3,
+    3
+   ]
+  },
+  "test_configurations": [
+   {
+    "f": [
+     1.0,
+     2.0
+    ],
+    "l": [
+     0,
+     1
+    ],
+    "n": [
+     3,
+     3
+    ]
+   },
+   {
+    "f": [
+     2.0,
+     1.0
+    ],
+    "l": [
+     0,
+     1
+    ],
+    "n": [
+     3,
+     3
+    ]
+   },
+   {
+    "f": [
+     1.0,
+     1.0
+    ],
+    "l": [
+     0,
+     1
+    ],
+    "n": [
+     3,
+     3
+    ]
+   }
+  ],
+  "vkb_projectors": {
+   "debl": [
+    1.0,
+    0.75,
+    0.75
+   ],
+   "l": [
+    0,
+    1,
+    2
+   ],
+   "nproj": [
+    2,
+    2,
+    2
+   ]
+  }
+ },
+ "localized_bound_states": [],
+ "missing_plot_data": [],
+ "plot_data": {
+  "charge_densities": {},
+  "convergence_profiles": [],
+  "kinetic_energy_densities": {},
+  "kinetic_energy_potentials": {},
+  "local_potential": {
+   "dvloc0": 0.0,
+   "lloc": 4,
+   "lpopt": 5,
+   "rcloc": 2.7
+  },
+  "log_derivatives": [],
+  "optimized_pseudo_wavefunctions": [],
+  "semilocal_potentials": [],
+  "unscreened_semilocal_potentials": [],
+  "vkb_projectors": [],
+  "wavefunctions": []
+ },
+ "program_information": {
+  "build": {
+   "commit": "5947faf554fc7e6ab6cefd01b2cb995b6b15ec15",
+   "compiled": "2026-10-19T16:53:33Z",
+   "executable": "oncvpsp_ae.x",
+   "relativistic_treatment": "scalar-relativistic",
+   "source": "clean",
+   "source_diff": null
+  },
+  "date": "03/01/2019",
+  "program": "ONCVPSP",
+  "relativistic_treatment": "scalar-relativistic",
+  "version": "4.0.1"
+ },
+ "psp8": "",
+ "reference_configuration": [
+  {
+   "eig_ae": -65.357528,
+   "f": 2.0,
+   "j": null,
+   "l": 0,
+   "n": 1
+  },
+  {
+   "eig_ae": -5.0983852,
+   "f": 2.0,
+   "j": null,
+   "l": 0,
+   "n": 2
+  },
+  {
+   "eig_ae": -3.5132518,
+   "f": 6.0,
+   "j": null,
+   "l": 1,
+   "n": 2
+  },
+  {
+   "eig_ae": -0.39999499,
+   "f": 2.0,
+   "j": null,
+   "l": 0,
+   "n": 3
+  },
+  {
+   "eig_ae": -0.15319675,
+   "f": 2.0,
+   "j": null,
+   "l": 1,
+   "n": 3
+  }
+ ],
+ "stage": "ae",
+ "test_configuration_energies": [],
+ "test_configuration_status": [],
+ "test_configurations": [],
+ "teter_coarse_grid": {},
+ "teter_parameters": {},
+ "upf": "",
+ "vkb_hermiticity_errors": [],
+ "vkb_scalar_projector_coefficients": [],
+ "vkb_spin_orbit_projector_coefficients": [],
+ "warnings": [],
+ "wellstate_metadata": []
+}
