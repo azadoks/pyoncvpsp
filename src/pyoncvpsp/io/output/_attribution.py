@@ -95,6 +95,10 @@ ATTRIBUTION: dict[str, dict[str, Any]] = {
     "input_file_read_error": {"stage": Stage.INPUT, "scope": Scope.INPUT},
     "input_data_read_error": {"stage": Stage.INPUT, "scope": Scope.INPUT},
     "input_file_read_failed": {"stage": Stage.INPUT, "scope": Scope.INPUT},
+    "ae_file_required": {"stage": Stage.INPUT, "scope": Scope.INPUT},
+    "ae_file_write_failed": {"stage": Stage.AE_REFERENCE, "scope": Scope.INPUT},
+    "ae_file_mismatch": {"stage": Stage.AE_REFERENCE, "scope": Scope.INPUT},
+    "ae_file_read_failed": {"stage": Stage.AE_REFERENCE, "scope": Scope.INPUT},
     "fr_lloc_not_supported": {"stage": Stage.INPUT, "scope": Scope.LOCAL},
     "libxc_not_available": {"stage": Stage.INPUT, "scope": Scope.INPUT},
     "vout_bad_input": {"stage": Stage.INPUT, "scope": Scope.INPUT},
@@ -160,6 +164,10 @@ ATTRIBUTION: dict[str, dict[str, Any]] = {
         "scope": Scope.MODEL_CORE,
     },
     "modcore_budget_no_waves": {"stage": Stage.MODEL_CORE, "scope": Scope.MODEL_CORE},
+    "modcore_budget_table_unreached": {
+        "stage": Stage.MODEL_CORE,
+        "scope": Scope.MODEL_CORE,
+    },
     "modcore_budget_ecut_too_large": {
         "stage": Stage.MODEL_CORE,
         "scope": Scope.MODEL_CORE,

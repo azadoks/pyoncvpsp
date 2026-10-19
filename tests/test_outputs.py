@@ -6,12 +6,15 @@ Regenerate the snapshots with `pytest --update-snapshots` after an intended chan
 """
 
 import json
+from pathlib import Path
 import re
 
 import pytest
 
 from pyoncvpsp.io.input import OncvpspInput
 from pyoncvpsp.io.output import OncvpspTextParser
+
+DATA_DIR = Path(__file__).parent / "data"
 
 
 def test_snapshot(output_name, parse_output, snapshot):
@@ -206,17 +209,25 @@ def test_truncated_output_is_incomplete(completed_output_name, read_output):
 def test_budgeted_core(parse_output):
     budgeted = parse_output("oncvpsp-4.0.1-sr_14_Si_bc").budgeted_core
     assert budgeted == {
+        "icmod": 6,
         "ecut": 25.0,
         "error": 1.0e-4,
         "ecut_pseudo_waves": None,
         "factor": None,
+        "budget_source": None,
+        "slack": 1.0,
         "r_s": 0.695197,
         "rc_min": 2.703023,
         "r_core_max": None,
+        "fill": "Martins",
         "a": 5.36621515,
         "b": -6.23065052,
         "c": 1.87082158,
+        "coefficients": None,
         "ecut_needed": 24.8513,
+        "r_s_smallest": None,
+        "hardness_mismatch": None,
+        "candidates": None,
     }
     capped = parse_output("oncvpsp-4.0.1-sr_N_budget_cap").budgeted_core
     assert capped is not None
@@ -248,3 +259,104 @@ def test_log_mesh(parse_output):
             "rr1": None,
             "rmax": None,
         }
+
+
+def test_split_stages(parse_output, read_output):
+    # oncvpsp_ae.x writes the all-electron atom and test configurations to a file, which
+    # oncvpsp_ps.x reads and then prints what oncvpsp.x prints
+    ae = parse_output("oncvpsp-4.0.1-sr_14_Si_ae")
+    assert ae.stage == "ae"
+    assert ae.completed
+    assert ae.ae_data_file == "si.ae"
+    assert ae.missing_plot_data == []
+    assert ae.check(doraise=False) == []
+    ps = parse_output("oncvpsp-4.0.1-sr_14_Si_ps")
+    assert ps.stage == "ps"
+    assert ps.completed
+    assert ps.ae_data_file is None
+    assert ps.reference_configuration == ae.reference_configuration
+    assert parse_output("oncvpsp-4.0.1-sr_14_Si").stage is None
+    lines = read_output("oncvpsp-4.0.1-sr_14_Si_ae").splitlines()[:-1]
+    truncated = OncvpspTextParser(lines=lines, check=False)
+    assert not truncated.completed
+    (exception,) = truncated.check(doraise=False)
+    assert exception.name == "incomplete_output"
+
+
+def test_budgeted_core_v2(parse_output):
+    # azadoks/oncvpsp 9b90162: the minimum-tail fill, slack and the hardness-matched core (icmod 7)
+    auto = parse_output("oncvpsp-4.0.1-sr_14_Si_icmod6_auto").budgeted_core
+    assert auto["icmod"] == 6 and auto["fill"] == "minimum tail"
+    assert auto["a"] is None and len(auto["coefficients"]) == 9
+    assert auto["ecut"] == auto["ecut_pseudo_waves"] == 33.5528
+    assert auto["slack"] == 1.0 and auto["candidates"] is None
+    parser = parse_output("oncvpsp-4.0.1-sr_14_Si_icmod7_slack0.7")
+    assert parser.input["model_core_charge"]["slack"] == 0.7
+    hardness = parser.budgeted_core
+    assert hardness["icmod"] == 7 and hardness["slack"] == 0.7
+    assert hardness["ecut_needed"] <= hardness["slack"] * hardness["ecut"]
+    assert hardness["hardness_mismatch"] == 3.09e-8
+    chosen = [c for c in hardness["candidates"] if c["fits"]]
+    assert [c["r_s"] for c in chosen] == [hardness["r_s"]]
+    radii = [c["r_s"] for c in hardness["candidates"]]
+    assert radii == sorted(radii, reverse=True) and radii[0] == hardness["rc_min"]
+    relativistic = parse_output("oncvpsp-4.0.1-fr_14_Si_icmod7").budgeted_core
+    assert (
+        relativistic["icmod"] == 7
+        and relativistic["r_s"] > relativistic["r_s_smallest"]
+    )
+
+
+@pytest.mark.parametrize(
+    ("name", "fill", "icmod"),
+    [
+        ("I_icmod6_martins_fill_fragment", "Martins", 6),
+        ("I_icmod7_fragment", "minimum tail", 7),
+    ],
+)
+def test_budgeted_core_fragments(name, fill, icmod):
+    # model-core blocks of the routine run on PPG's I densities: a Martins fill, and mixed candidates
+    with open(DATA_DIR / "fragments" / f"{name}.txt", encoding="utf-8") as fp:
+        budgeted = OncvpspTextParser(
+            lines=fp.read().splitlines(), check=False
+        ).budgeted_core
+    assert budgeted is not None
+    assert budgeted["icmod"] == icmod and budgeted["fill"] == fill
+    if icmod == 7:
+        fills = {c["fill"] for c in budgeted["candidates"]}
+        assert fills == {"minimum tail", "Martins"}
+        assert budgeted["r_s_smallest"] == 0.974534
+    else:
+        assert budgeted["coefficients"] is None and budgeted["c"] == 0.187504012
+
+
+def test_ionic_tail(parse_output):
+    # azadoks/oncvpsp 5e706ad: V_loc switched to the frozen-core ionic tail beyond rc, and its diagnostics
+    parser = parse_output("oncvpsp-4.0.1-sr_08_O_ionic_tail")
+    assert parser.ionic_tail == {"r_start": 1.4531, "r_end": 2.9062, "steps": 5}
+    assert parser.coulomb_tail == {
+        "alpha_z": 6.2386769285,
+        "truncation": [
+            {"r": 6.0, "change": 3.348e-08},
+            {"r": 10.0, "change": 4.9176e-09},
+        ],
+        "r_coulomb": 2.8059,
+        "max_nonionic": 3.8286e-05,
+    }
+    relativistic = parse_output("oncvpsp-4.0.1-fr_74_W_ionic_tail")
+    assert relativistic.ionic_tail is not None and relativistic.coulomb_tail is not None
+    assert parse_output("oncvpsp-4.0.1-sr_14_Si").ionic_tail is None
+    assert parse_output("oncvpsp-4.0.1-sr_14_Si").coulomb_tail is None
+
+
+def test_budget_from_tables(parse_output):
+    # azadoks/oncvpsp 59d0ba8: fcfact 0 is the largest Ecut of the convergence tables at the error per electron,
+    # ONCVPSP's recommended cutoff
+    parser = parse_output("oncvpsp-4.0.1-sr_14_Si_icmod7_tables")
+    budgeted = parser.budgeted_core
+    assert budgeted is not None
+    assert budgeted["budget_source"] == "tables"
+    assert budgeted["ecut_pseudo_waves"] == budgeted["ecut"] == 33.5991
+    assert budgeted["ecut"] == pytest.approx(parser.ecut_recommended, abs=0.01)
+    weighted = parse_output("oncvpsp-4.0.1-sr_14_Si_icmod6_auto").budgeted_core
+    assert weighted is not None and weighted["budget_source"] == "weighted"

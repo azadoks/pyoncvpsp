@@ -1,18 +1,28 @@
 {
+ "ae_data_file": null,
  "budgeted_core": {
   "a": 2.00171222,
   "b": -8.01646495,
+  "budget_source": null,
   "c": 1.07678712,
+  "candidates": null,
+  "coefficients": null,
   "ecut": 20.0,
   "ecut_needed": 19.845,
   "ecut_pseudo_waves": null,
   "error": 0.0001,
   "factor": null,
+  "fill": "Martins",
+  "hardness_mismatch": null,
+  "icmod": 6,
   "r_core_max": 2.873894,
   "r_s": 1.137061,
-  "rc_min": 3.200622
+  "r_s_smallest": null,
+  "rc_min": 3.200622,
+  "slack": 1.0
  },
  "completed": true,
+ "coulomb_tail": null,
  "d2exc": {},
  "d2exc_rmse": null,
  "diagnostic_tests_semilocal": [],
@@ -90,6 +100,7 @@
    "fcfact": 20.0,
    "icmod": 6,
    "rcfact": 0.0001,
+   "slack": 1.0,
    "teter_amp_max": null,
    "teter_amp_min": null,
    "teter_amp_step": null,
@@ -170,6 +181,7 @@
    ]
   }
  },
+ "ionic_tail": null,
  "localized_bound_states": [],
  "missing_plot_data": [],
  "plot_data": {
@@ -822,6 +834,7 @@
    "n": 2
   }
  ],
+ "stage": null,
  "test_configuration_energies": [
   {
    "etot_ae_diff": 0.0,

@@ -1,6 +1,8 @@
 {
+ "ae_data_file": null,
  "budgeted_core": null,
  "completed": true,
+ "coulomb_tail": null,
  "d2exc": {},
  "d2exc_rmse": null,
  "diagnostic_tests_semilocal": [
@@ -207,6 +209,7 @@
    "fcfact": 0.0,
    "icmod": 0,
    "rcfact": 0.0,
+   "slack": 1.0,
    "teter_amp_max": null,
    "teter_amp_min": null,
    "teter_amp_step": null,
@@ -296,6 +299,7 @@
    ]
   }
  },
+ "ionic_tail": null,
  "localized_bound_states": [
   {
    "asymptotic_potential": null,
@@ -1180,6 +1184,7 @@
    "n": 4
   }
  ],
+ "stage": null,
  "test_configuration_energies": [
   {
    "etot_ae_diff": 0.0,

@@ -1,6 +1,8 @@
 {
+ "ae_data_file": null,
  "budgeted_core": null,
  "completed": false,
+ "coulomb_tail": null,
  "d2exc": {},
  "d2exc_rmse": null,
  "diagnostic_tests_semilocal": [],
@@ -51,6 +53,7 @@
    "fcfact": 0.0,
    "icmod": 4,
    "rcfact": 0.0,
+   "slack": 1.0,
    "teter_amp_max": null,
    "teter_amp_min": null,
    "teter_amp_step": null,
@@ -131,6 +134,7 @@
    ]
   }
  },
+ "ionic_tail": null,
  "localized_bound_states": [],
  "missing_plot_data": [
   "DATA FOR PLOTTING"
@@ -184,6 +188,7 @@
    "n": 2
   }
  ],
+ "stage": null,
  "test_configuration_energies": [],
  "test_configuration_status": [],
  "test_configurations": [],

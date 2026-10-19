@@ -1,6 +1,8 @@
 {
+ "ae_data_file": null,
  "budgeted_core": null,
  "completed": true,
+ "coulomb_tail": null,
  "d2exc": {
   "ae": {
    "abs_sum": 0.13083230004000002,
@@ -190,6 +192,7 @@
    "fcfact": 0.25,
    "icmod": 1,
    "rcfact": 0.0,
+   "slack": 1.0,
    "teter_amp_max": null,
    "teter_amp_min": null,
    "teter_amp_step": null,
@@ -321,6 +324,7 @@
    ]
   }
  },
+ "ionic_tail": null,
  "localized_bound_states": [],
  "missing_plot_data": [],
  "plot_data": {
@@ -1265,6 +1269,7 @@
    "n": 6
   }
  ],
+ "stage": null,
  "test_configuration_energies": [
   {
    "etot_ae_diff": 0.0,
