@@ -1251,6 +1251,75 @@ class OncvpspTextParser:
         }
 
     @cached_property
+    def ionic_tail(self) -> dict | None:
+        """Window over which azadoks/oncvpsp switches the screened potentials to the frozen-core ionic tail
+        (V_ion + V_Hxc beyond the largest rc), and the fixed-point steps of the pseudo valence states in it
+        (`None` for builds without the ionic tail).
+
+        Returns:
+            dict | None:
+                r_start (float): Start of the switch (a.u.), the largest rc.
+                r_end (float): End of the switch (a.u.).
+                steps (int): Steps of the fixed point.
+        """
+        match = self.search(
+            rf"^Ionic tail switched over r =\s*(?P<r_start>{RE_FLOAT}) to\s*(?P<r_end>{RE_FLOAT}) a\.u\., "
+            r"converged in\s*(?P<steps>\d+) steps"
+        )
+        if not match:
+            return None
+        return {
+            "r_start": fort_float(match[1]["r_start"]),
+            "r_end": fort_float(match[1]["r_end"]),
+            "steps": int(match[1]["steps"]),
+        }
+
+    @cached_property
+    def coulomb_tail(self) -> dict | None:
+        """Coulomb tail diagnostics of the unscreened local potential, printed by builds of azadoks/oncvpsp with
+        the ionic tail (`coulomb_tail` of PseudoPotentialGenerators.jl; `None` if not printed).
+
+        Returns:
+            dict | None:
+                alpha_z (float): 4 pi int r^2 (V_loc + zion/r) dr over the log mesh (Ha bohr^3); QE's
+                    alpha = int r (r V_loc + 2 Z) dr (Ry) is alpha_z / (2 pi).
+                truncation (list[dict]): For each radius `r` (a.u.) at which the table is cut, the change
+                    `alpha_z(cut) - alpha_z` (Ha bohr^3).
+                r_coulomb (float): Radius beyond which |V_loc + zion/r| < 1e-10 Ha (a.u.).
+                max_nonionic (float): Largest |V_loc - V_ion| beyond the largest rc (Ha).
+        """
+        start = self.search(r"^Coulomb tail of the local potential")
+        if not start:
+            return None
+        i = start[0]
+        alpha = self.search(
+            rf"alpha_z = 4 pi int r\*\*2 \(V_loc \+ zion/r\) dr\s+(?P<a>{RE_FLOAT}) Ha",
+            i,
+        )
+        coulomb = self.search(
+            rf"\|V_loc \+ zion/r\| < 1e-10 beyond r =\s*(?P<r>{RE_FLOAT})", i
+        )
+        nonionic = self.search(
+            rf"max \|V_loc - V_ion\| beyond rcmax\s+(?P<v>{RE_FLOAT})", i
+        )
+        if not (alpha and coulomb and nonionic):
+            return None
+        truncation = [
+            {"r": fort_float(m["r"]), "change": fort_float(m["change"])}
+            for _, m in self.findall(
+                rf"alpha_z change, table cut at r =\s*(?P<r>{RE_FLOAT}):\s*(?P<change>{RE_FLOAT})",
+                i,
+                nonionic[0],
+            )
+        ]
+        return {
+            "alpha_z": fort_float(alpha[1]["a"]),
+            "truncation": truncation,
+            "r_coulomb": fort_float(coulomb[1]["r"]),
+            "max_nonionic": fort_float(nonionic[1]["v"]),
+        }
+
+    @cached_property
     def diagnostic_tests_semilocal(self) -> list[dict]:
         """Diagnostic test information when solving for states in the semilocal pseudopotential.
 
@@ -2127,6 +2196,8 @@ class OncvpspTextParser:
         output["teter_parameters"] = self.teter_parameters
         output["teter_coarse_grid"] = self.teter_coarse_grid
         output["budgeted_core"] = self.budgeted_core
+        output["ionic_tail"] = self.ionic_tail
+        output["coulomb_tail"] = self.coulomb_tail
         output["diagnostic_tests_semilocal"] = self.diagnostic_tests_semilocal
         output["diagnostic_tests_vkb"] = self.diagnostic_tests_vkb
         output["ghosts"] = self.ghosts

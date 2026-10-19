@@ -2,6 +2,7 @@
  "ae_data_file": null,
  "budgeted_core": null,
  "completed": true,
+ "coulomb_tail": null,
  "d2exc": {
   "ae": {
    "abs_sum": 0.21549051200000002,
@@ -581,6 +582,7 @@
    ]
   }
  },
+ "ionic_tail": null,
  "localized_bound_states": [
   {
    "asymptotic_potential": null,

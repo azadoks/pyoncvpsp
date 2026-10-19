@@ -2,6 +2,7 @@
  "ae_data_file": null,
  "budgeted_core": null,
  "completed": true,
+ "coulomb_tail": null,
  "d2exc": {},
  "d2exc_rmse": null,
  "diagnostic_tests_semilocal": [
@@ -322,6 +323,7 @@
    ]
   }
  },
+ "ionic_tail": null,
  "localized_bound_states": [],
  "missing_plot_data": [],
  "plot_data": {

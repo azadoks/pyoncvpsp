@@ -327,3 +327,22 @@ def test_budgeted_core_fragments(name, fill, icmod):
         assert budgeted["r_s_smallest"] == 0.974534
     else:
         assert budgeted["coefficients"] is None and budgeted["c"] == 0.187504012
+
+
+def test_ionic_tail(parse_output):
+    # azadoks/oncvpsp 5e706ad: V_loc switched to the frozen-core ionic tail beyond rc, and its diagnostics
+    parser = parse_output("oncvpsp-4.0.1-sr_08_O_ionic_tail")
+    assert parser.ionic_tail == {"r_start": 1.4531, "r_end": 2.9062, "steps": 5}
+    assert parser.coulomb_tail == {
+        "alpha_z": 6.2386769285,
+        "truncation": [
+            {"r": 6.0, "change": 3.348e-08},
+            {"r": 10.0, "change": 4.9176e-09},
+        ],
+        "r_coulomb": 2.8059,
+        "max_nonionic": 3.8286e-05,
+    }
+    relativistic = parse_output("oncvpsp-4.0.1-fr_74_W_ionic_tail")
+    assert relativistic.ionic_tail is not None and relativistic.coulomb_tail is not None
+    assert parse_output("oncvpsp-4.0.1-sr_14_Si").ionic_tail is None
+    assert parse_output("oncvpsp-4.0.1-sr_14_Si").coulomb_tail is None

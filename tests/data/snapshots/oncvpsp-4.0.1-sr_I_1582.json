@@ -2,6 +2,7 @@
  "ae_data_file": null,
  "budgeted_core": null,
  "completed": true,
+ "coulomb_tail": null,
  "d2exc": {
   "ae": {
    "abs_sum": 0.08318307999999999,
@@ -268,6 +269,7 @@
    ]
   }
  },
+ "ionic_tail": null,
  "localized_bound_states": [],
  "missing_plot_data": [],
  "plot_data": {

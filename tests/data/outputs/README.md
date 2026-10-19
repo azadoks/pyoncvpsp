@@ -33,6 +33,8 @@ features that no other file in the set covers.
 | `oncvpsp-4.0.1-sr_14_Si_icmod6_auto.out.gz` | `oncvpsp.x` of azadoks/oncvpsp 9b90162 (branch `oncvpsp-opt`, model core v2) on its `tests/data/14_Si_bca.dat` | `budgeted_core:minimum_tail` (icmod 6 with the minimum-tail fill and its coefficients) |
 | `oncvpsp-4.0.1-sr_14_Si_icmod7_slack0.7.out.gz` | `oncvpsp.x` of the same build on its `tests/data/14_Si_hm.dat` with slack 0.7 | `icmod:7` (hardness-matched core, its candidates), `slack` (input echo and output) |
 | `oncvpsp-4.0.1-fr_14_Si_icmod7.out.gz` | `oncvpspr.x` of the same build on its `tests/data/14_Si_hm.dat` | `icmod:7` fully relativistic (J-averaged probes) |
+| `oncvpsp-4.0.1-sr_08_O_ionic_tail.out.gz` | `oncvpsp.x` of azadoks/oncvpsp 5e706ad (branch `oncvpsp-opt`, ionic tail) on the PseudoDojo v0.6 O input (icmod 3, rlmax 6, no test configurations) | `ionic_tail`, `coulomb_tail` (V_loc switched to the frozen-core ionic tail, and its Coulomb-tail diagnostics) |
+| `oncvpsp-4.0.1-fr_74_W_ionic_tail.out.gz` | `oncvpspr.x` of the same build on a W input from the oncvpsp test set (sample of the ionic-tail port) | `ionic_tail` fully relativistic |
 | `oncvpsp-4.0.1-sr_N_budget_cap.out.gz` | `oncvpsp.x` of azadoks/oncvpsp a4046c0 on N with rc 3.2, icmod 6, cutoff budget 20 Ha | `budgeted_core:r_core_max` (rc beyond the last radius with core charge) |
 | `oncvpsp-4.0.1-sr_N_budget_too_small.out.gz` | `oncvpsp.x` of azadoks/oncvpsp a4046c0 on N with rc 1.5, icmod 6, cutoff budget 2 Ha | `err:modcore_budget_no_model` |
 | `oncvpsp-4.0.1-sr_14_Si.out.gz` | data/examples/Si/14_Si.out | `rxpsh:True` |
