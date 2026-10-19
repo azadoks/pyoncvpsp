@@ -1137,8 +1137,13 @@ class OncvpspTextParser:
             dict | None: None if the output has no budgeted model core, else
                 icmod (int): 6 or 7.
                 ecut (float): Cutoff budget (Ha).
-                ecut_pseudo_waves (float | None): Cutoff the pseudo-waves need for `error` (Ha),
-                    when the budget is taken from it (`fcfact <= 0`), else None.
+                ecut_pseudo_waves (float | None): Cutoff of the pseudo-waves (Ha) when the budget is taken
+                    from it (`fcfact <= 0`), else None: from 59d0ba8 on, the largest Ecut of the convergence
+                    tables at `error` per electron (ONCVPSP's recommended cutoff, as `ecut_recommended` at
+                    1e-5); before, the cutoff for a total error `error` over the waves weighted by their
+                    electrons (PseudoPotentialGenerators.jl's `ecut_for_error`).
+                budget_source (str | None): "tables" or "weighted" (the definition of
+                    `ecut_pseudo_waves`), None without it.
                 factor (float | None): Multiple of `ecut_pseudo_waves` that is the budget, else None.
                 error (float): Exchange-correlation energy error (Ha) that defines the needed cutoff.
                 slack (float): Fraction of the budget the model core must fit (1 if not printed).
@@ -1195,7 +1200,8 @@ class OncvpspTextParser:
         else:
             return None
         waves = find(
-            rf"pseudo-wave cutoff\s+(?P<ecut>{RE_FLOAT}) Ha, times\s+(?P<factor>{RE_FLOAT})"
+            rf"pseudo-wave cutoff(?:, largest Ecut of the tables at\s+(?P<per_electron>{RE_FLOAT}) Ha/electron)?"
+            rf"\s+(?P<ecut>{RE_FLOAT}) Ha, times\s+(?P<factor>{RE_FLOAT})"
         )
         slack = find(rf"slack\s+(?P<slack>{RE_FLOAT}),")
         core_max = find(rf"last radius with core charge\s+(?P<r>{RE_FLOAT})")
@@ -1233,6 +1239,9 @@ class OncvpspTextParser:
             "error": fort_float(budget["error"]),
             "ecut_pseudo_waves": fort_float(waves["ecut"]) if waves else None,
             "factor": fort_float(waves["factor"]) if waves else None,
+            "budget_source": (
+                None if not waves else "tables" if waves["per_electron"] else "weighted"
+            ),
             "slack": fort_float(slack["slack"]) if slack else 1.0,
             "r_s": fort_float(radius["r_s"]),
             "rc_min": fort_float(radius["rc_min"]),

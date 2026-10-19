@@ -214,6 +214,7 @@ def test_budgeted_core(parse_output):
         "error": 1.0e-4,
         "ecut_pseudo_waves": None,
         "factor": None,
+        "budget_source": None,
         "slack": 1.0,
         "r_s": 0.695197,
         "rc_min": 2.703023,
@@ -346,3 +347,16 @@ def test_ionic_tail(parse_output):
     assert relativistic.ionic_tail is not None and relativistic.coulomb_tail is not None
     assert parse_output("oncvpsp-4.0.1-sr_14_Si").ionic_tail is None
     assert parse_output("oncvpsp-4.0.1-sr_14_Si").coulomb_tail is None
+
+
+def test_budget_from_tables(parse_output):
+    # azadoks/oncvpsp 59d0ba8: fcfact 0 is the largest Ecut of the convergence tables at the error per electron,
+    # ONCVPSP's recommended cutoff
+    parser = parse_output("oncvpsp-4.0.1-sr_14_Si_icmod7_tables")
+    budgeted = parser.budgeted_core
+    assert budgeted is not None
+    assert budgeted["budget_source"] == "tables"
+    assert budgeted["ecut_pseudo_waves"] == budgeted["ecut"] == 33.5991
+    assert budgeted["ecut"] == pytest.approx(parser.ecut_recommended, abs=0.01)
+    weighted = parse_output("oncvpsp-4.0.1-sr_14_Si_icmod6_auto").budgeted_core
+    assert weighted is not None and weighted["budget_source"] == "weighted"

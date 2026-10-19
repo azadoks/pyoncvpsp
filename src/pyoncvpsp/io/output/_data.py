@@ -502,6 +502,14 @@ ERRORS: list[dict[str, Any]] = [
         "description": "The pseudo-waves do not converge to the error of the budgeted model core (icmod 6, fcfact <= 0) within their residual energy tables.",
     },
     {
+        "name": "modcore_budget_table_unreached",
+        "pattern": rf"modcore_budget_table: ERROR stop - no pseudo-wave reaches\s*(?P<error>{RE_FLOAT}) Ha per electron",
+        "match_string": "modcore_budget_table: ERROR stop",
+        "line_count": 1,
+        "subroutine": "modcore_budget_table",
+        "description": "No convergence table of the pseudo-waves reaches the error of the budgeted model core (icmod 6, 7 with fcfact <= 0).",
+    },
+    {
         "name": "modcore_budget_no_waves",
         "pattern": r"modcore_budget_ecut: ERROR stop - no residual energy curves",
         "match_string": "modcore_budget_ecut: ERROR stop - no residual energy curves",

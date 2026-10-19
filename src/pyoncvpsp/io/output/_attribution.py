@@ -164,6 +164,10 @@ ATTRIBUTION: dict[str, dict[str, Any]] = {
         "scope": Scope.MODEL_CORE,
     },
     "modcore_budget_no_waves": {"stage": Stage.MODEL_CORE, "scope": Scope.MODEL_CORE},
+    "modcore_budget_table_unreached": {
+        "stage": Stage.MODEL_CORE,
+        "scope": Scope.MODEL_CORE,
+    },
     "modcore_budget_ecut_too_large": {
         "stage": Stage.MODEL_CORE,
         "scope": Scope.MODEL_CORE,

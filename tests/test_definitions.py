@@ -189,6 +189,10 @@ MESSAGES = [
         "modcore_budget_no_waves",
     ),
     (
+        "modcore_budget_table: ERROR stop - no pseudo-wave reaches  1.00E-05 Ha per electron in its table",
+        "modcore_budget_table_unreached",
+    ),
+    (
         "modcore_budget: ERROR stop - ecut beyond    200.00 Ha",
         "modcore_budget_ecut_too_large",
     ),

@@ -3,6 +3,7 @@
  "budgeted_core": {
   "a": null,
   "b": null,
+  "budget_source": "weighted",
   "c": null,
   "candidates": null,
   "coefficients": [
