@@ -213,6 +213,27 @@ MESSAGES = [
         "negative_energy_second_projector",
     ),
     ("read_error: ERROR data file line  12", "input_data_read_error"),
+    ("oncvpsp: ERROR oncvpsp_ps.x requires --ae-file", "ae_file_required"),
+    ("write_ae_file: ERROR cannot open si.ae", "ae_file_write_failed"),
+    ("read_ae_file: ERROR cannot open si.ae", "ae_file_read_failed"),
+    ("read_ae_file: ERROR not an all-electron data file: si.ae", "ae_file_read_failed"),
+    (
+        "read_ae_file: ERROR file format version   2, expected   1",
+        "ae_file_read_failed",
+    ),
+    (
+        "read_ae_file: ERROR atsym, z, nc, nv or iexc differ from the input",
+        "ae_file_mismatch",
+    ),
+    (
+        "read_ae_file: ERROR reference configuration differs from the input",
+        "ae_file_mismatch",
+    ),
+    ("read_ae_file: ERROR radial mesh differs from the input", "ae_file_mismatch"),
+    (
+        "read_ae_file: ERROR test configuration 2 differs from the input",
+        "ae_file_mismatch",
+    ),
     ("read_srror: ERROR data file line  12", "input_data_read_error"),
     (
         "ERROR: No spin-orbit potential can be calculated for l = lloc = 1ERROR Only lloc=0",
