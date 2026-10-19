@@ -30,6 +30,9 @@ features that no other file in the set covers.
 | `oncvpsp-4.0.1-sr_14_Si_log_mesh.out.gz` | `oncvpsp.x` of azadoks/oncvpsp 8490a59 (branch `radial-mesh-input`) on its `tests/data/14_Si.dat` with the log mesh line `1.004 -1 50.0` | `log_mesh` (the mesh set by the input, echoed after the test configurations and in the psp8 input) |
 | `oncvpsp-4.0.1-sr_14_Si_ae.out.gz` | `oncvpsp_ae.x -a si.ae` of azadoks/oncvpsp 5947faf (branch `oncvpsp-opt`) on its `tests/data/14_Si.dat` | `stage:ae` (all-electron stage: input and all-electron sections, then the data file it wrote) |
 | `oncvpsp-4.0.1-sr_14_Si_ps.out.gz` | `oncvpsp_ps.x -a si.ae` of the same build on the same input, reading that file | `stage:ps` (prints what `oncvpsp.x` prints, the build line aside) |
+| `oncvpsp-4.0.1-sr_14_Si_icmod6_auto.out.gz` | `oncvpsp.x` of azadoks/oncvpsp 9b90162 (branch `oncvpsp-opt`, model core v2) on its `tests/data/14_Si_bca.dat` | `budgeted_core:minimum_tail` (icmod 6 with the minimum-tail fill and its coefficients) |
+| `oncvpsp-4.0.1-sr_14_Si_icmod7_slack0.7.out.gz` | `oncvpsp.x` of the same build on its `tests/data/14_Si_hm.dat` with slack 0.7 | `icmod:7` (hardness-matched core, its candidates), `slack` (input echo and output) |
+| `oncvpsp-4.0.1-fr_14_Si_icmod7.out.gz` | `oncvpspr.x` of the same build on its `tests/data/14_Si_hm.dat` | `icmod:7` fully relativistic (J-averaged probes) |
 | `oncvpsp-4.0.1-sr_N_budget_cap.out.gz` | `oncvpsp.x` of azadoks/oncvpsp a4046c0 on N with rc 3.2, icmod 6, cutoff budget 20 Ha | `budgeted_core:r_core_max` (rc beyond the last radius with core charge) |
 | `oncvpsp-4.0.1-sr_N_budget_too_small.out.gz` | `oncvpsp.x` of azadoks/oncvpsp a4046c0 on N with rc 1.5, icmod 6, cutoff budget 2 Ha | `err:modcore_budget_no_model` |
 | `oncvpsp-4.0.1-sr_14_Si.out.gz` | data/examples/Si/14_Si.out | `rxpsh:True` |

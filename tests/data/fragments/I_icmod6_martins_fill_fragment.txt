@@ -1,0 +1,9 @@
+
+Model core correction: budgeted core (icmod 6)
+  cutoff budget     32.1431 Ha for an xc energy error of  1.00E-05 Ha
+  slack  1.0000, the model core must fit     32.1431 Ha
+  model radius r_s    0.974534  smallest rc  2.404872
+  fill Martins
+  a, b, c  5.40110754E+00 -2.74041507E+00  1.87504012E-01
+  cutoff the model core needs     23.1200 Ha
+time_s   0.870

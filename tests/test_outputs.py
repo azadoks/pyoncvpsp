@@ -6,12 +6,15 @@ Regenerate the snapshots with `pytest --update-snapshots` after an intended chan
 """
 
 import json
+from pathlib import Path
 import re
 
 import pytest
 
 from pyoncvpsp.io.input import OncvpspInput
 from pyoncvpsp.io.output import OncvpspTextParser
+
+DATA_DIR = Path(__file__).parent / "data"
 
 
 def test_snapshot(output_name, parse_output, snapshot):
@@ -277,3 +280,50 @@ def test_split_stages(parse_output, read_output):
     assert not truncated.completed
     (exception,) = truncated.check(doraise=False)
     assert exception.name == "incomplete_output"
+
+
+def test_budgeted_core_v2(parse_output):
+    # azadoks/oncvpsp 9b90162: the minimum-tail fill, slack and the hardness-matched core (icmod 7)
+    auto = parse_output("oncvpsp-4.0.1-sr_14_Si_icmod6_auto").budgeted_core
+    assert auto["icmod"] == 6 and auto["fill"] == "minimum tail"
+    assert auto["a"] is None and len(auto["coefficients"]) == 9
+    assert auto["ecut"] == auto["ecut_pseudo_waves"] == 33.5528
+    assert auto["slack"] == 1.0 and auto["candidates"] is None
+    parser = parse_output("oncvpsp-4.0.1-sr_14_Si_icmod7_slack0.7")
+    assert parser.input["model_core_charge"]["slack"] == 0.7
+    hardness = parser.budgeted_core
+    assert hardness["icmod"] == 7 and hardness["slack"] == 0.7
+    assert hardness["ecut_needed"] <= hardness["slack"] * hardness["ecut"]
+    assert hardness["hardness_mismatch"] == 3.09e-8
+    chosen = [c for c in hardness["candidates"] if c["fits"]]
+    assert [c["r_s"] for c in chosen] == [hardness["r_s"]]
+    radii = [c["r_s"] for c in hardness["candidates"]]
+    assert radii == sorted(radii, reverse=True) and radii[0] == hardness["rc_min"]
+    relativistic = parse_output("oncvpsp-4.0.1-fr_14_Si_icmod7").budgeted_core
+    assert (
+        relativistic["icmod"] == 7
+        and relativistic["r_s"] > relativistic["r_s_smallest"]
+    )
+
+
+@pytest.mark.parametrize(
+    ("name", "fill", "icmod"),
+    [
+        ("I_icmod6_martins_fill_fragment", "Martins", 6),
+        ("I_icmod7_fragment", "minimum tail", 7),
+    ],
+)
+def test_budgeted_core_fragments(name, fill, icmod):
+    # model-core blocks of the routine run on PPG's I densities: a Martins fill, and mixed candidates
+    with open(DATA_DIR / "fragments" / f"{name}.txt", encoding="utf-8") as fp:
+        budgeted = OncvpspTextParser(
+            lines=fp.read().splitlines(), check=False
+        ).budgeted_core
+    assert budgeted is not None
+    assert budgeted["icmod"] == icmod and budgeted["fill"] == fill
+    if icmod == 7:
+        fills = {c["fill"] for c in budgeted["candidates"]}
+        assert fills == {"minimum tail", "Martins"}
+        assert budgeted["r_s_smallest"] == 0.974534
+    else:
+        assert budgeted["coefficients"] is None and budgeted["c"] == 0.187504012

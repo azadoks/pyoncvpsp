@@ -1148,7 +1148,8 @@ class OncvpspTextParser:
                     `rc_min` (it then bounds r_s instead of `rc_min`), else None.
                 fill (str): "minimum tail" or "Martins".
                 a, b, c (float | None): Martins coefficients (a.u.), for the Martins fill.
-                coefficients (list[float] | None): c_0..c_8 of the minimum-tail fill.
+                coefficients (list[float] | None): c_0..c_8 of the minimum-tail fill, of (r/r_s)^(2k), in
+                    ONCVPSP's density units (4 pi times those of PseudoPotentialGenerators.jl).
                 ecut_needed (float): Cutoff the model core needs (Ha).
                 r_s_smallest (float | None): icmod 7: the radius of icmod 6.
                 hardness_mismatch (float | None): icmod 7: rms hardness mismatch of the model (Ha).
