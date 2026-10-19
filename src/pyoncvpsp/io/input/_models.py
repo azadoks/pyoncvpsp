@@ -10,7 +10,7 @@ import warnings
 
 import numpy as np
 import toml
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 from ...utils import build_mesh
 from .._utils import flatten, recursive_merge
@@ -623,6 +623,46 @@ class OutputGridInput(BaseModel):  # pylint: disable=too-few-public-methods
         return s
 
 
+class LogMeshInput(BaseModel):  # pylint: disable=too-few-public-methods
+    """Input parameters of the log radial mesh `rr(i) = rr1 * amesh**(i - 1)`, out to `rmax`, on
+    which ONCVPSP solves the atom: the optional last line of the .dat input (after the test
+    configurations) or the `[log_mesh]` table of the TOML input, which azadoks/oncvpsp reads.
+    ONCVPSP uses its built-in value for each one that is not given, and takes a value of 0 or
+    less to mean the same, which is read here as `None`.
+
+    Attributes:
+        amesh (None | float): Ratio of successive mesh points. If `None`, 1.006.
+        rr1 (None | float): [Bohr] First mesh point. If `None`, `0.0005 / z`, capped at
+            `0.00005` except in the fully-relativistic code.
+        rmax (None | float): [Bohr] Outer radius of the mesh. If `None`, 45.
+    """
+
+    amesh: None | Annotated[float, Field(gt=1.0)] = None
+    rr1: None | Annotated[float, Field(gt=0.0)] = None
+    rmax: None | Annotated[float, Field(gt=0.0)] = None
+
+    @field_validator("amesh", "rr1", "rmax", mode="before")
+    @classmethod
+    def _nonpositive_is_default(cls, value: Any) -> Any:
+        if isinstance(value, (int, float)) and value <= 0:
+            return None
+        return value
+
+    @property
+    def is_set(self) -> bool:
+        """Whether any of the mesh parameters is given, so that the input sets the mesh."""
+        return any(v is not None for v in (self.amesh, self.rr1, self.rmax))
+
+    def as_dat_string(self, with_comment: bool = False) -> str:
+        """String representation of the log mesh input in .dat file format, with -1 for the
+        parameters that are not given."""
+        values = (-1.0 if v is None else v for v in (self.amesh, self.rr1, self.rmax))
+        s = " ".join(f"{v!r:>10s}" for v in values)
+        if with_comment:
+            s = f"# {'amesh':>8s} {'rr1':>10s} {'rmax':>10s}\n" + s
+        return s
+
+
 # Keys of the Teter grid of icmod 4 in the TOML input of ONCVPSP, by field name
 _TOML_TETER_GRID_KEYS = {
     "teter_amp_min": "fcfact_min",
@@ -638,9 +678,13 @@ def _to_oncvpsp_toml(data: dict[str, Any]) -> dict[str, Any]:
     """Arrange the fields of `OncvpspInput.model_dump()` as the TOML input of ONCVPSP
     (`oncvpsp.x -t`, src/input_toml_m.f90): `psfile` in `[pp_output]`, the output grid as
     `[linear_mesh]` `a` (drl) and `rmax` (rlmax), and the icmod 4 Teter grid as `fcfact_*` and
-    `rcfact_*`. ONCVPSP ignores the keys it does not read, such as `teter_relative`."""
+    `rcfact_*`. ONCVPSP ignores the keys it does not read, such as `teter_relative`. The log mesh
+    parameters that are not given are left out, and `[log_mesh]` too when none is."""
     data = deepcopy(data)
     data["pp_output"] = {"psfile": data["oncvpsp"].pop("psfile")}
+    log_mesh = {k: v for k, v in data.pop("log_mesh", {}).items() if v is not None}
+    if log_mesh:
+        data["log_mesh"] = log_mesh
     output_grid = data.pop("output_grid")
     data["linear_mesh"] = {"a": output_grid["drl"], "rmax": output_grid["rlmax"]}
     core = data["model_core_charge"]
@@ -680,15 +724,22 @@ class OncvpspInput(BaseModel):
     log_derivative_analysis: LogDerivativeInput
     test_configurations: list[AtomicConfigurationInput] = []
     output_grid: OutputGridInput
+    log_mesh: LogMeshInput = Field(default_factory=LogMeshInput)
 
     @property
     def radial_mesh(self) -> np.ndarray:
-        """Radial grid used for pseudopotential construction and output.
+        """Radial grid used for pseudopotential construction and output: the log mesh of the
+        input, with the defaults of the non- and scalar-relativistic codes.
 
         Returns:
             np.ndarray: Radial grid points in Bohr.
         """
-        return build_mesh(self.oncvpsp.z)
+        return build_mesh(
+            self.oncvpsp.z,
+            amesh=self.log_mesh.amesh,
+            rr1=self.log_mesh.rr1,
+            rmax=self.log_mesh.rmax,
+        )
 
     @property
     def rxpsh(self) -> list[float]:
@@ -739,6 +790,11 @@ class OncvpspInput(BaseModel):
         Returns:
             str: ONCVPSP stdin string
         """
+        log_mesh: list[str] = []
+        if self.log_mesh.is_set:
+            log_mesh = [self.log_mesh.as_dat_string(with_comment=with_comment)]
+            if with_comment:
+                log_mesh = ["#", "# LOG MESH", *log_mesh]
         if with_comment:
             return "\n".join(
                 [
@@ -778,6 +834,7 @@ class OncvpspInput(BaseModel):
                     + config.as_dat_string(with_comment=with_comment)
                     for config in self.test_configurations
                 ]
+                + log_mesh
             )
         return "\n".join(
             [
@@ -796,6 +853,7 @@ class OncvpspInput(BaseModel):
                 + config.as_dat_string(with_comment=with_comment)
                 for config in self.test_configurations
             ]
+            + log_mesh
         )
 
     @classmethod
@@ -953,6 +1011,18 @@ class OncvpspInput(BaseModel):
                 test_configurations[i]["n"][j] = int(words[0])
                 test_configurations[i]["l"][j] = int(words[1])
                 test_configurations[i]["f"][j] = float(words[2])
+        # LOG MESH (optional; azadoks/oncvpsp)
+        # amesh, rr1, rmax
+        # In an output, the echo of the input is followed by the results, which are not a mesh
+        log_mesh: dict[str, float] = {}
+        if (line := next(iter_, None)) is not None:
+            words = line.split()
+            try:
+                values = [float(w.lower().replace("d", "e")) for w in words]
+            except ValueError:
+                values = []
+            if len(values) == 3:
+                log_mesh = dict(zip(("amesh", "rr1", "rmax"), values))
         data = {
             "oncvpsp": {
                 "atsym": atsym,
@@ -1004,6 +1074,7 @@ class OncvpspInput(BaseModel):
                 "drl": drl,
             },
             "test_configurations": test_configurations,
+            "log_mesh": log_mesh,
         }
         return cls(**data)  # type: ignore
 
@@ -1119,5 +1190,26 @@ class OncvpspInput(BaseModel):
             raise ValueError(
                 f"Output grid rlmax={self.output_grid.rlmax} is smaller than "
                 f"maximum rc={rc_max} of pseudopotentials"
+            )
+        return self
+
+    @model_validator(mode="after")
+    def _check_log_mesh(self) -> "OncvpspInput":
+        # the checks of check_data in ONCVPSP
+        rc_max: float = max(self.pseudopotentials.rc)
+        if self.local_potential.lloc == 4:
+            rc_max = max(rc_max, self.local_potential.rcloc)  # type: ignore
+        if self.log_mesh.rr1 is not None and self.log_mesh.rr1 >= rc_max:
+            raise ValueError(
+                f"Log mesh rr1={self.log_mesh.rr1} is not smaller than "
+                f"maximum rc={rc_max} of pseudopotentials"
+            )
+        if (
+            self.log_mesh.rmax is not None
+            and self.log_mesh.rmax <= self.output_grid.rlmax
+        ):
+            raise ValueError(
+                f"Log mesh rmax={self.log_mesh.rmax} is not larger than "
+                f"output grid rlmax={self.output_grid.rlmax}"
             )
         return self
