@@ -206,17 +206,24 @@ def test_truncated_output_is_incomplete(completed_output_name, read_output):
 def test_budgeted_core(parse_output):
     budgeted = parse_output("oncvpsp-4.0.1-sr_14_Si_bc").budgeted_core
     assert budgeted == {
+        "icmod": 6,
         "ecut": 25.0,
         "error": 1.0e-4,
         "ecut_pseudo_waves": None,
         "factor": None,
+        "slack": 1.0,
         "r_s": 0.695197,
         "rc_min": 2.703023,
         "r_core_max": None,
+        "fill": "Martins",
         "a": 5.36621515,
         "b": -6.23065052,
         "c": 1.87082158,
+        "coefficients": None,
         "ecut_needed": 24.8513,
+        "r_s_smallest": None,
+        "hardness_mismatch": None,
+        "candidates": None,
     }
     capped = parse_output("oncvpsp-4.0.1-sr_N_budget_cap").budgeted_core
     assert capped is not None

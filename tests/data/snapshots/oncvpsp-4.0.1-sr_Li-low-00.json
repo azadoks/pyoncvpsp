@@ -106,6 +106,7 @@
    "fcfact": 5.0,
    "icmod": 3,
    "rcfact": 1.4,
+   "slack": 1.0,
    "teter_amp_max": null,
    "teter_amp_min": null,
    "teter_amp_step": null,

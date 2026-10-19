@@ -250,6 +250,34 @@ def test_icmod6_round_trip(nitrogen, fcfact, rcfact):
     assert OncvpspInput.from_dat_string(dat) == budgeted
 
 
+@pytest.mark.parametrize("icmod", [6, 7])
+@pytest.mark.parametrize(
+    ("rcfact", "slack"), [(0.0, 1.0), (1.0e-5, 1.0), (1.0e-5, 0.7), (2.5e-6, 0.85)]
+)
+def test_budgeted_core_round_trip(nitrogen, icmod, rcfact, slack):
+    budgeted = nitrogen.merge(
+        model_core_charge={
+            "icmod": icmod,
+            "fcfact": 0.0,
+            "rcfact": rcfact,
+            "slack": slack,
+        }
+    )
+    dat = budgeted.as_dat_string()
+    assert OncvpspInput.from_dat_string(dat) == budgeted
+
+
+def test_slack_writes_default_error(nitrogen):
+    # slack follows rcfact on the line, and ONCVPSP rejects rcfact 0 there
+    slack = nitrogen.merge(model_core_charge={"icmod": 7, "fcfact": 0.0, "slack": 0.7})
+    words = slack.model_core_charge.as_dat_string().split()
+    assert words == ["7", "0.00000", "1.00000e-05", "0.70000"]
+    assert (
+        OncvpspInput.from_dat_string(slack.as_dat_string()).model_core_charge.rcfact
+        == 1.0e-5
+    )
+
+
 @pytest.mark.parametrize(
     "update",
     [
@@ -258,7 +286,10 @@ def test_icmod6_round_trip(nitrogen, fcfact, rcfact):
         {"oncvpsp": {"psfile": "xml"}},
         {"oncvpsp": {"atsym": "Abc"}},
         {"model_core_charge": {"icmod": 2, "fcfact": -0.5}},
-        {"model_core_charge": {"icmod": 7, "fcfact": 25.0}},
+        {"model_core_charge": {"icmod": 8, "fcfact": 25.0}},
+        {"model_core_charge": {"icmod": 4, "slack": 0.7}},
+        {"model_core_charge": {"icmod": 6, "slack": 0.0}},
+        {"model_core_charge": {"icmod": 7, "slack": 1.5}},
         {"model_core_charge": {"icmod": 1, "fcfact": 0.0}},
         {"output_grid": {"rlmax": 1.0}},
         {"log_mesh": {"amesh": 0.999}},

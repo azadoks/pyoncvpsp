@@ -1092,68 +1092,131 @@ class OncvpspTextParser:
 
     @cached_property
     def budgeted_core(self) -> dict | None:
-        """Budgeted Martins model core charge of azadoks/oncvpsp (icmod 6).
+        """Budgeted model core charge of azadoks/oncvpsp (icmod 6 and 7).
 
-        Inside the radius r_s the model core charge is exp(a + b r^2 + c r^4), matched to the
-        all-electron core charge and its first two derivatives at r_s; beyond r_s it is the
-        all-electron core charge. r_s is the smallest radius whose model needs no more than the
-        cutoff budget for the exchange-correlation energy error.
+        Beyond the radius r_s the model core charge is the all-electron core charge; inside it, a
+        fill matched to it and its first two derivatives at r_s: the minimum-tail polynomial
+        sum_k c_k (r/r_s)^(2k), k = 0..8 (`fill == "minimum tail"`), or Martins'
+        exp(a + b r^2 + c r^4) (`fill == "Martins"`, the only fill of the first builds). icmod 6
+        takes the smallest radius whose model needs no more than `slack` times the cutoff budget for
+        the exchange-correlation energy error; icmod 7 (hardness-matched) the radius, among those
+        from the smallest rc down to a little below that of icmod 6, whose model fits and acts on
+        the pseudo valence states most as the all-electron core does.
 
         Returns:
             dict | None: None if the output has no budgeted model core, else
+                icmod (int): 6 or 7.
                 ecut (float): Cutoff budget (Ha).
                 ecut_pseudo_waves (float | None): Cutoff the pseudo-waves need for `error` (Ha),
                     when the budget is taken from it (`fcfact <= 0`), else None.
                 factor (float | None): Multiple of `ecut_pseudo_waves` that is the budget, else None.
                 error (float): Exchange-correlation energy error (Ha) that defines the needed cutoff.
+                slack (float): Fraction of the budget the model core must fit (1 if not printed).
                 r_s (float): Radius of the model (a.u.).
                 rc_min (float): Smallest core radius rc (a.u.).
                 r_core_max (float | None): Last radius with core charge (a.u.), when smaller than
                     `rc_min` (it then bounds r_s instead of `rc_min`), else None.
-                a, b, c (float): Martins coefficients (a.u.).
+                fill (str): "minimum tail" or "Martins".
+                a, b, c (float | None): Martins coefficients (a.u.), for the Martins fill.
+                coefficients (list[float] | None): c_0..c_8 of the minimum-tail fill.
                 ecut_needed (float): Cutoff the model core needs (Ha).
+                r_s_smallest (float | None): icmod 7: the radius of icmod 6.
+                hardness_mismatch (float | None): icmod 7: rms hardness mismatch of the model (Ha).
+                candidates (list[dict] | None): icmod 7: per radius, r_s, fill ("minimum tail",
+                    "Martins" or None if neither is monotone), hardness_mismatch and fits
+                    (None where not computed or checked).
         """
-        start = self.search(r"^Model core correction: budgeted Martins core")
+        start = self.search(r"^Model core correction: (?:budgeted|hardness-matched)")
         if not start:
             return None
         i = start[0]
-        budget = self.search(
-            rf"cutoff budget\s+(?P<ecut>{RE_FLOAT}) Ha for an xc energy error of\s+(?P<error>{RE_FLOAT}) Ha",
-            i,
-        )
-        radius = self.search(
-            rf"model radius r_s\s+(?P<r_s>{RE_FLOAT})\s+smallest rc\s+(?P<rc_min>{RE_FLOAT})",
-            i,
-        )
-        coefficients = self.search(
-            rf"a, b, c\s+(?P<a>{RE_FLOAT})\s+(?P<b>{RE_FLOAT})\s+(?P<c>{RE_FLOAT})", i
-        )
-        needed = self.search(
-            rf"cutoff the model core needs\s+(?P<ecut_needed>{RE_FLOAT}) Ha", i
-        )
-        if not (budget and radius and coefficients and needed):
+        header = start[1].string
+        icmod_match = re.search(r"icmod\s+(\d)", header)
+        icmod = int(icmod_match.group(1)) if icmod_match else 6
+        stop = self.search(r"^Pseudoatom total energy", i)
+        window = self.clean_lines[i : stop[0] if stop else len(self.clean_lines)]
+
+        def find(pattern):
+            regex = re.compile(pattern)
+            for line in window:
+                if match := regex.search(line):
+                    return match
             return None
-        waves = self.search(
-            rf"pseudo-wave cutoff\s+(?P<ecut>{RE_FLOAT}) Ha, times\s+(?P<factor>{RE_FLOAT})",
-            i,
+
+        budget = find(
+            rf"cutoff budget\s+(?P<ecut>{RE_FLOAT}) Ha for an xc energy error of\s+(?P<error>{RE_FLOAT}) Ha"
         )
-        if waves and waves[0] > budget[0]:
-            waves = None
-        core_max = self.search(rf"last radius with core charge\s+(?P<r>{RE_FLOAT})", i)
-        if core_max and core_max[0] > coefficients[0]:
-            core_max = None
+        radius = find(
+            rf"model radius r_s\s+(?P<r_s>{RE_FLOAT})\s+smallest rc\s+(?P<rc_min>{RE_FLOAT})"
+        )
+        needed = find(rf"cutoff the model core needs\s+(?P<ecut_needed>{RE_FLOAT}) Ha")
+        if not (budget and radius and needed):
+            return None
+        martins = find(
+            rf"a, b, c\s+(?P<a>{RE_FLOAT})\s+(?P<b>{RE_FLOAT})\s+(?P<c>{RE_FLOAT})"
+        )
+        polynomial = find(r"coefficients c0\.\.c8\s+(?P<c>.*)$")
+        fill_match = find(r"^\s*fill (?P<fill>minimum tail|Martins)")
+        if fill_match:
+            fill = fill_match["fill"]
+        elif martins:  # the builds before the minimum-tail fill print no fill line
+            fill = "Martins"
+        else:
+            return None
+        waves = find(
+            rf"pseudo-wave cutoff\s+(?P<ecut>{RE_FLOAT}) Ha, times\s+(?P<factor>{RE_FLOAT})"
+        )
+        slack = find(rf"slack\s+(?P<slack>{RE_FLOAT}),")
+        core_max = find(rf"last radius with core charge\s+(?P<r>{RE_FLOAT})")
+        smallest = find(rf"smallest fitting radius \(icmod 6\)\s+(?P<r>{RE_FLOAT})")
+        mismatch = find(rf"hardness mismatch\s+(?P<rms>{RE_FLOAT}) Ha")
+        candidates = None
+        table = next(
+            (
+                k
+                for k, line in enumerate(window)
+                if line.strip().startswith("candidates:")
+            ),
+            None,
+        )
+        if table is not None:
+            fills = {"MT": "minimum tail", "M": "Martins", "-": None}
+            candidates = []
+            for line in window[table + 1 :]:
+                words = line.split()
+                if len(words) != 4:
+                    break
+                candidates.append(
+                    {
+                        "r_s": fort_float(words[0]),
+                        "fill": fills[words[1]],
+                        "hardness_mismatch": None
+                        if words[2] == "-"
+                        else fort_float(words[2]),
+                        "fits": {"T": True, "F": False, "-": None}[words[3]],
+                    }
+                )
         return {
-            "ecut": fort_float(budget[1]["ecut"]),
-            "error": fort_float(budget[1]["error"]),
-            "ecut_pseudo_waves": fort_float(waves[1]["ecut"]) if waves else None,
-            "factor": fort_float(waves[1]["factor"]) if waves else None,
-            "r_s": fort_float(radius[1]["r_s"]),
-            "rc_min": fort_float(radius[1]["rc_min"]),
-            "r_core_max": fort_float(core_max[1]["r"]) if core_max else None,
-            "a": fort_float(coefficients[1]["a"]),
-            "b": fort_float(coefficients[1]["b"]),
-            "c": fort_float(coefficients[1]["c"]),
-            "ecut_needed": fort_float(needed[1]["ecut_needed"]),
+            "icmod": icmod,
+            "ecut": fort_float(budget["ecut"]),
+            "error": fort_float(budget["error"]),
+            "ecut_pseudo_waves": fort_float(waves["ecut"]) if waves else None,
+            "factor": fort_float(waves["factor"]) if waves else None,
+            "slack": fort_float(slack["slack"]) if slack else 1.0,
+            "r_s": fort_float(radius["r_s"]),
+            "rc_min": fort_float(radius["rc_min"]),
+            "r_core_max": fort_float(core_max["r"]) if core_max else None,
+            "fill": fill,
+            "a": fort_float(martins["a"]) if martins else None,
+            "b": fort_float(martins["b"]) if martins else None,
+            "c": fort_float(martins["c"]) if martins else None,
+            "coefficients": [fort_float(w) for w in polynomial["c"].split()]
+            if polynomial
+            else None,
+            "ecut_needed": fort_float(needed["ecut_needed"]),
+            "r_s_smallest": fort_float(smallest["r"]) if smallest else None,
+            "hardness_mismatch": fort_float(mismatch["rms"]) if mismatch else None,
+            "candidates": candidates,
         }
 
     @cached_property

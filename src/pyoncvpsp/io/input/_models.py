@@ -471,12 +471,22 @@ class ModelCoreChargeInput(BaseModel):  # pylint: disable=too-few-public-methods
                 :math:`\exp(a + b r^2 + c r^4)` matched to it needs no more than the plane-wave
                 cutoff `fcfact` (Ha) for an exchange-correlation energy error of `rcfact` (Ha).
                 With `fcfact <= 0` the cutoff is instead that of the pseudo-waves for the same
-                error, times `-fcfact` (times 1 for `fcfact == 0`).
+                error, times `-fcfact` (times 1 for `fcfact == 0`). Newer builds fill inside r_s
+                with the minimum-tail polynomial of PseudoPotentialGenerators.jl (`BudgetedCore`),
+                and fall back to the Martins function where that polynomial is not monotone.
+            7) (azadoks/oncvpsp only) Hardness-matched model core charge (`HardnessMatchedCore` of
+                PseudoPotentialGenerators.jl): of the cores of icmod 6 at the radii from the
+                smallest rc down to a little below the icmod 6 r_s, the one that fits the cutoff
+                and whose exchange-correlation hardness of the pseudo valence states is closest to
+                that of the all-electron core. Same `fcfact`, `rcfact` and `slack` as icmod 6.
         fcfact (float): Used to determine the matching radius for `icmod in (1, 2)`. Unused for `icmod in (0, 3, 4)`.
-            Plane-wave cutoff (Ha) for `icmod == 6` if positive; else 0 for the cutoff of the
-            pseudo-waves, or minus its multiple. Negative only for `icmod == 6`.
-        rcfact (float): Exchange-correlation energy error (Ha) for `icmod == 6`, where 0 means the
-            ONCVPSP default of 1e-4 Ha.
+            Plane-wave cutoff (Ha) for `icmod in (6, 7)` if positive; else 0 for the cutoff of the
+            pseudo-waves, or minus its multiple. Negative only for `icmod in (6, 7)`.
+        rcfact (float): Exchange-correlation energy error (Ha) for `icmod in (6, 7)`, where 0 means the
+            ONCVPSP default (1e-4 Ha up to f098dc9, 1e-5 Ha in the builds that read `slack`).
+        slack (float): For `icmod in (6, 7)`, the fraction of the cutoff the model core must fit;
+            the core is still made for the density cutoff of the whole cutoff. In (0, 1], default
+            1. Older builds ignore it.
         teter_relative (bool): If True, `teter_amp*` and `teter_scale*` specify relative
             ranges for optimizing the Teter parameters. If False, they specify absolute ranges.
         teter_amp_min (None | float): Minimum Teter amplitude for grid search (relative or absolute).
@@ -487,9 +497,10 @@ class ModelCoreChargeInput(BaseModel):  # pylint: disable=too-few-public-methods
         teter_scale_step (None | float): Teter scale factor step size for grid search (relative or absolute).
     """
 
-    icmod: Annotated[int, Field(ge=0, le=6)]
+    icmod: Annotated[int, Field(ge=0, le=7)]
     fcfact: Annotated[float, Field()] = 0.0
     rcfact: Annotated[float, Field(ge=0.0)] = 0.0
+    slack: Annotated[float, Field(gt=0.0, le=1.0)] = 1.0
     teter_relative: Annotated[bool, Field()] = True
     teter_amp_min: None | Annotated[float, Field()] = None
     teter_amp_max: None | Annotated[float, Field()] = None
@@ -506,8 +517,10 @@ class ModelCoreChargeInput(BaseModel):  # pylint: disable=too-few-public-methods
         if self.icmod == 3:
             if self.rcfact == 0.0:
                 raise ValueError("rcfact must be greater than 0 for icmod 3")
-        if self.icmod != 6 and self.fcfact < 0.0:
-            raise ValueError("fcfact must not be negative except for icmod 6")
+        if self.icmod not in (6, 7) and self.fcfact < 0.0:
+            raise ValueError("fcfact must not be negative except for icmod 6 and 7")
+        if self.icmod not in (6, 7) and self.slack != 1.0:
+            raise ValueError("slack is only read for icmod 6 and 7")
         return self
 
     def as_dat_string(self, with_comment: bool = False) -> str:
@@ -522,9 +535,19 @@ class ModelCoreChargeInput(BaseModel):  # pylint: disable=too-few-public-methods
             s = f" {self.icmod:>10d} {self.fcfact:>10.5f} {self.rcfact:>10.5f}"
             if with_comment:
                 s = f"# {'icmod':>8s} {'fcfact':>10s} {'rcfact':>10s}\n" + s
-        elif self.icmod == 6:
+        elif self.icmod in (6, 7):
             # rcfact is an energy error (Ha), often below the resolution of %10.5f
-            if self.rcfact == 0.0:
+            if self.slack != 1.0:
+                # slack follows rcfact, so rcfact must be written; ONCVPSP rejects 0 there, so
+                # the default of the builds that read slack
+                rcfact = self.rcfact if self.rcfact > 0.0 else 1.0e-5
+                s = f" {self.icmod:>10d} {self.fcfact:>10.5f} {rcfact:>12.5e} {self.slack:>10.5f}"
+                if with_comment:
+                    s = (
+                        f"# {'icmod':>8s} {'fcfact':>10s} {'rcfact':>12s} {'slack':>10s}\n"
+                        + s
+                    )
+            elif self.rcfact == 0.0:
                 s = f"{self.icmod:>10d} {self.fcfact:>10.5f}"
                 if with_comment:
                     s = f"# {'icmod':>8s} {'fcfact':>10s}\n" + s
@@ -967,6 +990,7 @@ class OncvpspInput(BaseModel):
         icmod = int(words[0])
         fcfact = float(words[1])
         rcfact: float = 0.0 if len(words) < 3 else float(words[2])
+        slack: float = float(words[3]) if icmod in (6, 7) and len(words) >= 4 else 1.0
         teter_grid: dict[str, float] = {}
         if icmod == 4 and len(words) >= 9:
             teter_grid = dict(
@@ -1061,6 +1085,7 @@ class OncvpspInput(BaseModel):
                 "icmod": icmod,
                 "fcfact": fcfact,
                 "rcfact": rcfact,
+                "slack": slack,
                 **teter_grid,
             },
             "log_derivative_analysis": {
