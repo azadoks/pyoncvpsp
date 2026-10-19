@@ -5,6 +5,7 @@ from ._models import (
     AtomicStateInput,
     LocalPotentialInput,
     LogDerivativeInput,
+    LogMeshInput,
     ModelCoreChargeInput,
     OncvpspInput,
     OutputGridInput,
@@ -25,5 +26,6 @@ __all__ = (
     "ModelCoreChargeInput",
     "LogDerivativeInput",
     "OutputGridInput",
+    "LogMeshInput",
     "OncvpspInput",
 )

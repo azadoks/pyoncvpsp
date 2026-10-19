@@ -6,7 +6,10 @@ import pytest
 import toml
 from pydantic import ValidationError
 
+import numpy as np
+
 from pyoncvpsp.io.input import OncvpspInput
+from pyoncvpsp.utils import build_mesh
 
 # ONCVPSP's own nitrogen example (tests/data/07_N.dat)
 N_DAT = """\
@@ -258,6 +261,9 @@ def test_icmod6_round_trip(nitrogen, fcfact, rcfact):
         {"model_core_charge": {"icmod": 7, "fcfact": 25.0}},
         {"model_core_charge": {"icmod": 1, "fcfact": 0.0}},
         {"output_grid": {"rlmax": 1.0}},
+        {"log_mesh": {"amesh": 0.999}},
+        {"log_mesh": {"rr1": 1.7}},
+        {"log_mesh": {"rmax": 4.0}},
     ],
 )
 def test_invalid_input(nitrogen, update):
@@ -267,3 +273,71 @@ def test_invalid_input(nitrogen, update):
 
 def test_libxc_functional(nitrogen):
     assert nitrogen.merge(oncvpsp={"iexc": -101130}).oncvpsp.iexc == -101130
+
+
+def test_log_mesh_default(nitrogen):
+    assert not nitrogen.log_mesh.is_set
+    assert "LOG MESH" not in nitrogen.as_dat_string()
+    assert "log_mesh" not in toml.loads(nitrogen.as_toml_string())
+    np.testing.assert_array_equal(nitrogen.radial_mesh, build_mesh(7.0))
+
+
+# the optional last line of the text input of azadoks/oncvpsp: amesh, rr1, rmax, with -1 for the
+# built-in rr1
+N_MESH_DAT = (
+    N_DAT
+    + """#
+# amesh, rr1, rmax
+  1.004  -1  50.0
+"""
+)
+
+
+@pytest.fixture
+def nitrogen_mesh() -> OncvpspInput:
+    return OncvpspInput.from_dat_string(N_MESH_DAT)
+
+
+def test_log_mesh_from_dat_string(nitrogen_mesh, nitrogen):
+    assert nitrogen_mesh.log_mesh.model_dump() == {
+        "amesh": 1.004,
+        "rr1": None,
+        "rmax": 50.0,
+    }
+    assert nitrogen_mesh.merge(log_mesh={"amesh": None, "rmax": None}) == nitrogen
+    mesh = nitrogen_mesh.radial_mesh
+    np.testing.assert_allclose(mesh[1:] / mesh[:-1], 1.004)
+    # as in ONCVPSP, mmax = int(log(rmax / rr1) / log(amesh)) points from rr1, so up to two steps short
+    assert mesh[0] == 0.0005 / 10 and mesh[-1] < 50.0 < mesh[-1] * 1.004**2
+
+
+@pytest.mark.parametrize("with_comment", [True, False])
+def test_log_mesh_dat_round_trip(nitrogen_mesh, with_comment):
+    dat = nitrogen_mesh.as_dat_string(with_comment=with_comment)
+    assert dat.splitlines()[-1].split() == ["1.004", "-1.0", "50.0"]
+    assert OncvpspInput.from_dat_string(dat) == nitrogen_mesh
+
+
+def test_log_mesh_toml(nitrogen_mesh):
+    # ONCVPSP's [log_mesh], without the keys that keep the built-in values
+    assert toml.loads(nitrogen_mesh.as_toml_string())["log_mesh"] == {
+        "amesh": 1.004,
+        "rmax": 50.0,
+    }
+    assert (
+        OncvpspInput.from_toml_string(nitrogen_mesh.as_toml_string()) == nitrogen_mesh
+    )
+    assert OncvpspInput.from_dict(nitrogen_mesh.as_dict()) == nitrogen_mesh
+
+
+def test_log_mesh_nonpositive_is_default(nitrogen):
+    # ONCVPSP takes a value of 0 or less for the built-in one
+    assert not nitrogen.merge(
+        log_mesh={"amesh": 0, "rr1": -1.0, "rmax": -1}
+    ).log_mesh.is_set
+
+
+def test_build_mesh_relativistic():
+    # the fully-relativistic code does not cap rr1
+    assert build_mesh(7.0)[0] == 0.0005 / 10
+    assert build_mesh(7.0, relativistic=True)[0] == 0.0005 / 7.0

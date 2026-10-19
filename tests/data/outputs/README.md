@@ -27,6 +27,7 @@ features that no other file in the set covers.
 | `oncvpsp-4.0.1-nr_08_O_build_info.out.gz` | `oncvpspnr.x` of azadoks/oncvpsp 1f11258 (branch `oncvpsp-opt`, then named `ae-pseudo-split`) on `tests/data/08_O.dat` | `prog:ONCVPSP-4.0.1:non-relativistic`, `build_line` (the header says scalar-relativistic; the build line gives the executable and its relativistic treatment) |
 | `oncvpsp-4.0.1-sr_14_Si_bc.out.gz` | `oncvpsp.x` of azadoks/oncvpsp a4046c0 (branch `oncvpsp-opt`) on its `tests/data/14_Si_bc.dat` | `icmod:6` (budgeted Martins model core) |
 | `oncvpsp-4.0.1-sr_14_Si_bca.out.gz` | `oncvpsp.x` of azadoks/oncvpsp f098dc9 (branch `icmod6-auto`) on its `tests/data/14_Si_bca.dat` | `budgeted_core:ecut_pseudo_waves` (icmod 6 budget taken from the pseudo-waves, `fcfact` 0) |
+| `oncvpsp-4.0.1-sr_14_Si_log_mesh.out.gz` | `oncvpsp.x` of azadoks/oncvpsp 8490a59 (branch `radial-mesh-input`) on its `tests/data/14_Si.dat` with the log mesh line `1.004 -1 50.0` | `log_mesh` (the mesh set by the input, echoed after the test configurations and in the psp8 input) |
 | `oncvpsp-4.0.1-sr_N_budget_cap.out.gz` | `oncvpsp.x` of azadoks/oncvpsp a4046c0 on N with rc 3.2, icmod 6, cutoff budget 20 Ha | `budgeted_core:r_core_max` (rc beyond the last radius with core charge) |
 | `oncvpsp-4.0.1-sr_N_budget_too_small.out.gz` | `oncvpsp.x` of azadoks/oncvpsp a4046c0 on N with rc 1.5, icmod 6, cutoff budget 2 Ha | `err:modcore_budget_no_model` |
 | `oncvpsp-4.0.1-sr_14_Si.out.gz` | data/examples/Si/14_Si.out | `rxpsh:True` |

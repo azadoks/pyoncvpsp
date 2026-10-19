@@ -232,3 +232,19 @@ def test_budgeted_core(parse_output):
     assert auto["factor"] == 1.0
     assert auto["ecut"] == auto["ecut_pseudo_waves"]
     assert auto["ecut_needed"] <= auto["ecut"]
+
+
+def test_log_mesh(parse_output):
+    # the mesh set by the input, echoed after the test configurations with full precision
+    parser = parse_output("oncvpsp-4.0.1-sr_14_Si_log_mesh")
+    assert parser.input["log_mesh"] == {
+        "amesh": 1.004,
+        "rr1": 0.0005 / 14,
+        "rmax": 50.0,
+    }
+    for name in ("oncvpsp-4.0.1-sr_14_Si", "oncvpsp-4.0.1-sr_14_Si_bc"):
+        assert parse_output(name).input["log_mesh"] == {
+            "amesh": None,
+            "rr1": None,
+            "rmax": None,
+        }

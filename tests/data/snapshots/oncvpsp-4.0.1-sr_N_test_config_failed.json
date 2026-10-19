@@ -124,6 +124,11 @@
    "epsh2": 12.0,
    "rxpsh": null
   },
+  "log_mesh": {
+   "amesh": null,
+   "rmax": null,
+   "rr1": null
+  },
   "model_core_charge": {
    "fcfact": 4.0,
    "icmod": 3,
