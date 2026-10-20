@@ -889,6 +889,98 @@ class OncvpspTextParser:
         ]
 
     @cached_property
+    def optimization_diagnostics(self) -> list[dict]:
+        """Consistency tests and parameters printed by `optimize` for each optimized
+        pseudo-wavefunction (ONCVPSP v4; the fields not printed are None).
+
+        Returns:
+            list[dict]: One per optimized projector, in output order:
+                l (int): Orbital angular momentum.
+                j (float | None): Total angular momentum, None for an l-channel.
+                iproj (int): Projector index (1-based).
+                constraints (dict | None): Constraint consistency test, the values and derivatives at
+                    rc of the pseudo-wavefunction (`pswf`) and the all-electron wavefunction (`aewf`),
+                    and their difference (`diff`), as arrays.
+                norm_fraction (float | None): Fraction of the norm inside rc.
+                qcut (float | None): Optimization wavevector cutoff (a_B^-1).
+                ecut (float | None): Corresponding energy cutoff (Ha).
+                q_infinity_ke (float | None): Residual kinetic energy defining q_infinity.
+                e_inf (float | None): Corresponding energy (Ha).
+                residual_ke_error (float | None): Residual kinetic energy error (Ha).
+                ke_fourier (float | None): Kinetic energy by Fourier integration (Ha).
+                ke_rspace (float | None): Kinetic energy by the r-space d^2/dr^2 integral (Ha).
+                ke_ratio (float | None): Their ratio.
+                v_ps_rc (float | None): Pseudopotential at rc (Ha).
+                v_ae_rc (float | None): All-electron potential at rc (Ha).
+                v_diff_rc (float | None): Their difference (Ha).
+        """
+        patterns = {
+            "norm": re.compile(rf"^\s*Fraction of norm inside rc\s+(?P<f>{RE_FLOAT})"),
+            "qcut": re.compile(
+                rf"^\s*Optimizing pswf for qcut=\s*(?P<q>{RE_FLOAT}) a_B\^-1,\s+ecut=\s*(?P<e>{RE_FLOAT}) Ha"
+            ),
+            "qinf": re.compile(
+                rf"^\s*q_infinity defining residual KE=\s*(?P<ke>{RE_FLOAT})\s+\(E_inf=\s*(?P<e>{RE_FLOAT}) Ha\)"
+            ),
+            "resid": re.compile(
+                rf"^\s*Residual kinetic energy error=\s*(?P<e>{RE_FLOAT}) Ha"
+            ),
+            "ke": re.compile(
+                rf"^\s*Fourier\s+(?P<f>{RE_FLOAT})\s+r-space=\s*(?P<r>{RE_FLOAT})\s+ratio=\s*(?P<ratio>{RE_FLOAT})"
+            ),
+            "v": re.compile(
+                rf'^\s*"vpsp"=\s*(?P<ps>{RE_FLOAT})\s+vae=\s*(?P<ae>{RE_FLOAT})\s+difference=\s*(?P<d>{RE_FLOAT})'
+            ),
+        }
+        constraint_header = re.compile(r"^\s*pswf0 val/der aewf val/der\s+diff")
+        constraint_row = re.compile(
+            rf"^\s*(?P<ps>{RE_FLOAT})\s+(?P<ae>{RE_FLOAT})\s+(?P<d>{RE_FLOAT})\s*$"
+        )
+        diagnostics = []
+        for projector, start, stop in self._optimize_line_indices:
+            found: dict[str, re.Match[str]] = {}
+            constraints: dict[str, list[float]] | None = None
+            lines = self.clean_lines[start:stop]
+            for k, line in enumerate(lines):
+                if constraint_header.match(line) and constraints is None:
+                    constraints = {"pswf": [], "aewf": [], "diff": []}
+                    for row in lines[k + 1 :]:
+                        if not (match := constraint_row.match(row)):
+                            break
+                        constraints["pswf"].append(fort_float(match["ps"]))
+                        constraints["aewf"].append(fort_float(match["ae"]))
+                        constraints["diff"].append(fort_float(match["d"]))
+                    continue
+                for name, pattern in patterns.items():
+                    if name not in found and (match := pattern.match(line)):
+                        found[name] = match
+
+            def value(name: str, group: str) -> float | None:
+                return fort_float(found[name][group]) if name in found else None
+
+            diagnostics.append(
+                {
+                    **projector.as_dict(),
+                    "constraints": None
+                    if constraints is None
+                    else {k: np.array(v) for k, v in constraints.items()},
+                    "norm_fraction": value("norm", "f"),
+                    "qcut": value("qcut", "q"),
+                    "ecut": value("qcut", "e"),
+                    "q_infinity_ke": value("qinf", "ke"),
+                    "e_inf": value("qinf", "e"),
+                    "residual_ke_error": value("resid", "e"),
+                    "ke_fourier": value("ke", "f"),
+                    "ke_rspace": value("ke", "r"),
+                    "ke_ratio": value("ke", "ratio"),
+                    "v_ps_rc": value("v", "ps"),
+                    "v_ae_rc": value("v", "ae"),
+                    "v_diff_rc": value("v", "d"),
+                }
+            )
+        return diagnostics
+
+    @cached_property
     def _run_vkb_indices(self) -> list[tuple[ChannelKey, int, int]]:
         """VKB blocks as `(channel, start, coefficients)`: the `clean_lines` indices of the
         `B matrix` header and of the `Orthonormal projector coefficients` line. Blocks without
@@ -1512,6 +1604,59 @@ class OncvpspTextParser:
                 }
             )
         return ghosts
+
+    @cached_property
+    def bound_ghost_tests(self) -> list[dict]:
+        """Rows of the tables of the bound ghost tests (`run_ghosts`): the bound states of the
+        nonlocal Schroedinger equation against the eigenvalues of the basis diagonalization. The
+        rows flagged as ghosts are in `ghosts`.
+
+        Returns:
+            list[dict]:
+                set (str | None): "+" or "-" for the test of the j = l + 1/2 or j = l - 1/2
+                    projectors of a fully-relativistic output, else None.
+                n (int): Principal quantum number.
+                l (int): Orbital angular momentum.
+                eig (float): Eigenvalue of the nonlocal Schroedinger equation (Ha).
+                eig_basis (float): Eigenvalue of the basis diagonalization (Ha).
+                ecut (float): Cutoff energy of the basis (Ha).
+        """
+        set_pattern = re.compile(r"^Ghost test for J = L (?P<sign>[+-]) 1/2")
+        row_pattern = re.compile(
+            rf"^\s+(?P<n>\d+)\s+(?P<ell>\d+)\s+(?P<eig>{RE_FLOAT})\s+(?P<eig_basis>{RE_FLOAT})"
+            rf"\s+(?P<ecut>{RE_FLOAT})\s*$"
+        )
+        rows = []
+        for block, start, stop in self._blocks(BlockKind.GHOSTS):
+            if "bound ghosts" not in self.clean_lines[start]:
+                continue
+            sign = None
+            for k in range(start - 1, -1, -1):
+                line = self.clean_lines[k]
+                if match := set_pattern.match(line):
+                    sign = match["sign"]
+                    break
+                if line.startswith("Diagnostic tests"):
+                    break
+            for _, match in self.findall(row_pattern, start + 1, stop):
+                rows.append(
+                    {
+                        "set": sign,
+                        "n": int(match["n"]),
+                        "l": int(match["ell"]),
+                        "eig": fort_float(match["eig"]),
+                        "eig_basis": fort_float(match["eig_basis"]),
+                        "ecut": fort_float(match["ecut"]),
+                    }
+                )
+        return rows
+
+    @cached_property
+    def pseudoatom_total_energy(self) -> float | None:
+        """Total energy of the pseudo-atom in the reference configuration (Ha), `None` if not
+        printed."""
+        match = self.search(rf"^Pseudoatom total energy\s*(?P<e>{RE_FLOAT})")
+        return fort_float(match[1]["e"]) if match else None
 
     @cached_property
     def test_configurations(self) -> list[list[dict]]:
@@ -2256,6 +2401,7 @@ class OncvpspTextParser:
         output["ae_reference_energies"] = self.ae_reference_energies
         output["wellstate_metadata"] = self.wellstate_metadata
         output["localized_bound_states"] = self.localized_bound_states
+        output["optimization_diagnostics"] = self.optimization_diagnostics
         output["vkb_hermiticity_errors"] = self.vkb_hermiticity_errors
         output["vkb_scalar_projector_coefficients"] = (
             self.vkb_scalar_projector_coefficients
@@ -2270,9 +2416,11 @@ class OncvpspTextParser:
         output["budgeted_core"] = self.budgeted_core
         output["ionic_tail"] = self.ionic_tail
         output["coulomb_tail"] = self.coulomb_tail
+        output["pseudoatom_total_energy"] = self.pseudoatom_total_energy
         output["diagnostic_tests_semilocal"] = self.diagnostic_tests_semilocal
         output["diagnostic_tests_vkb"] = self.diagnostic_tests_vkb
         output["ghosts"] = self.ghosts
+        output["bound_ghost_tests"] = self.bound_ghost_tests
         output["test_configurations"] = self.test_configurations
         output["test_configuration_energies"] = self.test_configuration_energies
         output["test_configuration_status"] = self.test_configuration_status

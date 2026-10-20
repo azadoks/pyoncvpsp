@@ -6,6 +6,7 @@
   "terms": null,
   "total_energy": -0.458934134
  },
+ "bound_ghost_tests": [],
  "budgeted_core": null,
  "completed": true,
  "coulomb_tail": null,
@@ -154,6 +155,94 @@
  "ionic_tail": null,
  "localized_bound_states": [],
  "missing_plot_data": [],
+ "optimization_diagnostics": [
+  {
+   "constraints": {
+    "aewf": {
+     "abs_sum": 2.87408339,
+     "nan": 0,
+     "shape": [
+      4
+     ],
+     "sum": -0.06512880999999993
+    },
+    "diff": {
+     "abs_sum": 6.0764e-12,
+     "nan": 0,
+     "shape": [
+      4
+     ],
+     "sum": -6.0764e-12
+    },
+    "pswf": {
+     "abs_sum": 2.87408339,
+     "nan": 0,
+     "shape": [
+      4
+     ],
+     "sum": -0.06512880999999993
+    }
+   },
+   "e_inf": 392.0,
+   "ecut": 38.72,
+   "iproj": 1,
+   "j": null,
+   "ke_fourier": 0.43944842,
+   "ke_ratio": 0.99999901,
+   "ke_rspace": 0.43944885,
+   "l": 0,
+   "norm_fraction": 0.298581,
+   "q_infinity_ke": 28.0,
+   "qcut": 8.8,
+   "residual_ke_error": 1.19e-05,
+   "v_ae_rc": null,
+   "v_diff_rc": null,
+   "v_ps_rc": null
+  },
+  {
+   "constraints": {
+    "aewf": {
+     "abs_sum": 0.22924207000000002,
+     "nan": 0,
+     "shape": [
+      4
+     ],
+     "sum": 0.11140038999999999
+    },
+    "diff": {
+     "abs_sum": 1.3133e-12,
+     "nan": 0,
+     "shape": [
+      4
+     ],
+     "sum": 1.2600999999999999e-12
+    },
+    "pswf": {
+     "abs_sum": 0.22924207000000002,
+     "nan": 0,
+     "shape": [
+      4
+     ],
+     "sum": 0.11140038999999999
+    }
+   },
+   "e_inf": 968.0,
+   "ecut": 38.72,
+   "iproj": 1,
+   "j": null,
+   "ke_fourier": 0.06881762,
+   "ke_ratio": 1.00012893,
+   "ke_rspace": 0.06880875,
+   "l": 1,
+   "norm_fraction": 0.000261,
+   "q_infinity_ke": 44.0,
+   "qcut": 8.8,
+   "residual_ke_error": 1.25e-05,
+   "v_ae_rc": null,
+   "v_diff_rc": null,
+   "v_ps_rc": null
+  }
+ ],
  "plot_data": {
   "charge_densities": {
    "r": {
@@ -551,6 +640,7 @@
   "relativistic_treatment": "scalar-relativistic",
   "version": "3.2.2"
  },
+ "pseudoatom_total_energy": -0.458757,
  "psml": "",
  "psp8": "",
  "reference_configuration": [

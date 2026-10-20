@@ -6,6 +6,7 @@
   "terms": null,
   "total_energy": -37.7648003
  },
+ "bound_ghost_tests": [],
  "budgeted_core": null,
  "completed": true,
  "coulomb_tail": null,
@@ -199,6 +200,94 @@
  "ionic_tail": null,
  "localized_bound_states": [],
  "missing_plot_data": [],
+ "optimization_diagnostics": [
+  {
+   "constraints": {
+    "aewf": {
+     "abs_sum": 5.08840109,
+     "nan": 0,
+     "shape": [
+      4
+     ],
+     "sum": 3.45684359
+    },
+    "diff": {
+     "abs_sum": 2.4116e-12,
+     "nan": 0,
+     "shape": [
+      4
+     ],
+     "sum": 1.3816e-12
+    },
+    "pswf": {
+     "abs_sum": 5.08840109,
+     "nan": 0,
+     "shape": [
+      4
+     ],
+     "sum": 3.45684359
+    }
+   },
+   "e_inf": 275.2,
+   "ecut": 40.5,
+   "iproj": 1,
+   "j": null,
+   "ke_fourier": 0.45001633,
+   "ke_ratio": 1.00000066,
+   "ke_rspace": 0.45001603,
+   "l": 0,
+   "norm_fraction": 0.337189,
+   "q_infinity_ke": 23.46,
+   "qcut": 9.0,
+   "residual_ke_error": 8.95e-07,
+   "v_ae_rc": null,
+   "v_diff_rc": null,
+   "v_ps_rc": null
+  },
+  {
+   "constraints": {
+    "aewf": {
+     "abs_sum": 1.73994822,
+     "nan": 0,
+     "shape": [
+      4
+     ],
+     "sum": 0.7909094
+    },
+    "diff": {
+     "abs_sum": 1.5772000000000002e-12,
+     "nan": 0,
+     "shape": [
+      4
+     ],
+     "sum": 1.4964000000000002e-12
+    },
+    "pswf": {
+     "abs_sum": 1.73994822,
+     "nan": 0,
+     "shape": [
+      4
+     ],
+     "sum": 0.7909094
+    }
+   },
+   "e_inf": 442.8,
+   "ecut": 44.18,
+   "iproj": 1,
+   "j": null,
+   "ke_fourier": 1.17597362,
+   "ke_ratio": 1.00000127,
+   "ke_rspace": 1.17597212,
+   "l": 1,
+   "norm_fraction": 0.343779,
+   "q_infinity_ke": 29.76,
+   "qcut": 9.4,
+   "residual_ke_error": 6.57e-06,
+   "v_ae_rc": null,
+   "v_diff_rc": null,
+   "v_ps_rc": null
+  }
+ ],
  "plot_data": {
   "charge_densities": {
    "r": {
@@ -611,6 +700,7 @@
   "relativistic_treatment": "scalar-relativistic",
   "version": "3.2.2"
  },
+ "pseudoatom_total_energy": -5.380787,
  "psml": "",
  "psp8": "",
  "reference_configuration": [

@@ -6,6 +6,7 @@
   "terms": null,
   "total_energy": -20881.9075
  },
+ "bound_ghost_tests": [],
  "budgeted_core": null,
  "completed": false,
  "coulomb_tail": null,
@@ -201,6 +202,7 @@
  "missing_plot_data": [
   "DATA FOR PLOTTING"
  ],
+ "optimization_diagnostics": [],
  "plot_data": {
   "charge_densities": {},
   "convergence_profiles": [],
@@ -226,6 +228,7 @@
   "relativistic_treatment": "scalar-relativistic",
   "version": "4.0.1"
  },
+ "pseudoatom_total_energy": null,
  "psml": "",
  "psp8": "",
  "reference_configuration": [

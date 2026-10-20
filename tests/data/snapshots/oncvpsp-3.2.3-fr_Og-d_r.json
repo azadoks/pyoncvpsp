@@ -6,6 +6,7 @@
   "terms": null,
   "total_energy": -55198.511
  },
+ "bound_ghost_tests": [],
  "budgeted_core": null,
  "completed": true,
  "coulomb_tail": null,
@@ -495,6 +496,438 @@
   }
  ],
  "missing_plot_data": [],
+ "optimization_diagnostics": [
+  {
+   "constraints": {
+    "aewf": {
+     "abs_sum": 1.0205807199999999,
+     "nan": 0,
+     "shape": [
+      4
+     ],
+     "sum": -0.04527228
+    },
+    "diff": {
+     "abs_sum": 6.709e-14,
+     "nan": 0,
+     "shape": [
+      4
+     ],
+     "sum": -6.709e-14
+    },
+    "pswf": {
+     "abs_sum": 1.0205807199999999,
+     "nan": 0,
+     "shape": [
+      4
+     ],
+     "sum": -0.04527228
+    }
+   },
+   "e_inf": 200.0,
+   "ecut": 11.52,
+   "iproj": 1,
+   "j": 0.5,
+   "ke_fourier": 0.43922237,
+   "ke_ratio": 1.0,
+   "ke_rspace": 0.43922237,
+   "l": 0,
+   "norm_fraction": 0.915745,
+   "q_infinity_ke": 20.0,
+   "qcut": 4.8,
+   "residual_ke_error": 1.69e-06,
+   "v_ae_rc": null,
+   "v_diff_rc": null,
+   "v_ps_rc": null
+  },
+  {
+   "constraints": {
+    "aewf": {
+     "abs_sum": 0.5731274399999999,
+     "nan": 0,
+     "shape": [
+      5
+     ],
+     "sum": 0.010782040000000007
+    },
+    "diff": {
+     "abs_sum": 5.944450000000001e-14,
+     "nan": 0,
+     "shape": [
+      5
+     ],
+     "sum": 3.00665e-14
+    },
+    "pswf": {
+     "abs_sum": 0.5731274399999999,
+     "nan": 0,
+     "shape": [
+      5
+     ],
+     "sum": 0.010782040000000007
+    }
+   },
+   "e_inf": 200.0,
+   "ecut": 11.52,
+   "iproj": 2,
+   "j": 0.5,
+   "ke_fourier": 0.12616126,
+   "ke_ratio": 0.99999833,
+   "ke_rspace": 0.12616147,
+   "l": 0,
+   "norm_fraction": 0.037033,
+   "q_infinity_ke": 20.0,
+   "qcut": 4.8,
+   "residual_ke_error": 1.54e-06,
+   "v_ae_rc": -0.62939904,
+   "v_diff_rc": 2.21e-05,
+   "v_ps_rc": -0.62942113
+  },
+  {
+   "constraints": {
+    "aewf": {
+     "abs_sum": 0.38882561,
+     "nan": 0,
+     "shape": [
+      4
+     ],
+     "sum": 0.15893225
+    },
+    "diff": {
+     "abs_sum": 1.051e-13,
+     "nan": 0,
+     "shape": [
+      4
+     ],
+     "sum": 8.47e-14
+    },
+    "pswf": {
+     "abs_sum": 0.38882561,
+     "nan": 0,
+     "shape": [
+      4
+     ],
+     "sum": 0.15893225
+    }
+   },
+   "e_inf": 200.0,
+   "ecut": 12.5,
+   "iproj": 1,
+   "j": 1.5,
+   "ke_fourier": 0.33590803,
+   "ke_ratio": 1.00000005,
+   "ke_rspace": 0.33590801,
+   "l": 1,
+   "norm_fraction": 0.645094,
+   "q_infinity_ke": 20.0,
+   "qcut": 5.0,
+   "residual_ke_error": 2.16e-08,
+   "v_ae_rc": null,
+   "v_diff_rc": null,
+   "v_ps_rc": null
+  },
+  {
+   "constraints": {
+    "aewf": {
+     "abs_sum": 0.5899149100000001,
+     "nan": 0,
+     "shape": [
+      5
+     ],
+     "sum": -0.31468871
+    },
+    "diff": {
+     "abs_sum": 1.7927e-14,
+     "nan": 0,
+     "shape": [
+      5
+     ],
+     "sum": 2.9130000000000002e-15
+    },
+    "pswf": {
+     "abs_sum": 0.5899149100000001,
+     "nan": 0,
+     "shape": [
+      5
+     ],
+     "sum": -0.31468871
+    }
+   },
+   "e_inf": 200.0,
+   "ecut": 12.5,
+   "iproj": 2,
+   "j": 1.5,
+   "ke_fourier": 0.31163175,
+   "ke_ratio": 1.0,
+   "ke_rspace": 0.31163175,
+   "l": 1,
+   "norm_fraction": 0.161915,
+   "q_infinity_ke": 20.0,
+   "qcut": 5.0,
+   "residual_ke_error": 6.53e-09,
+   "v_ae_rc": -0.36873181,
+   "v_diff_rc": -2.99e-05,
+   "v_ps_rc": -0.36870193
+  },
+  {
+   "constraints": {
+    "aewf": {
+     "abs_sum": 0.51374797,
+     "nan": 0,
+     "shape": [
+      4
+     ],
+     "sum": -0.005229590000000006
+    },
+    "diff": {
+     "abs_sum": 6.580000000000001e-14,
+     "nan": 0,
+     "shape": [
+      4
+     ],
+     "sum": 6.580000000000001e-14
+    },
+    "pswf": {
+     "abs_sum": 0.51374797,
+     "nan": 0,
+     "shape": [
+      4
+     ],
+     "sum": -0.005229590000000006
+    }
+   },
+   "e_inf": 200.0,
+   "ecut": 12.5,
+   "iproj": 1,
+   "j": 0.5,
+   "ke_fourier": 0.66558261,
+   "ke_ratio": 1.00000001,
+   "ke_rspace": 0.6655826,
+   "l": 1,
+   "norm_fraction": 0.927099,
+   "q_infinity_ke": 20.0,
+   "qcut": 5.0,
+   "residual_ke_error": 1.42e-08,
+   "v_ae_rc": null,
+   "v_diff_rc": null,
+   "v_ps_rc": null
+  },
+  {
+   "constraints": {
+    "aewf": {
+     "abs_sum": 0.67760328,
+     "nan": 0,
+     "shape": [
+      5
+     ],
+     "sum": -0.0407391
+    },
+    "diff": {
+     "abs_sum": 9.005099999999999e-14,
+     "nan": 0,
+     "shape": [
+      5
+     ],
+     "sum": 8.4829e-14
+    },
+    "pswf": {
+     "abs_sum": 0.67760328,
+     "nan": 0,
+     "shape": [
+      5
+     ],
+     "sum": -0.0407391
+    }
+   },
+   "e_inf": 200.0,
+   "ecut": 12.5,
+   "iproj": 2,
+   "j": 0.5,
+   "ke_fourier": 0.42244704,
+   "ke_ratio": 1.00000002,
+   "ke_rspace": 0.42244703,
+   "l": 1,
+   "norm_fraction": 0.157474,
+   "q_infinity_ke": 20.0,
+   "qcut": 5.0,
+   "residual_ke_error": 8.14e-08,
+   "v_ae_rc": -0.36873181,
+   "v_diff_rc": 1.34e-05,
+   "v_ps_rc": -0.36874521
+  },
+  {
+   "constraints": {
+    "aewf": {
+     "abs_sum": 1.3989042999999999,
+     "nan": 0,
+     "shape": [
+      4
+     ],
+     "sum": -0.38336388000000005
+    },
+    "diff": {
+     "abs_sum": 5.9397e-14,
+     "nan": 0,
+     "shape": [
+      4
+     ],
+     "sum": 5.2316999999999996e-14
+    },
+    "pswf": {
+     "abs_sum": 1.3989042999999999,
+     "nan": 0,
+     "shape": [
+      4
+     ],
+     "sum": -0.38336388000000005
+    }
+   },
+   "e_inf": 200.0,
+   "ecut": 21.12,
+   "iproj": 1,
+   "j": 2.5,
+   "ke_fourier": 3.04486323,
+   "ke_ratio": 1.0,
+   "ke_rspace": 3.04486322,
+   "l": 2,
+   "norm_fraction": 0.972424,
+   "q_infinity_ke": 20.0,
+   "qcut": 6.5,
+   "residual_ke_error": 1.55e-06,
+   "v_ae_rc": null,
+   "v_diff_rc": null,
+   "v_ps_rc": null
+  },
+  {
+   "constraints": {
+    "aewf": {
+     "abs_sum": 1.89608854,
+     "nan": 0,
+     "shape": [
+      5
+     ],
+     "sum": 0.40637189999999995
+    },
+    "diff": {
+     "abs_sum": 1.0257800000000001e-13,
+     "nan": 0,
+     "shape": [
+      5
+     ],
+     "sum": 5.079800000000001e-14
+    },
+    "pswf": {
+     "abs_sum": 1.89608854,
+     "nan": 0,
+     "shape": [
+      5
+     ],
+     "sum": 0.40637189999999995
+    }
+   },
+   "e_inf": 200.0,
+   "ecut": 21.12,
+   "iproj": 2,
+   "j": 2.5,
+   "ke_fourier": 1.79664553,
+   "ke_ratio": 1.00000001,
+   "ke_rspace": 1.79664551,
+   "l": 2,
+   "norm_fraction": 0.357852,
+   "q_infinity_ke": 20.0,
+   "qcut": 6.5,
+   "residual_ke_error": 9.98e-06,
+   "v_ae_rc": -0.78911061,
+   "v_diff_rc": 5.05e-05,
+   "v_ps_rc": -0.78916115
+  },
+  {
+   "constraints": {
+    "aewf": {
+     "abs_sum": 1.39067139,
+     "nan": 0,
+     "shape": [
+      4
+     ],
+     "sum": -0.44583391
+    },
+    "diff": {
+     "abs_sum": 1.2059e-14,
+     "nan": 0,
+     "shape": [
+      4
+     ],
+     "sum": -1.1836999999999999e-14
+    },
+    "pswf": {
+     "abs_sum": 1.39067139,
+     "nan": 0,
+     "shape": [
+      4
+     ],
+     "sum": -0.44583391
+    }
+   },
+   "e_inf": 200.0,
+   "ecut": 21.12,
+   "iproj": 1,
+   "j": 1.5,
+   "ke_fourier": 3.34800137,
+   "ke_ratio": 1.0,
+   "ke_rspace": 3.34800136,
+   "l": 2,
+   "norm_fraction": 0.98372,
+   "q_infinity_ke": 20.0,
+   "qcut": 6.5,
+   "residual_ke_error": 2.66e-06,
+   "v_ae_rc": null,
+   "v_diff_rc": null,
+   "v_ps_rc": null
+  },
+  {
+   "constraints": {
+    "aewf": {
+     "abs_sum": 2.0707397199999997,
+     "nan": 0,
+     "shape": [
+      5
+     ],
+     "sum": 0.5323943
+    },
+    "diff": {
+     "abs_sum": 6.453860000000001e-13,
+     "nan": 0,
+     "shape": [
+      5
+     ],
+     "sum": -5.99058e-13
+    },
+    "pswf": {
+     "abs_sum": 2.0707397199999997,
+     "nan": 0,
+     "shape": [
+      5
+     ],
+     "sum": 0.5323943
+    }
+   },
+   "e_inf": 200.0,
+   "ecut": 21.12,
+   "iproj": 2,
+   "j": 1.5,
+   "ke_fourier": 1.95821412,
+   "ke_ratio": 1.00000001,
+   "ke_rspace": 1.9582141,
+   "l": 2,
+   "norm_fraction": 0.433543,
+   "q_infinity_ke": 20.0,
+   "qcut": 6.5,
+   "residual_ke_error": 2.75e-05,
+   "v_ae_rc": -0.78911061,
+   "v_diff_rc": 7.23e-05,
+   "v_ps_rc": -0.78918294
+  }
+ ],
  "plot_data": {
   "charge_densities": {
    "r": {
@@ -1540,6 +1973,7 @@
   "relativistic_treatment": "fully-relativistic",
   "version": "3.2.3"
  },
+ "pseudoatom_total_energy": -96.521479,
  "psml": "",
  "psp8": {
   "len": 477025,

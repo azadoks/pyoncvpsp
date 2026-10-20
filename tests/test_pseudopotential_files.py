@@ -1,8 +1,11 @@
-"""Tests of the psp8 and PSML parsers."""
+"""Tests of the psp8 and PSML parsers and of the quantities of the output that the comparison of
+two outputs needs (the optimization diagnostics, the bound ghost tests and the pseudo-atom energy)."""
 
+import numpy as np
 import pytest
 
 from pyoncvpsp.io import parse_psml, parse_psp8
+from pyoncvpsp.io.output import OncvpspTextParser
 
 
 def test_psp8_scalar_relativistic(parse_output):
@@ -95,3 +98,43 @@ def test_psml(parse_output):
 def test_psml_rejects_other_documents():
     with pytest.raises(ValueError, match="not a PSML document"):
         parse_psml("<upf></upf>")
+
+
+def test_optimization_diagnostics(parse_output):
+    diagnostics = parse_output("oncvpsp-4.0.1-sr_14_Si").optimization_diagnostics
+    assert [(d["l"], d["iproj"]) for d in diagnostics] == [
+        (0, 1),
+        (0, 2),
+        (1, 1),
+        (1, 2),
+        (2, 1),
+        (2, 2),
+    ]
+    first = diagnostics[0]
+    assert first["constraints"]["pswf"] == pytest.approx(
+        [0.20169637, -0.18168790, 0.13441969, -0.02256484, -0.24449972]
+    )
+    assert np.abs(first["constraints"]["diff"]).max() < 1e-12
+    assert first["norm_fraction"] == 0.770856
+    assert (first["qcut"], first["ecut"]) == (5.01, 12.53)
+    assert (first["q_infinity_ke"], first["e_inf"]) == (20.0, 200.0)
+    for diagnostic in diagnostics:
+        assert all(value is not None for key, value in diagnostic.items() if key != "j")
+        assert diagnostic["ke_ratio"] == pytest.approx(1.0, abs=1e-6)
+
+
+def test_bound_ghost_tests(parse_output):
+    rows = parse_output("oncvpsp-4.0.1-sr_14_Si").bound_ghost_tests
+    assert [(r["set"], r["n"], r["l"]) for r in rows] == [(None, 1, 0), (None, 2, 1)]
+    assert rows[0]["eig"] == pytest.approx(rows[0]["eig_basis"], abs=1e-4)
+    fully_relativistic = parse_output("oncvpsp-4.0.1-fr_14_Si_icmod7").bound_ghost_tests
+    assert {r["set"] for r in fully_relativistic} == {"+", "-"}
+
+
+def test_pseudoatom_total_energy(parse_output):
+    assert parse_output("oncvpsp-4.0.1-sr_14_Si").pseudoatom_total_energy == -3.792023
+    # a large energy runs into the label
+    parser = OncvpspTextParser(
+        lines=["Pseudoatom total energy-1269.498648"], check=False
+    )
+    assert parser.pseudoatom_total_energy == -1269.498648

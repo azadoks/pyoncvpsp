@@ -6,6 +6,7 @@
   "terms": null,
   "total_energy": -7116.39687
  },
+ "bound_ghost_tests": [],
  "budgeted_core": null,
  "completed": false,
  "coulomb_tail": null,
@@ -180,6 +181,51 @@
  "missing_plot_data": [
   "DATA FOR PLOTTING"
  ],
+ "optimization_diagnostics": [
+  {
+   "constraints": {
+    "aewf": {
+     "abs_sum": 10.74274841,
+     "nan": 0,
+     "shape": [
+      4
+     ],
+     "sum": 6.25561313
+    },
+    "diff": {
+     "abs_sum": 1.8988999999999999e-13,
+     "nan": 0,
+     "shape": [
+      4
+     ],
+     "sum": 1.2050999999999998e-13
+    },
+    "pswf": {
+     "abs_sum": 10.74274841,
+     "nan": 0,
+     "shape": [
+      4
+     ],
+     "sum": 6.25561313
+    }
+   },
+   "e_inf": 311.0,
+   "ecut": 3.1,
+   "iproj": 1,
+   "j": null,
+   "ke_fourier": null,
+   "ke_ratio": null,
+   "ke_rspace": null,
+   "l": 0,
+   "norm_fraction": 0.168448,
+   "q_infinity_ke": 24.94,
+   "qcut": 2.49,
+   "residual_ke_error": null,
+   "v_ae_rc": null,
+   "v_diff_rc": null,
+   "v_ps_rc": null
+  }
+ ],
  "plot_data": {
   "charge_densities": {},
   "convergence_profiles": [],
@@ -205,6 +251,7 @@
   "relativistic_treatment": "scalar-relativistic",
   "version": "4.0.1"
  },
+ "pseudoatom_total_energy": null,
  "psml": "",
  "psp8": "",
  "reference_configuration": [

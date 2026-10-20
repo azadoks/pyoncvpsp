@@ -6,6 +6,7 @@
   "terms": null,
   "total_energy": -7.45219754
  },
+ "bound_ghost_tests": [],
  "budgeted_core": null,
  "completed": false,
  "coulomb_tail": null,
@@ -144,6 +145,180 @@
  "missing_plot_data": [
   "DATA FOR PLOTTING"
  ],
+ "optimization_diagnostics": [
+  {
+   "constraints": {
+    "aewf": {
+     "abs_sum": 5.65032839,
+     "nan": 0,
+     "shape": [
+      4
+     ],
+     "sum": -2.46408145
+    },
+    "diff": {
+     "abs_sum": 5.193599999999999e-13,
+     "nan": 0,
+     "shape": [
+      4
+     ],
+     "sum": -1.0663999999999999e-13
+    },
+    "pswf": {
+     "abs_sum": 5.65032839,
+     "nan": 0,
+     "shape": [
+      4
+     ],
+     "sum": -2.46408145
+    }
+   },
+   "e_inf": 308.5,
+   "ecut": 78.37,
+   "iproj": 1,
+   "j": null,
+   "ke_fourier": 2.78603469,
+   "ke_ratio": 0.9999999,
+   "ke_rspace": 2.78603498,
+   "l": 0,
+   "norm_fraction": 0.968571,
+   "q_infinity_ke": 24.84,
+   "qcut": 12.52,
+   "residual_ke_error": 8.98e-09,
+   "v_ae_rc": -0.70453615,
+   "v_diff_rc": 1.54e-05,
+   "v_ps_rc": -0.70455155
+  },
+  {
+   "constraints": {
+    "aewf": {
+     "abs_sum": 1.5729176800000002,
+     "nan": 0,
+     "shape": [
+      5
+     ],
+     "sum": 0.63689556
+    },
+    "diff": {
+     "abs_sum": 8.941178e-13,
+     "nan": 0,
+     "shape": [
+      5
+     ],
+     "sum": 8.941178e-13
+    },
+    "pswf": {
+     "abs_sum": 1.5729176800000002,
+     "nan": 0,
+     "shape": [
+      5
+     ],
+     "sum": 0.63689556
+    }
+   },
+   "e_inf": 428.7,
+   "ecut": 78.37,
+   "iproj": 2,
+   "j": null,
+   "ke_fourier": 0.27758835,
+   "ke_ratio": 0.99999769,
+   "ke_rspace": 0.27758899,
+   "l": 0,
+   "norm_fraction": 0.027089,
+   "q_infinity_ke": 29.28,
+   "qcut": 12.52,
+   "residual_ke_error": 1.91e-08,
+   "v_ae_rc": -0.70453615,
+   "v_diff_rc": 1.69e-05,
+   "v_ps_rc": -0.70455301
+  },
+  {
+   "constraints": {
+    "aewf": {
+     "abs_sum": 0.81182844,
+     "nan": 0,
+     "shape": [
+      4
+     ],
+     "sum": 0.48724466000000005
+    },
+    "diff": {
+     "abs_sum": 2.4858000000000004e-13,
+     "nan": 0,
+     "shape": [
+      4
+     ],
+     "sum": -2.4858000000000004e-13
+    },
+    "pswf": {
+     "abs_sum": 0.81182844,
+     "nan": 0,
+     "shape": [
+      4
+     ],
+     "sum": 0.48724466000000005
+    }
+   },
+   "e_inf": 271.9,
+   "ecut": 17.93,
+   "iproj": 1,
+   "j": null,
+   "ke_fourier": 0.41010945,
+   "ke_ratio": 1.0,
+   "ke_rspace": 0.41010945,
+   "l": 1,
+   "norm_fraction": 0.154038,
+   "q_infinity_ke": 23.32,
+   "qcut": 5.99,
+   "residual_ke_error": 1.08e-05,
+   "v_ae_rc": -0.55883088,
+   "v_diff_rc": 9.47e-06,
+   "v_ps_rc": -0.55884035
+  },
+  {
+   "constraints": {
+    "aewf": {
+     "abs_sum": 2.12638044,
+     "nan": 0,
+     "shape": [
+      5
+     ],
+     "sum": -1.03849566
+    },
+    "diff": {
+     "abs_sum": 2.80405e-12,
+     "nan": 0,
+     "shape": [
+      5
+     ],
+     "sum": -2.7849499999999998e-12
+    },
+    "pswf": {
+     "abs_sum": 2.12638044,
+     "nan": 0,
+     "shape": [
+      5
+     ],
+     "sum": -1.03849566
+    }
+   },
+   "e_inf": 371.0,
+   "ecut": 17.93,
+   "iproj": 2,
+   "j": null,
+   "ke_fourier": 0.99448299,
+   "ke_ratio": 1.0,
+   "ke_rspace": 0.99448299,
+   "l": 1,
+   "norm_fraction": 0.26336,
+   "q_infinity_ke": 27.24,
+   "qcut": 5.99,
+   "residual_ke_error": 4.5e-05,
+   "v_ae_rc": -0.55883088,
+   "v_diff_rc": 5.23e-05,
+   "v_ps_rc": -0.55888315
+  }
+ ],
  "plot_data": {
   "charge_densities": {},
   "convergence_profiles": [
@@ -254,6 +429,7 @@
   "relativistic_treatment": "scalar-relativistic",
   "version": "4.0.1"
  },
+ "pseudoatom_total_energy": null,
  "psml": "",
  "psp8": "",
  "reference_configuration": [
