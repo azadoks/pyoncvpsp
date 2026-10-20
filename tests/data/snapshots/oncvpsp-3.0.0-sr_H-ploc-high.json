@@ -558,6 +558,7 @@
   "relativistic_treatment": "scalar-relativistic",
   "version": "3.0.0"
  },
+ "psml": "",
  "psp8": "",
  "reference_configuration": [
   {

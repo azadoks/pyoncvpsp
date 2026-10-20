@@ -2216,6 +2216,11 @@ class OncvpspTextParser:
         """String containing the pseudopotential in Abinit PSP8 format."""
         return "\n".join(self._get_lines_between("Begin PSPCODE8", "</INPUT>"))
 
+    @cached_property
+    def psml_string(self) -> str:
+        """String containing the pseudopotential in PSML format."""
+        return "\n".join(self._get_lines_between("^Begin PSML$", "^END_PSP$"))
+
     # --- Attribution ---------------------------------------------------------------------------------
 
     @cached_property
@@ -2275,6 +2280,7 @@ class OncvpspTextParser:
         output["gnuplot_script"] = self.gnuplot_script
         output["upf"] = self.upf_string
         output["psp8"] = self.psp8_string
+        output["psml"] = self.psml_string
         return output
 
     def to_dict(self) -> dict:

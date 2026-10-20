@@ -986,6 +986,10 @@
   "relativistic_treatment": "scalar-relativistic",
   "version": "4.0.1"
  },
+ "psml": {
+  "len": 560384,
+  "sha256": "4b0c471ca7536839ed1062fdb5f0de610b937c2b77d65afbd970d6434f21ae2f"
+ },
  "psp8": {
   "len": 219032,
   "sha256": "cd44093437e501608aabc834f55571ae89afcf7b39882baafcdbc71ee9d36870"
