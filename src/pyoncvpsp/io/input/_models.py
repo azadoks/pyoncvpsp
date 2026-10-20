@@ -28,6 +28,11 @@ class OncvpspAtomInput(BaseModel):  # pylint: disable=too-few-public-methods
         nv (int): Number of valence states.
         iexc (int): Exchange-correlation functional. Negative values indicate Libxc; 1-4 are built-in functionals; 5 is r2SCAN (METAPSP only).
         psfile (str): Pseudopotential output type.
+        c_light (None | float): Speed of light of the scalar- and fully-relativistic equations
+            and of the relativistic exchange: the optional seventh value of the first line, or
+            `c_light` in `[oncvpsp]` of the TOML input (azadoks/oncvpsp). If `None`, ONCVPSP's
+            137.036; ONCVPSP takes a value of 0 or less to mean the same, which is read here as
+            `None`.
     """
 
     atsym: Annotated[
@@ -49,6 +54,14 @@ class OncvpspAtomInput(BaseModel):  # pylint: disable=too-few-public-methods
         ),
     ]
     psfile: Annotated[str, Field(description="Pseudopotential output type.")]
+    c_light: None | Annotated[float, Field(ge=1.0)] = None
+
+    @field_validator("c_light", mode="before")
+    @classmethod
+    def _nonpositive_is_default(cls, value: Any) -> Any:
+        if isinstance(value, (int, float)) and value <= 0:
+            return None
+        return value
 
     @model_validator(mode="after")
     def _check_atomic_symbol(self) -> "OncvpspAtomInput":
@@ -82,10 +95,13 @@ class OncvpspAtomInput(BaseModel):  # pylint: disable=too-few-public-methods
             f"{self.atsym:>10s} {self.z:>10.5f} {self.nc:>10d} "
             f"{self.nv:>10d} {self.iexc:>10d} {self.psfile:>10s}"
         )
+        if self.c_light is not None:
+            s += f" {self.c_light!r:>10s}"
         if with_comment:
+            c_light = f" {'c_light':>10s}" if self.c_light is not None else ""
             s = (
                 f"# {'atsym':>8s} {'z':>10s} {'nc':>10s} "
-                f"{'nv':>10s} {'iexc':>10s} {'psfile':>10s}\n" + s
+                f"{'nv':>10s} {'iexc':>10s} {'psfile':>10s}{c_light}\n" + s
             )
         return s
 
@@ -633,16 +649,26 @@ class OutputGridInput(BaseModel):  # pylint: disable=too-few-public-methods
     Attributes:
         rlmax (float): [Bohr] Maximum radius of the output grid (exclusive).
         drl (float): [Bohr] Spacing of the output grid.
+        upf_mesh (int): Most points of the UPF file on the log mesh: if positive, the UPF file
+            is written on every `istr`-th point of the log mesh out to `rlmax`, `istr` the
+            smallest stride leaving at most `upf_mesh` points; 0 for the linear output grid.
+            The optional third value of the line, or `upf_mesh` in `[pp_output]` of the TOML
+            input (azadoks/oncvpsp). QE reads at most 3500 points.
     """
 
     rlmax: Annotated[float, Field(gt=0.0)]
     drl: Annotated[float, Field(gt=0.0)]
+    upf_mesh: Annotated[int, Field(ge=0)] = 0
 
     def as_dat_string(self, with_comment: bool = False) -> str:
-        """String representation of the pseudopotential input in .dat file format."""
+        """String representation of the pseudopotential input in .dat file format, with
+        `upf_mesh` only when it is not 0."""
         s = f"{self.rlmax:>10.5f} {self.drl:>10.5f}"
+        if self.upf_mesh:
+            s += f" {self.upf_mesh:>10d}"
         if with_comment:
-            s = f"# {'rlmax':>8s} {'drl':>10s}\n" + s
+            upf_mesh = f" {'upf_mesh':>10s}" if self.upf_mesh else ""
+            s = f"# {'rlmax':>8s} {'drl':>10s}{upf_mesh}\n" + s
         return s
 
 
@@ -700,16 +726,21 @@ _TOML_TETER_GRID_KEYS = {
 def _to_oncvpsp_toml(data: dict[str, Any]) -> dict[str, Any]:
     """Arrange the fields of `OncvpspInput.model_dump()` as the TOML input of ONCVPSP
     (`oncvpsp.x -t`, src/input_toml_m.f90): `psfile` in `[pp_output]`, the output grid as
-    `[linear_mesh]` `a` (drl) and `rmax` (rlmax), and the icmod 4 Teter grid as `fcfact_*` and
-    `rcfact_*`. ONCVPSP ignores the keys it does not read, such as `teter_relative`. The log mesh
-    parameters that are not given are left out, and `[log_mesh]` too when none is."""
+    `[linear_mesh]` `a` (drl) and `rmax` (rlmax) with `upf_mesh` in `[pp_output]`, and the icmod
+    4 Teter grid as `fcfact_*` and `rcfact_*`. ONCVPSP ignores the keys it does not read, such as
+    `teter_relative`. The log mesh parameters that are not given are left out, and `[log_mesh]`
+    too when none is; so are `c_light` when it is not given and `upf_mesh` when it is 0."""
     data = deepcopy(data)
     data["pp_output"] = {"psfile": data["oncvpsp"].pop("psfile")}
+    if data["oncvpsp"].get("c_light", 0) is None:
+        del data["oncvpsp"]["c_light"]
     log_mesh = {k: v for k, v in data.pop("log_mesh", {}).items() if v is not None}
     if log_mesh:
         data["log_mesh"] = log_mesh
     output_grid = data.pop("output_grid")
     data["linear_mesh"] = {"a": output_grid["drl"], "rmax": output_grid["rlmax"]}
+    if output_grid.get("upf_mesh"):
+        data["pp_output"]["upf_mesh"] = output_grid["upf_mesh"]
     core = data["model_core_charge"]
     for field, key in _TOML_TETER_GRID_KEYS.items():
         value = core.pop(field, None)
@@ -723,11 +754,16 @@ def _from_oncvpsp_toml(data: dict[str, Any]) -> dict[str, Any]:
     `_to_oncvpsp_toml`. Data already arranged as the fields (as pyoncvpsp wrote TOML before)
     are returned as they are."""
     data = deepcopy(data)
+    upf_mesh = None
     if "pp_output" in data:
-        data.setdefault("oncvpsp", {})["psfile"] = data.pop("pp_output")["psfile"]
+        pp_output = data.pop("pp_output")
+        data.setdefault("oncvpsp", {})["psfile"] = pp_output["psfile"]
+        upf_mesh = pp_output.get("upf_mesh")
     if "linear_mesh" in data:
         linear_mesh = data.pop("linear_mesh")
         data["output_grid"] = {"rlmax": linear_mesh["rmax"], "drl": linear_mesh["a"]}
+    if upf_mesh is not None:
+        data.setdefault("output_grid", {})["upf_mesh"] = upf_mesh
     core = data.get("model_core_charge", {})
     for field, key in _TOML_TETER_GRID_KEYS.items():
         if key in core:
@@ -931,7 +967,7 @@ class OncvpspInput(BaseModel):
         lines = [line.split("#", 1)[0].strip() for line in lines]
         iter_: Iterator[str] = iter(lines)
         # ATOM AND REFERENCE CONFIGURATION
-        # atsym, z, nc, nv, iexc, psfile
+        # atsym, z, nc, nv, iexc, psfile, (c_light)
         words: list[str] = next(iter_).split()
         # ONCVPSP echoes the input with format (a2,f6.2), which runs together e.g. "Og118.00"
         if symbol_match := re.fullmatch(r"([A-Za-z]{1,2})([-+.\d].*)", words[0]):
@@ -942,6 +978,7 @@ class OncvpspInput(BaseModel):
         nv = int(words[3])
         iexc = int(words[4])
         psfile = words[5]
+        c_light = float(words[6].lower().replace("d", "e")) if len(words) >= 7 else None
         # n, l, f (nc + nv lines)
         na: list[int] = [0] * (nc + nv)
         la: list[int] = [0] * (nc + nv)
@@ -1014,10 +1051,11 @@ class OncvpspInput(BaseModel):
         depsh = float(words[2])
         rxpsh = None if len(words) < 4 else float(words[3])
         # OUTPUT GRID
-        # rlmax, drl
+        # rlmax, drl, (upf_mesh)
         words = next(iter_).split()
         rlmax = float(words[0])
         drl = float(words[1])
+        upf_mesh = int(words[2]) if len(words) >= 3 else 0
         # TEST CONFIGURATIONS
         # ncnf
         ncnf = int(next(iter_).strip())
@@ -1055,6 +1093,7 @@ class OncvpspInput(BaseModel):
                 "nv": nv,
                 "iexc": iexc,
                 "psfile": psfile,
+                "c_light": c_light,
             },
             "reference_configuration": {
                 "n": na,
@@ -1097,6 +1136,7 @@ class OncvpspInput(BaseModel):
             "output_grid": {
                 "rlmax": rlmax,
                 "drl": drl,
+                "upf_mesh": upf_mesh,
             },
             "test_configurations": test_configurations,
             "log_mesh": log_mesh,

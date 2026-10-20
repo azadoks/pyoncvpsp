@@ -261,6 +261,18 @@ def test_log_mesh(parse_output):
         }
 
 
+def test_c_light_and_upf_mesh(parse_output):
+    # c_light echoed at full precision at the end of the atom line, upf_mesh after rlmax, drl
+    parser = parse_output("oncvpsp-4.0.1-sr_14_Si_c_light_upf_mesh")
+    assert parser.input["oncvpsp"]["c_light"] == 137.0359895
+    assert parser.input["output_grid"]["upf_mesh"] == 1500
+    assert parser.completed
+    for name in ("oncvpsp-4.0.1-sr_14_Si", "oncvpsp-4.0.1-sr_14_Si_log_mesh"):
+        parsed = parse_output(name).input
+        assert parsed["oncvpsp"]["c_light"] is None
+        assert parsed["output_grid"]["upf_mesh"] == 0
+
+
 def test_split_stages(parse_output, read_output):
     # oncvpsp_ae.x writes the all-electron atom and test configurations to a file, which
     # oncvpsp_ps.x reads and then prints what oncvpsp.x prints

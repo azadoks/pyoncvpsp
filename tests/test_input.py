@@ -295,6 +295,8 @@ def test_slack_writes_default_error(nitrogen):
         {"log_mesh": {"amesh": 0.999}},
         {"log_mesh": {"rr1": 1.7}},
         {"log_mesh": {"rmax": 4.0}},
+        {"oncvpsp": {"c_light": 0.5}},
+        {"output_grid": {"upf_mesh": -1}},
     ],
 )
 def test_invalid_input(nitrogen, update):
@@ -372,3 +374,60 @@ def test_build_mesh_relativistic():
     # the fully-relativistic code does not cap rr1
     assert build_mesh(7.0)[0] == 0.0005 / 10
     assert build_mesh(7.0, relativistic=True)[0] == 0.0005 / 7.0
+
+
+def test_c_light_and_upf_mesh_default(nitrogen):
+    assert nitrogen.oncvpsp.c_light is None
+    assert nitrogen.output_grid.upf_mesh == 0
+    assert len(nitrogen.oncvpsp.as_dat_string().split()) == 6
+    assert nitrogen.output_grid.as_dat_string().split() == ["4.00000", "0.01000"]
+    data = toml.loads(nitrogen.as_toml_string())
+    assert "c_light" not in data["oncvpsp"]
+    assert data["pp_output"] == {"psfile": "psp8"}
+
+
+def test_c_light_nonpositive_is_default(nitrogen):
+    # ONCVPSP takes a value of 0 or less for the built-in 137.036
+    assert nitrogen.merge(oncvpsp={"c_light": 0}).oncvpsp.c_light is None
+    assert nitrogen.merge(oncvpsp={"c_light": -1.0}).oncvpsp.c_light is None
+
+
+# the optional seventh value of the atom line (c_light) and third value of the output grid line
+# (upf_mesh) of azadoks/oncvpsp
+N_FLAGS_DAT = N_DAT.replace(
+    "    N    7     1   2   3   psp8", "    N    7     1   2   3   upf  137.0359895"
+).replace("    4.0  0.01", "    4.0  0.01  1500")
+
+
+@pytest.fixture
+def nitrogen_flags() -> OncvpspInput:
+    return OncvpspInput.from_dat_string(N_FLAGS_DAT)
+
+
+def test_c_light_and_upf_mesh_from_dat_string(nitrogen_flags, nitrogen):
+    assert nitrogen_flags.oncvpsp.c_light == 137.0359895
+    assert nitrogen_flags.output_grid.upf_mesh == 1500
+    assert (
+        nitrogen_flags.merge(
+            oncvpsp={"c_light": None, "psfile": "psp8"}, output_grid={"upf_mesh": 0}
+        )
+        == nitrogen
+    )
+
+
+@pytest.mark.parametrize("with_comment", [True, False])
+def test_c_light_and_upf_mesh_dat_round_trip(nitrogen_flags, with_comment):
+    dat = nitrogen_flags.as_dat_string(with_comment=with_comment)
+    assert OncvpspInput.from_dat_string(dat) == nitrogen_flags
+
+
+def test_c_light_and_upf_mesh_toml(nitrogen_flags):
+    # c_light in [oncvpsp] and upf_mesh in [pp_output], as ONCVPSP reads them
+    data = toml.loads(nitrogen_flags.as_toml_string())
+    assert data["oncvpsp"]["c_light"] == 137.0359895
+    assert data["pp_output"] == {"psfile": "upf", "upf_mesh": 1500}
+    assert "upf_mesh" not in data["linear_mesh"]
+    assert (
+        OncvpspInput.from_toml_string(nitrogen_flags.as_toml_string()) == nitrogen_flags
+    )
+    assert OncvpspInput.from_dict(nitrogen_flags.as_dict()) == nitrogen_flags

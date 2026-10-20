@@ -119,6 +119,7 @@
   },
   "oncvpsp": {
    "atsym": "Li",
+   "c_light": null,
    "iexc": 4,
    "nc": 1,
    "nv": 1,
@@ -127,7 +128,8 @@
   },
   "output_grid": {
    "drl": 0.01,
-   "rlmax": 4.2671
+   "rlmax": 4.2671,
+   "upf_mesh": 0
   },
   "pseudopotentials": {
    "ep": [

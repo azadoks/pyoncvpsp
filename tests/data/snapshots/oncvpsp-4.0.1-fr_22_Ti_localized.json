@@ -267,6 +267,7 @@
   },
   "oncvpsp": {
    "atsym": "Ti",
+   "c_light": null,
    "iexc": 3,
    "nc": 3,
    "nv": 3,
@@ -275,7 +276,8 @@
   },
   "output_grid": {
    "drl": 0.06,
-   "rlmax": 3.0
+   "rlmax": 3.0,
+   "upf_mesh": 0
   },
   "pseudopotentials": {
    "ep": [

@@ -493,6 +493,7 @@
   },
   "oncvpsp": {
    "atsym": "W",
+   "c_light": null,
    "iexc": 3,
    "nc": 10,
    "nv": 4,
@@ -501,7 +502,8 @@
   },
   "output_grid": {
    "drl": 0.01,
-   "rlmax": 7.0
+   "rlmax": 7.0,
+   "upf_mesh": 0
   },
   "pseudopotentials": {
    "ep": [
