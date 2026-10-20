@@ -1260,6 +1260,63 @@ class OncvpspTextParser:
         }
 
     @cached_property
+    def ae_reference_energies(self) -> dict | None:
+        """SCF summary of the all-electron reference atom ("Reference configufation results"): its iterations
+        and total energy, and, in builds of azadoks/oncvpsp from 35f1150 on, the residual of the screening
+        potential and the energy terms (`None` where not printed).
+
+        Returns:
+            dict | None: `None` if the section is not printed, else:
+                iterations (int): SCF iterations.
+                total_energy (float): All-electron total energy (Ha).
+                screening_residual (float | None): RMS change of the screening potential over the electrons
+                    at convergence (Ha).
+                terms (dict[str, float] | None): `total`, `kinetic`, `electron_nucleus`, `hartree` and
+                    `exchange_correlation` energies (Ha), at full precision.
+        """
+        header = self.search(r"^Reference configufation results$")
+        if not header:
+            return None
+        i = header[0]
+        lines = self.clean_lines[i + 1 : i + 10]
+        iterations = re.match(r"^\s*iterations\s+(\d+)", lines[0]) if lines else None
+        total = (
+            re.match(
+                rf"^\s*all-electron total energy \(Ha\)\s+(?P<e>{RE_FLOAT})", lines[1]
+            )
+            if len(lines) > 1
+            else None
+        )
+        if not (iterations and total):
+            return None
+        residual = None
+        terms = None
+        if len(lines) > 2 and (
+            match := re.match(
+                rf"^\s*residual of the screening potential \(Ha\)\s+(?P<r>{RE_FLOAT})",
+                lines[2],
+            )
+        ):
+            residual = fort_float(match["r"])
+        if len(lines) > 8 and re.match(r"^\s*energy terms \(Ha\)$", lines[3]):
+            terms = {}
+            for line in lines[4:9]:
+                match = re.match(
+                    rf"^\s*(?P<name>total|kinetic|electron-nucleus|Hartree|exchange-correlation)\s+(?P<e>{RE_FLOAT})$",
+                    line,
+                )
+                if not match:
+                    terms = None
+                    break
+                terms[match["name"].lower().replace("-", "_")] = fort_float(match["e"])
+        return {
+            "iterations": int(iterations[1]),
+            "total_energy": fort_float(total["e"]),
+            "screening_residual": residual,
+            "terms": terms,
+        }
+
+    @cached_property
     def ionic_tail(self) -> dict | None:
         """Window over which azadoks/oncvpsp switches the screened potentials to the frozen-core ionic tail
         (V_ion + V_Hxc beyond the largest rc), and the fixed-point steps of the pseudo valence states in it
@@ -2191,6 +2248,7 @@ class OncvpspTextParser:
         output["program_information"] = self.program_information
         output["input"] = self.input
         output["reference_configuration"] = self.reference_configuration
+        output["ae_reference_energies"] = self.ae_reference_energies
         output["wellstate_metadata"] = self.wellstate_metadata
         output["localized_bound_states"] = self.localized_bound_states
         output["vkb_hermiticity_errors"] = self.vkb_hermiticity_errors

@@ -1,5 +1,11 @@
 {
  "ae_data_file": null,
+ "ae_reference_energies": {
+  "iterations": 23,
+  "screening_residual": null,
+  "terms": null,
+  "total_energy": -54.4530351
+ },
  "budgeted_core": null,
  "completed": false,
  "coulomb_tail": null,

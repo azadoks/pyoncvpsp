@@ -26,7 +26,9 @@ class OncvpspAtomInput(BaseModel):  # pylint: disable=too-few-public-methods
         z (float): Nuclear charge.
         nc (int): Number of core states.
         nv (int): Number of valence states.
-        iexc (int): Exchange-correlation functional. Negative values indicate Libxc; 1-4 are built-in functionals; 5 is r2SCAN (METAPSP only).
+        iexc (int): Exchange-correlation functional. Negative values indicate Libxc; 1-4 are built-in functionals;
+            5 is r2SCAN (METAPSP only); 6 is Slater exchange with VWN5 correlation (Libxc -001007) and 7 the same with
+            the relativistic exchange of MacDonald and Vosko at `c_light` (Libxc -532007), azadoks/oncvpsp only.
         psfile (str): Pseudopotential output type.
         c_light (None | float): Speed of light of the scalar- and fully-relativistic equations
             and of the relativistic exchange: the optional seventh value of the first line, or
@@ -46,10 +48,11 @@ class OncvpspAtomInput(BaseModel):  # pylint: disable=too-few-public-methods
     iexc: Annotated[
         int,
         Field(
-            le=5,
+            le=7,
             description=(
                 "Exchange-correlation functional. Negative values indicate Libxc. 1-4 are built-in functionals."
-                " 5 is r2SCAN (METAPSP only)."
+                " 5 is r2SCAN (METAPSP only). 6 is Slater + VWN5 and 7 is VWN5 with the MacDonald-Vosko"
+                " relativistic exchange at c_light (azadoks/oncvpsp only)."
             ),
         ),
     ]
@@ -75,7 +78,8 @@ class OncvpspAtomInput(BaseModel):  # pylint: disable=too-few-public-methods
     def _check_exchange_correlation_type(self) -> "OncvpspAtomInput":
         if self.iexc == 0:
             raise ValueError(
-                "exchange_correlation_type can be negative (LibXC), 1-4 (built-in), 5 (METAPSP r2SCAN), but not 0"
+                "exchange_correlation_type can be negative (LibXC), 1-4 (built-in), 5 (METAPSP r2SCAN),"
+                " 6-7 (azadoks/oncvpsp VWN), but not 0"
             )
         return self
 

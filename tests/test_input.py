@@ -282,7 +282,7 @@ def test_slack_writes_default_error(nitrogen):
     "update",
     [
         {"oncvpsp": {"iexc": 0}},
-        {"oncvpsp": {"iexc": 6}},
+        {"oncvpsp": {"iexc": 8}},
         {"oncvpsp": {"psfile": "xml"}},
         {"oncvpsp": {"atsym": "Abc"}},
         {"model_core_charge": {"icmod": 2, "fcfact": -0.5}},
@@ -431,3 +431,11 @@ def test_c_light_and_upf_mesh_toml(nitrogen_flags):
         OncvpspInput.from_toml_string(nitrogen_flags.as_toml_string()) == nitrogen_flags
     )
     assert OncvpspInput.from_dict(nitrogen_flags.as_dict()) == nitrogen_flags
+
+
+@pytest.mark.parametrize("iexc", [6, 7])
+def test_vwn_functionals(nitrogen_flags, iexc):
+    # azadoks/oncvpsp 522b58a: 6 Slater + VWN5, 7 with the relativistic exchange at c_light; 5 is METAPSP's
+    vwn = nitrogen_flags.merge(oncvpsp={"iexc": iexc})
+    assert OncvpspInput.from_dat_string(vwn.as_dat_string()) == vwn
+    assert OncvpspInput.from_toml_string(vwn.as_toml_string()) == vwn

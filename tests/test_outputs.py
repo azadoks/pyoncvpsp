@@ -263,14 +263,46 @@ def test_log_mesh(parse_output):
 
 def test_c_light_and_upf_mesh(parse_output):
     # c_light echoed at full precision at the end of the atom line, upf_mesh after rlmax, drl
-    parser = parse_output("oncvpsp-4.0.1-sr_14_Si_c_light_upf_mesh")
+    parser = parse_output("oncvpsp-4.0.1-sr_14_Si_new_options")
+    assert parser.input["oncvpsp"]["iexc"] == 7
     assert parser.input["oncvpsp"]["c_light"] == 137.0359895
-    assert parser.input["output_grid"]["upf_mesh"] == 1500
+    assert parser.input["output_grid"]["upf_mesh"] == 3500
     assert parser.completed
+    assert 'functional="RXC  VWN  NOGX NOGC"' in parser.upf_string
+    assert 'mesh_size="  2166"' in parser.upf_string
     for name in ("oncvpsp-4.0.1-sr_14_Si", "oncvpsp-4.0.1-sr_14_Si_log_mesh"):
         parsed = parse_output(name).input
         assert parsed["oncvpsp"]["c_light"] is None
         assert parsed["output_grid"]["upf_mesh"] == 0
+
+
+def test_ae_reference_energies(parse_output):
+    # azadoks/oncvpsp 35f1150 on: the residual of the screening potential and the energy terms
+    energies = parse_output("oncvpsp-4.0.1-sr_14_Si_new_options").ae_reference_energies
+    assert energies == {
+        "iterations": 25,
+        "total_energy": -288.696531,
+        "screening_residual": 4.96e-11,
+        "terms": {
+            "total": -288.6965311033,
+            "kinetic": 288.8633056401,
+            "electron_nucleus": -690.0657357738,
+            "hartree": 131.9675528627,
+            "exchange_correlation": -19.4616538323,
+        },
+    }
+    terms = energies["terms"]
+    assert terms["total"] == pytest.approx(
+        terms["kinetic"]
+        + terms["electron_nucleus"]
+        + terms["hartree"]
+        + terms["exchange_correlation"],
+        abs=1e-9,
+    )
+    # earlier builds print the iterations and the total energy only
+    older = parse_output("oncvpsp-4.0.1-sr_14_Si").ae_reference_energies
+    assert older is not None
+    assert older["screening_residual"] is None and older["terms"] is None
 
 
 def test_split_stages(parse_output, read_output):
