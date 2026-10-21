@@ -388,6 +388,7 @@
    "slope_test": 1.0000452
   }
  ],
+ "diagnostics": {},
  "errors": [],
  "ghosts": [],
  "gnuplot_script": {

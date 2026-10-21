@@ -2307,6 +2307,65 @@ class OncvpspTextParser:
         ]
 
     @cached_property
+    def diagnostics(self) -> dict:
+        """The machine-readable block of the diagnostics (`Begin DIAGNOSTICS` to
+        `End DIAGNOSTICS`, azadoks/oncvpsp): the Ecut crossings of the convergence tables and the
+        log derivatives, to 17 significant digits. Its lines are tagged `ecut l ikap iproj err ecut`,
+        `ld_r l ikap r` and `ld l ikap e ae ps`, with ikap 1 for j = l + 1/2 (or an l-channel) and
+        2 for j = l - 1/2.
+
+        Returns:
+            dict: Empty if the output has no such block, else:
+                ecut_crossings (list[dict]): One per optimized projector:
+                    l (int): Orbital angular momentum.
+                    j (float | None): Total angular momentum, None for an l-channel.
+                    iproj (int): Projector index (1-based).
+                    eresid (np.ndarray): The levels of the residual kinetic energy per electron
+                        that the projector's curve reaches (Ha), from 1e-2 down by half decades.
+                    ecut (np.ndarray): The cutoff energies at which it falls to them (Ha).
+                log_derivatives (list[dict]): One per channel, as `log_derivatives`:
+                    l, j, rxpsh, e, log_deriv_ae, log_deriv_ps.
+        """
+        lines = self._get_lines_between("^Begin DIAGNOSTICS$", "^End DIAGNOSTICS$")
+        if not lines:
+            return {}
+        relativistic = self.is_relativistic
+        ecut: dict[ProjectorKey, dict[str, Any]] = defaultdict(
+            lambda: defaultdict(list)
+        )
+        ld: dict[ChannelKey, dict[str, Any]] = defaultdict(lambda: defaultdict(list))
+        for line in lines:
+            tag, *fields = line.split()
+            if tag == "ecut":
+                ell, ikap, iproj = (int(f) for f in fields[:3])
+                key = ProjectorKey(j_channels(ell, relativistic)[ikap - 1], iproj)
+                ecut[key]["eresid"].append(float(fields[3]))
+                ecut[key]["ecut"].append(float(fields[4]))
+            elif tag == "ld_r":
+                ell, ikap = int(fields[0]), int(fields[1])
+                ld[j_channels(ell, relativistic)[ikap - 1]]["rxpsh"] = float(fields[2])
+            elif tag == "ld":
+                ell, ikap = int(fields[0]), int(fields[1])
+                data = ld[j_channels(ell, relativistic)[ikap - 1]]
+                data["e"].append(float(fields[2]))
+                data["log_deriv_ae"].append(float(fields[3]))
+                data["log_deriv_ps"].append(float(fields[4]))
+
+        def as_records(values: dict) -> list[dict]:
+            return [
+                {
+                    **key.as_dict(),
+                    **{
+                        k: v if isinstance(v, float) else np.array(v)
+                        for k, v in value.items()
+                    },
+                }
+                for key, value in values.items()
+            ]
+
+        return {"ecut_crossings": as_records(ecut), "log_derivatives": as_records(ld)}
+
+    @cached_property
     def plot_data(self) -> dict:
         """Dictionary containing plot data (radial functions).
 
@@ -2424,6 +2483,7 @@ class OncvpspTextParser:
         output["test_configurations"] = self.test_configurations
         output["test_configuration_energies"] = self.test_configuration_energies
         output["test_configuration_status"] = self.test_configuration_status
+        output["diagnostics"] = self.diagnostics
         output["plot_data"] = self.plot_data
         output["gnuplot_script"] = self.gnuplot_script
         output["upf"] = self.upf_string

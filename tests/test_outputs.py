@@ -9,6 +9,7 @@ import json
 from pathlib import Path
 import re
 
+import numpy as np
 import pytest
 
 from pyoncvpsp.io.input import OncvpspInput
@@ -404,3 +405,49 @@ def test_budget_from_tables(parse_output):
     assert budgeted["ecut"] == pytest.approx(parser.ecut_recommended, abs=0.01)
     weighted = parse_output("oncvpsp-4.0.1-sr_14_Si_icmod6_auto").budgeted_core
     assert weighted is not None and weighted["budget_source"] == "weighted"
+
+
+def test_diagnostics(parse_output):
+    # azadoks/oncvpsp O-6: the DIAGNOSTICS block, the Ecut crossings and log derivatives to 17 digits,
+    # the printed tables rounded from them
+    parser = parse_output("oncvpsp-4.0.1-sr_07_N_opt_diagnostics")
+    diagnostics = parser.diagnostics
+    crossings = diagnostics["ecut_crossings"]
+    assert [(c["l"], c["j"], c["iproj"]) for c in crossings] == [
+        (0, None, 1),
+        (0, None, 2),
+        (1, None, 1),
+        (1, None, 2),
+    ]
+    for crossing in crossings:
+        assert crossing["eresid"] == pytest.approx(1e-2 * 10.0 ** (-0.5 * np.arange(7)))
+    for profile in parser._optimize_convergence_profiles:
+        crossing = next(
+            c
+            for c in crossings
+            if (c["l"], c["iproj"]) == (profile["l"], profile["iproj"])
+        )
+        assert profile["ecut"] == pytest.approx(crossing["ecut"][::2], abs=0.005)
+    for printed, full in zip(
+        parser.log_derivatives, diagnostics["log_derivatives"], strict=True
+    ):
+        assert (printed["l"], printed["j"]) == (full["l"], full["j"])
+        assert full["rxpsh"] == pytest.approx(printed["rxpsh"], abs=0.005)
+        for key in ("e", "log_deriv_ae", "log_deriv_ps"):
+            assert full[key] == pytest.approx(printed[key], abs=5e-7)
+    relativistic = parse_output("oncvpsp-4.0.1-fr_14_Si_diagnostics").diagnostics
+    assert [(c["l"], c["j"]) for c in relativistic["log_derivatives"]] == [
+        (0, 0.5),
+        (1, 1.5),
+        (1, 0.5),
+        (2, 2.5),
+        (2, 1.5),
+        (3, 3.5),
+        (3, 2.5),
+    ]
+    assert {(c["l"], c["j"], c["iproj"]) for c in relativistic["ecut_crossings"]} == {
+        (ell, j, iproj)
+        for ell, j in [(0, 0.5), (1, 1.5), (1, 0.5), (2, 2.5), (2, 1.5)]
+        for iproj in (1, 2)
+    }
+    assert parse_output("oncvpsp-4.0.1-sr_14_Si").diagnostics == {}

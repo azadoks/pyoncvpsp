@@ -14,6 +14,7 @@
  "d2exc_rmse": null,
  "diagnostic_tests_semilocal": [],
  "diagnostic_tests_vkb": [],
+ "diagnostics": {},
  "errors": [],
  "ghosts": [],
  "gnuplot_script": "",
