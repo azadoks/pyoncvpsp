@@ -435,7 +435,26 @@ def test_diagnostics(parse_output):
         assert full["rxpsh"] == pytest.approx(printed["rxpsh"], abs=0.005)
         for key in ("e", "log_deriv_ae", "log_deriv_ps"):
             assert full[key] == pytest.approx(printed[key], abs=5e-7)
+    # X-3: the ghost tests' margins, the printed bound-state rows rounded from them
+    margins = diagnostics["ghost_margins"]
+    assert [(m["l"], m["j"], m["n"]) for m in margins] == [(0, None, 1), (1, None, 2)]
+    for printed, full in zip(parser.bound_ghost_tests, margins, strict=True):
+        assert (printed["n"], printed["l"]) == (full["n"], full["l"])
+        for key in ("eig", "eig_basis"):
+            assert full[key] == pytest.approx(printed[key], abs=5e-7)
+    localization = diagnostics["ghost_localization"]
+    assert [(g["l"], g["j"]) for g in localization] == [(0, None), (1, None)]
+    assert all(g["r_over_rc"] > 1.0 for g in localization)
     relativistic = parse_output("oncvpsp-4.0.1-fr_14_Si_diagnostics").diagnostics
+    assert [(m["l"], m["j"], m["n"]) for m in relativistic["ghost_margins"]] == [
+        (0, 0.5, 1),
+        (1, 1.5, 2),
+        (1, 0.5, 2),
+        (2, 2.5, 3),
+        (2, 1.5, 3),
+    ]
+    # l = 2 has no bound state: compared with the vacuum level
+    assert relativistic["ghost_margins"][3]["eig"] == 0.0
     assert [(c["l"], c["j"]) for c in relativistic["log_derivatives"]] == [
         (0, 0.5),
         (1, 1.5),

@@ -2309,10 +2309,11 @@ class OncvpspTextParser:
     @cached_property
     def diagnostics(self) -> dict:
         """The machine-readable block of the diagnostics (`Begin DIAGNOSTICS` to
-        `End DIAGNOSTICS`, azadoks/oncvpsp): the Ecut crossings of the convergence tables and the
-        log derivatives, to 17 significant digits. Its lines are tagged `ecut l ikap iproj err ecut`,
-        `ld_r l ikap r` and `ld l ikap e ae ps`, with ikap 1 for j = l + 1/2 (or an l-channel) and
-        2 for j = l - 1/2.
+        `End DIAGNOSTICS`, azadoks/oncvpsp): the Ecut crossings of the convergence tables, the
+        log derivatives and the margins of the ghost tests, to 17 significant digits. Its lines are
+        tagged `ecut l ikap iproj err ecut`, `ld_r l ikap r`, `ld l ikap e ae ps`,
+        `ghost l ikap n e_ref e_basis` and `ghost_r l ikap e r`, with ikap 1 for j = l + 1/2 (or an
+        l-channel) and 2 for j = l - 1/2.
 
         Returns:
             dict: Empty if the output has no such block, else:
@@ -2325,6 +2326,15 @@ class OncvpspTextParser:
                     ecut (np.ndarray): The cutoff energies at which it falls to them (Ha).
                 log_derivatives (list[dict]): One per channel, as `log_derivatives`:
                     l, j, rxpsh, e, log_deriv_ae, log_deriv_ps.
+                ghost_margins (list[dict]): One per row of the bound-ghost test:
+                    l (int), j (float | None), n (int).
+                    eig (float): The bound state of the nonlocal Schroedinger equation (Ha), 0 for
+                        the vacuum level of a channel without one.
+                    eig_basis (float): The eigenvalue of the basis diagonalization matched to it
+                        (Ha); a GHOST(-) lies below min(eig - 1e-4, eig * (1 + 1e-4)).
+                ghost_localization (list[dict]): One per channel, the basis eigenstate of least
+                    <r>/rc more than 0.05 Ha above the reference: l, j, eig (Ha) and r_over_rc,
+                    a GHOST(+) below 1.
         """
         lines = self._get_lines_between("^Begin DIAGNOSTICS$", "^End DIAGNOSTICS$")
         if not lines:
@@ -2334,6 +2344,8 @@ class OncvpspTextParser:
             lambda: defaultdict(list)
         )
         ld: dict[ChannelKey, dict[str, Any]] = defaultdict(lambda: defaultdict(list))
+        margins: list[dict] = []
+        localization: list[dict] = []
         for line in lines:
             tag, *fields = line.split()
             if tag == "ecut":
@@ -2350,6 +2362,25 @@ class OncvpspTextParser:
                 data["e"].append(float(fields[2]))
                 data["log_deriv_ae"].append(float(fields[3]))
                 data["log_deriv_ps"].append(float(fields[4]))
+            elif tag == "ghost":
+                ell, ikap, n = (int(f) for f in fields[:3])
+                margins.append(
+                    {
+                        **j_channels(ell, relativistic)[ikap - 1].as_dict(),
+                        "n": n,
+                        "eig": float(fields[3]),
+                        "eig_basis": float(fields[4]),
+                    }
+                )
+            elif tag == "ghost_r":
+                ell, ikap = int(fields[0]), int(fields[1])
+                localization.append(
+                    {
+                        **j_channels(ell, relativistic)[ikap - 1].as_dict(),
+                        "eig": float(fields[2]),
+                        "r_over_rc": float(fields[3]),
+                    }
+                )
 
         def as_records(values: dict) -> list[dict]:
             return [
@@ -2363,7 +2394,12 @@ class OncvpspTextParser:
                 for key, value in values.items()
             ]
 
-        return {"ecut_crossings": as_records(ecut), "log_derivatives": as_records(ld)}
+        return {
+            "ecut_crossings": as_records(ecut),
+            "log_derivatives": as_records(ld),
+            "ghost_margins": margins,
+            "ghost_localization": localization,
+        }
 
     @cached_property
     def plot_data(self) -> dict:

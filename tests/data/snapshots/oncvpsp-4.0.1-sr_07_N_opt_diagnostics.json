@@ -16,7 +16,7 @@
   {
    "ecut": 181.35,
    "eig": -0.682913,
-   "eig_basis": -0.672336,
+   "eig_basis": -0.672451,
    "l": 0,
    "n": 1,
    "set": null
@@ -24,7 +24,7 @@
   {
    "ecut": 165.49,
    "eig": -0.260549,
-   "eig_basis": -0.246034,
+   "eig_basis": -0.246321,
    "l": 1,
    "n": 2,
    "set": null
@@ -211,6 +211,36 @@
     "iproj": 2,
     "j": null,
     "l": 1
+   }
+  ],
+  "ghost_localization": [
+   {
+    "eig": 18.56430846266011,
+    "j": null,
+    "l": 0,
+    "r_over_rc": 1.3315505916706396
+   },
+   {
+    "eig": 242.97038229564473,
+    "j": null,
+    "l": 1,
+    "r_over_rc": 1.5052504105285258
+   }
+  ],
+  "ghost_margins": [
+   {
+    "eig": -0.6829130337591744,
+    "eig_basis": -0.6724511093280944,
+    "j": null,
+    "l": 0,
+    "n": 1
+   },
+   {
+    "eig": -0.2605491058189389,
+    "eig_basis": -0.24632076607788014,
+    "j": null,
+    "l": 1,
+    "n": 2
    }
   ],
   "log_derivatives": [
@@ -1238,8 +1268,8 @@
  },
  "program_information": {
   "build": {
-   "commit": "e188eee18c00988ebcf6e7ce44d3dd17f955b1db",
-   "compiled": "2026-10-21T16:54:11Z",
+   "commit": "99e97fcb4c990bf9e7b6fb1e8ace4ab39ecc8a7a",
+   "compiled": "2026-10-21T18:06:19Z",
    "executable": "oncvpsp.x",
    "relativistic_treatment": "scalar-relativistic",
    "source": "clean",
