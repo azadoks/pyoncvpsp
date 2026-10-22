@@ -112,6 +112,7 @@
     0.07295,
     0.19289
    ],
+   "wave_regularization": 0.0,
    "well_onset": null,
    "well_tail": "well"
   },

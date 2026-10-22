@@ -269,6 +269,11 @@ class PseudoPotentialsInput(BaseModel):  # pylint: disable=too-few-public-method
         well_tail (str): The tail of the well states beyond rc: "well", that of the well, or
             "free", the free solution under a window, which does not depend on the well
             (the optional fourth value of the lmax line, 0 or 1).
+        wave_regularization (float): Weight w >= 0 of the residual energy at qcut/4 added to
+            that at qcut in the optimization of the pseudo waves, which determines the wave
+            where E_resid(qcut) is flat (azadoks/oncvpsp; `wave_regularization` in
+            `[pseudopotentials]`, or the optional fifth value of the lmax line); 0, the
+            default, leaves the optimization as it was.
     """
 
     lmax: Annotated[
@@ -286,6 +291,7 @@ class PseudoPotentialsInput(BaseModel):  # pylint: disable=too-few-public-method
     ep_as_given: bool = False
     well_onset: Annotated[float | None, Field(ge=1.0)] = None
     well_tail: Literal["well", "free"] = "well"
+    wave_regularization: Annotated[float, Field(ge=0.0)] = 0.0
 
     @field_validator("well_onset", mode="before")
     @classmethod
@@ -348,12 +354,16 @@ class PseudoPotentialsInput(BaseModel):  # pylint: disable=too-few-public-method
         lines: list[str] = []
         lmax = f"{self.lmax:>10d}"
         head = f"# {'lmax':>8s}"
-        if self.has_well_options:
-            # ep_as_given, well_onset (0 for the default) and well_tail after lmax
+        if self.has_well_options or self.wave_regularization != 0.0:
+            # ep_as_given, well_onset (0 for the default) and well_tail after lmax, and
+            # wave_regularization after them when it is not 0
             onset = self.well_onset if self.well_onset is not None else 0.0
             tail = 1 if self.well_tail == "free" else 0
             lmax += f" {int(self.ep_as_given):>5d} {onset:>24.16e} {tail:>5d}"
             head += ", ep_as_given, well_onset, well_tail"
+            if self.wave_regularization != 0.0:
+                lmax += f" {self.wave_regularization:>24.16e}"
+                head += ", wave_regularization"
         if with_comment:
             lines.append(f"{head}\n{lmax}\n#")
         else:
@@ -790,13 +800,15 @@ def _to_oncvpsp_toml(data: dict[str, Any]) -> dict[str, Any]:
     4 Teter grid as `fcfact_*` and `rcfact_*`. ONCVPSP ignores the keys it does not read, such as
     `teter_relative`. The log mesh parameters that are not given are left out, and `[log_mesh]`
     too when none is; so are `c_light` when it is not given, `upf_mesh` when it is 0, and
-    `ep_as_given`, `well_onset` and `well_tail` at their defaults, and `budget_cutoff` at "max"."""
+    `ep_as_given`, `well_onset`, `well_tail` and `wave_regularization` at their defaults, and
+    `budget_cutoff` at "max"."""
     data = deepcopy(data)
     psps = data["pseudopotentials"]
     for key, default in (
         ("ep_as_given", False),
         ("well_onset", None),
         ("well_tail", "well"),
+        ("wave_regularization", 0.0),
     ):
         if psps.get(key, default) == default:
             psps.pop(key, None)
@@ -1060,7 +1072,7 @@ class OncvpspInput(BaseModel):
             la[i] = int(words[1])
             fa[i] = float(words[2])
         # PSEUDOPOTENTIAL AND OPTIMIZATION
-        # lmax, (ep_as_given, (well_onset, (well_tail)))
+        # lmax, (ep_as_given, (well_onset, (well_tail, (wave_regularization))))
         words = next(iter_).split()
         lmax = int(words[0])
         ep_as_given = len(words) >= 2 and int(words[1]) == 1
@@ -1068,6 +1080,9 @@ class OncvpspInput(BaseModel):
             float(words[2].lower().replace("d", "e")) if len(words) >= 3 else None
         )
         well_tail = "free" if len(words) >= 4 and int(words[3]) == 1 else "well"
+        wave_regularization = (
+            float(words[4].lower().replace("d", "e")) if len(words) >= 5 else 0.0
+        )
         # l, rc, ep, ncon, nbas, qcut (lmax + 1 lines, l's must be in order)
         rc: list[float] = [0.0] * (lmax + 1)
         ep: list[float] = [0.0] * (lmax + 1)
@@ -1193,6 +1208,7 @@ class OncvpspInput(BaseModel):
                 "ep_as_given": ep_as_given,
                 "well_onset": well_onset,
                 "well_tail": well_tail,
+                "wave_regularization": wave_regularization,
             },
             "local_potential": {
                 "lloc": lloc,

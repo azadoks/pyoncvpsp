@@ -242,6 +242,7 @@
     2.07236,
     2.46699
    ],
+   "wave_regularization": 0.0,
    "well_onset": null,
    "well_tail": "well"
   },

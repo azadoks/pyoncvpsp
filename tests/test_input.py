@@ -523,6 +523,55 @@ def test_well_options_invalid(nitrogen, update):
         nitrogen.merge(update)
 
 
+# wave_regularization: the optional fifth value of the lmax line (azadoks/oncvpsp), after the well
+# options, and a key of [pseudopotentials] in TOML
+def test_wave_regularization_default(nitrogen):
+    assert nitrogen.pseudopotentials.wave_regularization == 0.0
+    assert nitrogen.pseudopotentials.as_dat_string().split("\n")[0].split() == ["1"]
+    data = toml.loads(nitrogen.as_toml_string())
+    assert "wave_regularization" not in data["pseudopotentials"]
+
+
+def test_wave_regularization_from_dat_string(nitrogen):
+    dat = N_DAT.replace("# lmax\n    1\n", "# lmax\n    1    0    0.0    0    0.25\n")
+    psps = OncvpspInput.from_dat_string(dat).pseudopotentials
+    assert psps.wave_regularization == 0.25
+    assert not psps.has_well_options
+    assert (
+        OncvpspInput.from_dat_string(dat).merge(
+            pseudopotentials={"wave_regularization": 0.0}
+        )
+        == nitrogen
+    )
+
+
+@pytest.mark.parametrize("with_comment", [True, False])
+@pytest.mark.parametrize("well", [False, True])
+def test_wave_regularization_dat_round_trip(
+    nitrogen, nitrogen_well, with_comment, well
+):
+    regularized = (nitrogen_well if well else nitrogen).merge(
+        pseudopotentials={"wave_regularization": 0.25}
+    )
+    dat = regularized.as_dat_string(with_comment=with_comment)
+    # the well options are written at their defaults before it
+    words = regularized.pseudopotentials.as_dat_string().split("\n")[0].split()
+    assert len(words) == 5 and float(words[4]) == 0.25
+    assert OncvpspInput.from_dat_string(dat) == regularized
+
+
+def test_wave_regularization_toml(nitrogen):
+    regularized = nitrogen.merge(pseudopotentials={"wave_regularization": 0.25})
+    data = toml.loads(regularized.as_toml_string())
+    assert data["pseudopotentials"]["wave_regularization"] == 0.25
+    assert OncvpspInput.from_toml_string(regularized.as_toml_string()) == regularized
+
+
+def test_wave_regularization_invalid(nitrogen):
+    with pytest.raises(ValueError):
+        nitrogen.merge(pseudopotentials={"wave_regularization": -0.1})
+
+
 # budget_cutoff: the optional fifth value of the icmod 6, 7 line (0 "max", 1 "weighted"), after
 # slack, and a key of [model_core_charge] in TOML (azadoks/oncvpsp)
 @pytest.mark.parametrize("icmod", [6, 7])
@@ -565,3 +614,15 @@ def test_budget_cutoff_toml(nitrogen):
     data = toml.loads(weighted.as_toml_string())
     assert data["model_core_charge"]["budget_cutoff"] == "weighted"
     assert OncvpspInput.from_toml_string(weighted.as_toml_string()) == weighted
+
+
+def test_wave_regularization_echo(nitrogen):
+    # the lmax line as azadoks/oncvpsp echoes it in the output, '(i5,i5,es24.16,i5,es24.16)'
+    echo = "    1    0  0.0000000000000000E+00    0  2.5000000000000000E-01"
+    dat = N_DAT.replace(
+        "# lmax\n    1\n",
+        f"# lmax, ep_as_given, well_onset, well_tail, wave_regularization\n{echo}\n",
+    )
+    assert OncvpspInput.from_dat_string(dat) == nitrogen.merge(
+        pseudopotentials={"wave_regularization": 0.25}
+    )

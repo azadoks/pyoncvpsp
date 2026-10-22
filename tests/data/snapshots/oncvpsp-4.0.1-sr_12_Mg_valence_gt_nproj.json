@@ -153,6 +153,7 @@
     2.6,
     2.8
    ],
+   "wave_regularization": 0.0,
    "well_onset": null,
    "well_tail": "well"
   },
