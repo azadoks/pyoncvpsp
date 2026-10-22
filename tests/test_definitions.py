@@ -79,6 +79,10 @@ MESSAGES = [
         "local_channel_ps_node",
     ),
     (
+        "run_optimize: ERROR q grid longer than the convergence curve, nq=4983, ncurve=4000",
+        "optimize_q_grid_too_long",
+    ),
+    (
         "ode_rc_der: ERROR uu and up disagree for l= 1 at rc=  3.340590",
         "ode_rc_der_mismatch",
     ),

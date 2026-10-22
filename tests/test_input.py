@@ -626,3 +626,22 @@ def test_wave_regularization_echo(nitrogen):
     assert OncvpspInput.from_dat_string(dat) == nitrogen.merge(
         pseudopotentials={"wave_regularization": 0.25}
     )
+
+
+@pytest.mark.parametrize(
+    ("line", "expected"),
+    [
+        # icmod 6, fcfact 1079: i5 and f10.5 run together in the echo of the output
+        (
+            "    61079.00000  1.0000E-05   0.70000",
+            {"icmod": 6, "fcfact": 1079.0, "rcfact": 1.0e-5, "slack": 0.7},
+        ),
+        ("    3 1000.00000   1.50000", {"icmod": 3, "fcfact": 1000.0, "rcfact": 1.5}),
+    ],
+)
+def test_model_core_echo_with_wide_fcfact(line, expected):
+    dat = N_DAT.replace(
+        "# icmod, fcfact\n    0    0.1\n", f"# icmod, fcfact, rcfact\n{line}\n"
+    )
+    core = OncvpspInput.from_dat_string(dat).model_core_charge
+    assert {key: getattr(core, key) for key in expected} == pytest.approx(expected)

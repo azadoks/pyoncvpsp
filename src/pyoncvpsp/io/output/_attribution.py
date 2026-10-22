@@ -216,6 +216,7 @@ ATTRIBUTION: dict[str, dict[str, Any]] = {
     "local_channel_ae_node": {"stage": Stage.VKB, "scope": Scope.ELL_AND_LOCAL},
     "local_channel_ps_node": {"stage": Stage.VKB, "scope": Scope.ELL_AND_LOCAL},
     "ode_rc_der_mismatch": {"stage": Stage.SEMILOCAL, "scope": Scope.ELL},
+    "optimize_q_grid_too_long": {"stage": Stage.SEMILOCAL, "scope": Scope.ELL},
     "mesh_tail_too_short": {"stage": Stage.SEMILOCAL, "scope": Scope.ELL},
     "free_tail_qcut_too_low": {"stage": Stage.SEMILOCAL, "scope": Scope.ELL},
     "output_mesh_error": {"stage": Stage.OUTPUT, "scope": Scope.GLOBAL},

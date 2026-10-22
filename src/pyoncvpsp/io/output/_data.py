@@ -871,6 +871,14 @@ ERRORS += [
         "its finite differences.",
     },
     {
+        "name": "optimize_q_grid_too_long",
+        "pattern": r"run_optimize: ERROR q grid longer than the convergence curve, nq=\s*(?P<nq>\d+), ncurve=\s*(?P<ncurve>\d+)",
+        "match_string": "run_optimize: ERROR q grid longer",
+        "line_count": 1,
+        "subroutine": "run_optimize",
+        "description": "The q grid of the optimization is longer than the convergence curve.",
+    },
+    {
         "name": "match_point_failed",
         "pattern": r"match_point: ERROR (?P<reason>matching window at mch=.*leaves the mesh|no sign change below mch=)",
         "match_string": "match_point: ERROR",

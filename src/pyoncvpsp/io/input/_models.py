@@ -1116,6 +1116,11 @@ class OncvpspInput(BaseModel):
         # MODEL CORE CHARGE
         # icmod, fcfact, (rcfact), (fcfact_min, fcfact_max, fcfact_step, rcfact_min, rcfact_max, rcfact_step)
         words = next(iter_).split()
+        if not re.fullmatch(r"[+-]?\d+", words[0]) and len(words[0]) > 10:
+            # The echo in the output writes icmod in i5 and fcfact in f10.5, which run together
+            # when fcfact >= 1000 (e.g. "61079.00000" for icmod 6, fcfact 1079): fcfact fills its
+            # ten columns
+            words = [words[0][:-10], words[0][-10:], *words[1:]]
         icmod = int(words[0])
         fcfact = float(words[1])
         rcfact: float = 0.0 if len(words) < 3 else float(words[2])
