@@ -244,6 +244,23 @@ def test_budgeted_core(parse_output):
     assert auto["factor"] == 1.0
     assert auto["ecut"] == auto["ecut_pseudo_waves"]
     assert auto["ecut_needed"] <= auto["ecut"]
+    weighted = parse_output("oncvpsp-4.0.1-sr_14_Si_budget_weighted")
+    core = weighted.budgeted_core
+    assert core["budget_source"] == "weighted_mean"
+    assert core["ecut_pseudo_waves"] == 9.3091
+    assert weighted.input["model_core_charge"]["budget_cutoff"] == "weighted"
+    diag = weighted.diagnostics["ecut_weighted"]
+    assert diag["error"] == 1.0e-4
+    assert diag["ecut"] == pytest.approx(9.3090796161463860)
+    assert [(w["l"], w["iproj"], w["weight"]) for w in diag["weights"]] == [
+        (0, 1, 2.0),
+        (1, 1, 2.0),
+        (2, 1, 10.0),
+    ]
+    assert (
+        parse_output("oncvpsp-4.0.1-sr_14_Si_bca").diagnostics.get("ecut_weighted")
+        is None
+    )
 
 
 def test_log_mesh(parse_output):

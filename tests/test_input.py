@@ -290,6 +290,15 @@ def test_slack_writes_default_error(nitrogen):
         {"model_core_charge": {"icmod": 4, "slack": 0.7}},
         {"model_core_charge": {"icmod": 6, "slack": 0.0}},
         {"model_core_charge": {"icmod": 7, "slack": 1.5}},
+        {
+            "model_core_charge": {
+                "icmod": 3,
+                "fcfact": 1.0,
+                "rcfact": 1.0,
+                "budget_cutoff": "weighted",
+            }
+        },
+        {"model_core_charge": {"icmod": 6, "budget_cutoff": "mean"}},
         {"model_core_charge": {"icmod": 1, "fcfact": 0.0}},
         {"output_grid": {"rlmax": 1.0}},
         {"log_mesh": {"amesh": 0.999}},
@@ -512,3 +521,47 @@ def test_well_options_toml(nitrogen_well):
 def test_well_options_invalid(nitrogen, update):
     with pytest.raises(ValueError):
         nitrogen.merge(update)
+
+
+# budget_cutoff: the optional fifth value of the icmod 6, 7 line (0 "max", 1 "weighted"), after
+# slack, and a key of [model_core_charge] in TOML (azadoks/oncvpsp)
+@pytest.mark.parametrize("icmod", [6, 7])
+@pytest.mark.parametrize("slack", [1.0, 0.7])
+@pytest.mark.parametrize("with_comment", [True, False])
+def test_budget_cutoff_dat_round_trip(nitrogen, icmod, slack, with_comment):
+    weighted = nitrogen.merge(
+        model_core_charge={
+            "icmod": icmod,
+            "fcfact": 0.0,
+            "rcfact": 1.0e-5,
+            "slack": slack,
+            "budget_cutoff": "weighted",
+        }
+    )
+    words = weighted.model_core_charge.as_dat_string().split()
+    assert words == [str(icmod), "0.00000", "1.00000e-05", f"{slack:.5f}", "1"]
+    dat = weighted.as_dat_string(with_comment=with_comment)
+    assert OncvpspInput.from_dat_string(dat) == weighted
+
+
+def test_budget_cutoff_default(nitrogen):
+    budgeted = nitrogen.merge(
+        model_core_charge={"icmod": 6, "fcfact": 0.0, "rcfact": 1.0e-5}
+    )
+    assert budgeted.model_core_charge.budget_cutoff == "max"
+    assert len(budgeted.model_core_charge.as_dat_string().split()) == 3
+    assert (
+        "budget_cutoff"
+        not in toml.loads(budgeted.as_toml_string())["model_core_charge"]
+    )
+    dat = budgeted.as_dat_string().replace(" 1.00000e-05", " 1.00000e-05    1.0    0")
+    assert OncvpspInput.from_dat_string(dat) == budgeted
+
+
+def test_budget_cutoff_toml(nitrogen):
+    weighted = nitrogen.merge(
+        model_core_charge={"icmod": 6, "fcfact": 0.0, "budget_cutoff": "weighted"}
+    )
+    data = toml.loads(weighted.as_toml_string())
+    assert data["model_core_charge"]["budget_cutoff"] == "weighted"
+    assert OncvpspInput.from_toml_string(weighted.as_toml_string()) == weighted

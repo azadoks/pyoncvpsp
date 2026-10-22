@@ -529,6 +529,7 @@
     "l": 2
    }
   ],
+  "ecut_weighted": null,
   "ghost_localization": [
    {
     "eig": 5.9111482979340435,
@@ -829,6 +830,7 @@
    "rr1": null
   },
   "model_core_charge": {
+   "budget_cutoff": "max",
    "fcfact": 0.25,
    "icmod": 1,
    "rcfact": 0.0,

@@ -1232,10 +1232,12 @@ class OncvpspTextParser:
                 ecut_pseudo_waves (float | None): Cutoff of the pseudo-waves (Ha) when the budget is taken
                     from it (`fcfact <= 0`), else None: from 59d0ba8 on, the largest Ecut of the convergence
                     tables at `error` per electron (ONCVPSP's recommended cutoff, as `ecut_recommended` at
-                    1e-5); before, the cutoff for a total error `error` over the waves weighted by their
-                    electrons (PseudoPotentialGenerators.jl's `ecut_for_error`).
-                budget_source (str | None): "tables" or "weighted" (the definition of
-                    `ecut_pseudo_waves`), None without it.
+                    1e-5), or with `budget_cutoff = "weighted"` the Ecut at which their mean weighted by
+                    the occupations falls to `error`; before 59d0ba8, the cutoff for a total error
+                    `error` over the waves weighted by their electrons (PseudoPotentialGenerators.jl's
+                    `ecut_for_error`).
+                budget_source (str | None): "tables", "weighted_mean" or "weighted" (the definition
+                    of `ecut_pseudo_waves`, in that order), None without it.
                 factor (float | None): Multiple of `ecut_pseudo_waves` that is the budget, else None.
                 error (float): Exchange-correlation energy error (Ha) that defines the needed cutoff.
                 slack (float): Fraction of the budget the model core must fit (1 if not printed).
@@ -1292,7 +1294,8 @@ class OncvpspTextParser:
         else:
             return None
         waves = find(
-            rf"pseudo-wave cutoff(?:, largest Ecut of the tables at\s+(?P<per_electron>{RE_FLOAT}) Ha/electron)?"
+            rf"pseudo-wave cutoff(?:, (?P<kind>largest|weighted mean) Ecut of the tables at"
+            rf"\s+(?P<per_electron>{RE_FLOAT}) Ha/electron)?"
             rf"\s+(?P<ecut>{RE_FLOAT}) Ha, times\s+(?P<factor>{RE_FLOAT})"
         )
         slack = find(rf"slack\s+(?P<slack>{RE_FLOAT}),")
@@ -1332,7 +1335,13 @@ class OncvpspTextParser:
             "ecut_pseudo_waves": fort_float(waves["ecut"]) if waves else None,
             "factor": fort_float(waves["factor"]) if waves else None,
             "budget_source": (
-                None if not waves else "tables" if waves["per_electron"] else "weighted"
+                None
+                if not waves
+                else "weighted"
+                if not waves["per_electron"]
+                else "tables"
+                if waves["kind"] == "largest"
+                else "weighted_mean"
             ),
             "slack": fort_float(slack["slack"]) if slack else 1.0,
             "r_s": fort_float(radius["r_s"]),
@@ -2335,6 +2344,11 @@ class OncvpspTextParser:
                 ghost_localization (list[dict]): One per channel, the basis eigenstate of least
                     <r>/rc more than 0.05 Ha above the reference: l, j, eig (Ha) and r_over_rc,
                     a GHOST(+) below 1.
+                ecut_weighted (dict | None): With `budget_cutoff = "weighted"` (lines `ecut_w err
+                    ecut` and `ecut_w_weight l ikap iproj w`), the cutoff of the model core's
+                    budget: error (Ha per electron), ecut (Ha) at which the weighted mean of the
+                    residual kinetic energies falls to it, and weights (list[dict]: l, j, iproj,
+                    weight) of the waves with a weight; else None.
         """
         lines = self._get_lines_between("^Begin DIAGNOSTICS$", "^End DIAGNOSTICS$")
         if not lines:
@@ -2346,9 +2360,25 @@ class OncvpspTextParser:
         ld: dict[ChannelKey, dict[str, Any]] = defaultdict(lambda: defaultdict(list))
         margins: list[dict] = []
         localization: list[dict] = []
+        weighted: dict[str, Any] | None = None
         for line in lines:
             tag, *fields = line.split()
-            if tag == "ecut":
+            if tag == "ecut_w":
+                weighted = {
+                    "error": float(fields[0]),
+                    "ecut": float(fields[1]),
+                    "weights": [],
+                }
+            elif tag == "ecut_w_weight" and weighted is not None:
+                ell, ikap, iproj = (int(f) for f in fields[:3])
+                weighted["weights"].append(
+                    {
+                        **j_channels(ell, relativistic)[ikap - 1].as_dict(),
+                        "iproj": iproj,
+                        "weight": float(fields[3]),
+                    }
+                )
+            elif tag == "ecut":
                 ell, ikap, iproj = (int(f) for f in fields[:3])
                 key = ProjectorKey(j_channels(ell, relativistic)[ikap - 1], iproj)
                 ecut[key]["eresid"].append(float(fields[3]))
@@ -2399,6 +2429,7 @@ class OncvpspTextParser:
             "log_derivatives": as_records(ld),
             "ghost_margins": margins,
             "ghost_localization": localization,
+            "ecut_weighted": weighted,
         }
 
     @cached_property

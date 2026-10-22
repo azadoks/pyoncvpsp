@@ -204,6 +204,7 @@
    "rr1": null
   },
   "model_core_charge": {
+   "budget_cutoff": "max",
    "fcfact": 6.0,
    "icmod": 3,
    "rcfact": 1.34,

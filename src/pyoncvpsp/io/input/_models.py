@@ -541,6 +541,13 @@ class ModelCoreChargeInput(BaseModel):  # pylint: disable=too-few-public-methods
         slack (float): For `icmod in (6, 7)`, the fraction of the cutoff the model core must fit;
             the core is still made for the density cutoff of the whole cutoff. In (0, 1], default
             1. Older builds ignore it.
+        budget_cutoff (str): For `icmod in (6, 7)` with `fcfact <= 0`, the cutoff of the
+            pseudo-waves: "max", the largest over the pseudo-waves of the cutoff at which each
+            one's residual kinetic energy per electron falls to `rcfact` (ONCVPSP's default), or
+            "weighted", the cutoff at which their mean weighted by the occupations falls to it
+            (each occupied valence state's occupation, 2(2l+1) for the first wave of a channel
+            with none; azadoks/oncvpsp only). The optional fifth value of the .dat icmod line, 0
+            or 1.
         teter_relative (bool): If True, `teter_amp*` and `teter_scale*` specify relative
             ranges for optimizing the Teter parameters. If False, they specify absolute ranges.
         teter_amp_min (None | float): Minimum Teter amplitude for grid search (relative or absolute).
@@ -555,6 +562,7 @@ class ModelCoreChargeInput(BaseModel):  # pylint: disable=too-few-public-methods
     fcfact: Annotated[float, Field()] = 0.0
     rcfact: Annotated[float, Field(ge=0.0)] = 0.0
     slack: Annotated[float, Field(gt=0.0, le=1.0)] = 1.0
+    budget_cutoff: Literal["max", "weighted"] = "max"
     teter_relative: Annotated[bool, Field()] = True
     teter_amp_min: None | Annotated[float, Field()] = None
     teter_amp_max: None | Annotated[float, Field()] = None
@@ -575,6 +583,8 @@ class ModelCoreChargeInput(BaseModel):  # pylint: disable=too-few-public-methods
             raise ValueError("fcfact must not be negative except for icmod 6 and 7")
         if self.icmod not in (6, 7) and self.slack != 1.0:
             raise ValueError("slack is only read for icmod 6 and 7")
+        if self.icmod not in (6, 7) and self.budget_cutoff != "max":
+            raise ValueError("budget_cutoff is only read for icmod 6 and 7")
         return self
 
     def as_dat_string(self, with_comment: bool = False) -> str:
@@ -591,7 +601,19 @@ class ModelCoreChargeInput(BaseModel):  # pylint: disable=too-few-public-methods
                 s = f"# {'icmod':>8s} {'fcfact':>10s} {'rcfact':>10s}\n" + s
         elif self.icmod in (6, 7):
             # rcfact is an energy error (Ha), often below the resolution of %10.5f
-            if self.slack != 1.0:
+            if self.budget_cutoff != "max":
+                # budget_cutoff follows slack, which follows rcfact
+                rcfact = self.rcfact if self.rcfact > 0.0 else 1.0e-5
+                s = (
+                    f" {self.icmod:>10d} {self.fcfact:>10.5f} {rcfact:>12.5e} {self.slack:>10.5f}"
+                    f" {1:>5d}"
+                )
+                if with_comment:
+                    s = (
+                        f"# {'icmod':>8s} {'fcfact':>10s} {'rcfact':>12s} {'slack':>10s}"
+                        " budget_cutoff\n" + s
+                    )
+            elif self.slack != 1.0:
                 # slack follows rcfact, so rcfact must be written; ONCVPSP rejects 0 there, so
                 # the default of the builds that read slack
                 rcfact = self.rcfact if self.rcfact > 0.0 else 1.0e-5
@@ -768,7 +790,7 @@ def _to_oncvpsp_toml(data: dict[str, Any]) -> dict[str, Any]:
     4 Teter grid as `fcfact_*` and `rcfact_*`. ONCVPSP ignores the keys it does not read, such as
     `teter_relative`. The log mesh parameters that are not given are left out, and `[log_mesh]`
     too when none is; so are `c_light` when it is not given, `upf_mesh` when it is 0, and
-    `ep_as_given`, `well_onset` and `well_tail` at their defaults."""
+    `ep_as_given`, `well_onset` and `well_tail` at their defaults, and `budget_cutoff` at "max"."""
     data = deepcopy(data)
     psps = data["pseudopotentials"]
     for key, default in (
@@ -789,6 +811,8 @@ def _to_oncvpsp_toml(data: dict[str, Any]) -> dict[str, Any]:
     if output_grid.get("upf_mesh"):
         data["pp_output"]["upf_mesh"] = output_grid["upf_mesh"]
     core = data["model_core_charge"]
+    if core.get("budget_cutoff", "max") == "max":
+        core.pop("budget_cutoff", None)
     for field, key in _TOML_TETER_GRID_KEYS.items():
         value = core.pop(field, None)
         if value is not None:
@@ -1081,6 +1105,11 @@ class OncvpspInput(BaseModel):
         fcfact = float(words[1])
         rcfact: float = 0.0 if len(words) < 3 else float(words[2])
         slack: float = float(words[3]) if icmod in (6, 7) and len(words) >= 4 else 1.0
+        budget_cutoff = (
+            "weighted"
+            if icmod in (6, 7) and len(words) >= 5 and int(words[4]) == 1
+            else "max"
+        )
         teter_grid: dict[str, float] = {}
         if icmod == 4 and len(words) >= 9:
             teter_grid = dict(
@@ -1181,6 +1210,7 @@ class OncvpspInput(BaseModel):
                 "fcfact": fcfact,
                 "rcfact": rcfact,
                 "slack": slack,
+                "budget_cutoff": budget_cutoff,
                 **teter_grid,
             },
             "log_derivative_analysis": {
