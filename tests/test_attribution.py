@@ -405,6 +405,13 @@ def test_unrecognized_error_is_not_a_message_of_a_completed_run():
             2,
         ),
         (
+            "ode_rc_der: ERROR uu and up disagree for l= 1 at rc=  3.340590",
+            "ode_rc_der_mismatch",
+            Stage.SEMILOCAL,
+            Scope.ELL,
+            1,
+        ),
+        (
             "qroots: WARNING bisection failed, skipping, ll=1, qlow=  1.2345E+00, qhi=  2.3456E+00",
             "qroots_bisection_failed",
             Stage.SEMILOCAL,

@@ -79,6 +79,10 @@ MESSAGES = [
         "local_channel_ps_node",
     ),
     (
+        "ode_rc_der: ERROR uu and up disagree for l= 1 at rc=  3.340590",
+        "ode_rc_der_mismatch",
+    ),
+    (
         "match_point: ERROR matching window at mch=  1500 leaves the mesh, mmax=  1501",
         "match_point_failed",
     ),

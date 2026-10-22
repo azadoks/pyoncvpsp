@@ -859,6 +859,18 @@ ERRORS += [
         "description": "The pseudo wave of the local channel has a node within reach of rc.",
     },
     {
+        "name": "ode_rc_der_mismatch",
+        # The second line gives uu' from up and from stencils on uu
+        "pattern": (
+            rf"ode_rc_der: ERROR uu and up disagree for l=\s*(?P<l>\d+) at rc=\s*(?P<rc>{RE_FLOAT})"
+        ),
+        "match_string": "ode_rc_der: ERROR",
+        "line_count": 2,
+        "subroutine": "ode_rc_der",
+        "description": "The derivative of the all-electron wave at rc from the ODE disagrees with "
+        "its finite differences.",
+    },
+    {
         "name": "match_point_failed",
         "pattern": r"match_point: ERROR (?P<reason>matching window at mch=.*leaves the mesh|no sign change below mch=)",
         "match_string": "match_point: ERROR",
