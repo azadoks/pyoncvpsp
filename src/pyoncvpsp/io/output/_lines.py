@@ -2,15 +2,16 @@
 
 Most searches of the output look for a pattern in a few of its tens of thousands of lines. Rather
 than run the pattern on every line, `LineIndex` finds the lines containing a substring that every
-match must contain (with `str.find` on the joined text), and the pattern is run only on those. The
-substring is only a pre-filter: the pattern decides every match, so the results are those of
+match must contain (or one of several, for an alternation), searching the joined text, and the
+pattern is run only on those. The substrings are only a pre-filter: the pattern decides every match, so the results are those of
 running it on every line.
 """
 
 from bisect import bisect_right
 from functools import lru_cache
+from heapq import merge
 from importlib import import_module
-from typing import Any, Iterator
+from typing import Any, Iterable, Iterator
 import re
 
 # The regex parser of the standard library (private: without it, nothing is pre-filtered)
@@ -22,29 +23,34 @@ except ImportError:  # pragma: no cover
 
 
 @lru_cache(maxsize=None)
-def required_literal(regex: re.Pattern[str]) -> str:
-    """Longest literal substring of every match of `regex` (`""` if none is found).
+def required_literals(regex: re.Pattern[str]) -> frozenset[str]:
+    """Literal substrings one of which every match of `regex` contains (empty if none are found).
 
-    Only literals in the top-level sequence of the pattern (and in the groups of that sequence)
-    are considered, since they are matched exactly once by every match; anything else (repeats,
-    alternatives, classes, case-insensitive matching) ends a literal.
+    A literal of the top-level sequence of the pattern (or of the groups of that sequence) is
+    matched exactly once by every match, and so is one of the alternatives of an alternation of
+    the sequence: of these, the set whose shortest literal is longest (then the smallest) is
+    returned. Anything else (repeats, classes, case-insensitive matching) ends a literal.
     """
     if _sre_parser is None or not isinstance(regex.pattern, str):
-        return ""
-    literal, subpattern = _sre_parser.LITERAL, _sre_parser.SUBPATTERN
-    ignorecase = _sre_parser.SRE_FLAG_IGNORECASE
+        return frozenset()
     if regex.flags & re.IGNORECASE:
-        return ""
+        return frozenset()
     try:
         tree = _sre_parser.parse(regex.pattern, regex.flags)
     except Exception:  # pylint: disable=broad-except
-        return ""
-    literals: list[str] = []
+        return frozenset()
+    return _sequence_literals(_sre_parser, tree)
+
+
+def _sequence_literals(sre_parser: Any, items) -> frozenset[str]:
+    literal, subpattern = sre_parser.LITERAL, sre_parser.SUBPATTERN
+    branch, ignorecase = sre_parser.BRANCH, sre_parser.SRE_FLAG_IGNORECASE
+    candidates: list[frozenset[str]] = []
     current: list[str] = []
 
     def end_literal() -> None:
         if current:
-            literals.append("".join(current))
+            candidates.append(frozenset(["".join(current)]))
             current.clear()
 
     def walk(items) -> None:
@@ -55,10 +61,18 @@ def required_literal(regex: re.Pattern[str]) -> str:
                 walk(av[3])
             else:
                 end_literal()
+                if op is branch:
+                    alternatives = [
+                        _sequence_literals(sre_parser, items) for items in av[1]
+                    ]
+                    if all(alternatives):
+                        candidates.append(frozenset().union(*alternatives))
 
-    walk(tree)
+    walk(items)
     end_literal()
-    return max(literals, key=len, default="")
+    return max(
+        candidates, key=lambda c: (min(map(len, c)), -len(c)), default=frozenset()
+    )
 
 
 class LineIndex:
@@ -95,14 +109,29 @@ class LineIndex:
             yield i
             pos = self.text.find(needle, self._offset(i + 1), end)
 
+    def containing_any(
+        self, needles: Iterable[str], start: int = 0, stop: int | None = None
+    ) -> Iterator[int]:
+        """Indices of the lines in `lines[start:stop]` which contain any of `needles`, in order."""
+        # A `str.find` pass for each needle is much faster than a regex of the alternatives
+        merged = merge(
+            *(self.containing(needle, start, stop) for needle in set(needles))
+        )
+        previous = -1
+        for i in merged:
+            if i != previous:
+                yield i
+                previous = i
+
     def finditer(
         self, regex: re.Pattern[str], start: int = 0, stop: int | None = None
     ) -> Iterator[tuple[int, re.Match[str]]]:
         """`(index, match)` of the lines in `lines[start:stop]` which `regex.search` matches."""
         search = regex.search
-        for i in self.containing(required_literal(regex), start, stop):
+        needles = required_literals(regex) or {""}
+        for i in self.containing_any(needles, start, stop):
             if match := search(self.lines[i]):
                 yield i, match
 
 
-__all__ = ["LineIndex", "required_literal"]
+__all__ = ["LineIndex", "required_literals"]

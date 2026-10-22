@@ -4,7 +4,7 @@
 from collections import defaultdict
 from functools import cached_property
 from os import PathLike
-from typing import TextIO, Any
+from typing import Any, Iterator, TextIO
 import pathlib as pl
 import re
 
@@ -22,7 +22,7 @@ from pyoncvpsp.io.input._models import OncvpspInput
 from ._data import WARNINGS, ERRORS
 from ._messages import OncvpspFailure, OncvpspMessage, Stage
 from . import _attribution, _sections
-from ._lines import LineIndex
+from ._lines import LineIndex, required_literals
 from ._sections import Block, BlockKind, LineContext
 
 RE_FLOAT: str = r"[+-]?(?:\d+\.\d*|\.\d+|\d+)(?:[eEdD][+-]?\d+)?"
@@ -88,6 +88,10 @@ class OncvpspOutputError(Exception):
         ]
 
 
+# First lines of the pseudopotential files written into the output (`linout`, `upfout`, `psmlout`)
+_PSEUDO_FILE_BEGINS = {"Begin PSPCODE8", "Begin PSP_UPF", "Begin PSML"}
+
+
 class OncvpspTextParser:
     """Parser for ONCVPSP/METAPSP stdout text output."""
 
@@ -131,13 +135,23 @@ class OncvpspTextParser:
             else context_window
         )
         patterns = [re.compile(definition["pattern"]) for definition in definitions]
-        # The substring is a fast pre-filter; the pattern distinguishes similar messages
-        hits = sorted(
+        # The substring is a fast pre-filter; the pattern distinguishes similar messages.
+        # The candidate lines are those containing the substring, or the literals of the
+        # pattern when they are longer (and so rarer).
+        needles = set()
+        for definition, pattern in zip(definitions, patterns):
+            literals = required_literals(pattern)
+            if literals and min(map(len, literals)) > len(definition["match_string"]):
+                needles |= literals
+            else:
+                needles.add(definition["match_string"])
+        hits = [
             (i, k)
+            for i in self._message_candidates(needles)
             for k, (definition, pattern) in enumerate(zip(definitions, patterns))
-            for i in self._raw_index.containing(definition["match_string"])
-            if pattern.search(self._lines[i])
-        )
+            if definition["match_string"] in self._lines[i]
+            and pattern.search(self._lines[i])
+        ]
         errors = []
         for i, k in hits:
             definition = definitions[k]
@@ -161,6 +175,38 @@ class OncvpspTextParser:
             }
             errors.append(warning)
         return errors
+
+    @cached_property
+    def _pseudo_file_ranges(self) -> list[tuple[int, int]]:
+        """`(start, stop)` of the complete pseudopotential files, `raw_lines[start:stop]` within one.
+
+        A file runs from its `Begin` line to the `END_PSP` line closing it. One cut short (by an
+        `error stop` while writing it) has no `END_PSP`, and is not counted.
+        """
+        index = self._raw_index
+        begins = [
+            i
+            for i in index.containing("Begin PS")
+            if self._lines[i] in _PSEUDO_FILE_BEGINS
+        ]
+        ends = [i for i in index.containing("END_PSP") if self._lines[i] == "END_PSP"]
+        ranges = []
+        for begin, next_begin in zip(begins, begins[1:] + [len(self._lines)]):
+            end = next((i for i in ends if i > begin), None)
+            if end is not None and end < next_begin:
+                ranges.append((begin + 1, end))
+        return ranges
+
+    def _message_candidates(self, needles: set[str]) -> Iterator[int]:
+        """Indices of the raw lines which contain any of `needles`, outside the pseudopotential files.
+
+        The program prints no messages while writing a complete file, and the files are much of
+        the output, so they are not searched.
+        """
+        start = 0
+        for stop, next_start in self._pseudo_file_ranges + [(len(self._lines), 0)]:
+            yield from self._raw_index.containing_any(needles, start, stop)
+            start = next_start
 
     def _get_lines_between(
         self,

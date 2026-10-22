@@ -4,7 +4,8 @@ import re
 
 import pytest
 
-from pyoncvpsp.io.output._lines import LineIndex, required_literal
+from pyoncvpsp.io import OncvpspTextParser
+from pyoncvpsp.io.output._lines import LineIndex, required_literals
 from pyoncvpsp.io.output._sections import _RE, _RE_ANY
 
 LINES = [
@@ -21,24 +22,33 @@ LINES = [
 
 
 @pytest.mark.parametrize(
-    "pattern, literal",
+    "pattern, literals",
     [
-        (r"^Begin PSPCODE8", "Begin PSPCODE8"),
-        (r"\s+Wellstate for l =\s+(?P<ell>\d)", "Wellstate for l ="),
+        (r"^Begin PSPCODE8", {"Begin PSPCODE8"}),
+        (r"\s+Wellstate for l =\s+(?P<ell>\d)", {"Wellstate for l ="}),
         # Groups of the top-level sequence are matched exactly once
-        (r"ab(cd)ef\s+x", "abcdef"),
-        # Alternatives, optional groups and repeats are not required
-        (r"foo|barbaz", ""),
-        (r"x(?:longer)?y", "x"),
-        (r"(?:abc)+", ""),
+        (r"ab(cd)ef\s+x", {"abcdef"}),
+        # One of the alternatives is matched; the set with the longest shortest literal wins,
+        # then the smallest
+        (r"foo|barbaz", {"foo", "barbaz"}),
+        (
+            r"^(?:Fortran runtime error:|forrtl: severe)",
+            {"Fortran runtime error:", "forrtl: severe"},
+        ),
+        (r"(?P<rel>sr|rel)atom: WARNING", {"atom: WARNING"}),
+        (r"x(?:ab|cd)y", {"ab", "cd"}),
+        (r"(?:ab|c\d)y", {"y"}),
+        # Optional groups and repeats are not required
+        (r"x(?:longer)?y", {"x"}),
+        (r"(?:abc)+", set()),
         # Case-insensitive matching has no literal
-        (r"(?i)Wellstate", ""),
-        (r"Well(?i:STATE)", "Well"),
-        (r"", ""),
+        (r"(?i)Wellstate", set()),
+        (r"Well(?i:STATE)", {"Well"}),
+        (r"", set()),
     ],
 )
-def test_required_literal(pattern, literal):
-    assert required_literal(re.compile(pattern)) == literal
+def test_required_literals(pattern, literals):
+    assert required_literals(re.compile(pattern)) == literals
 
 
 @pytest.mark.parametrize(
@@ -54,6 +64,8 @@ def test_required_literal(pattern, literal):
         r"negative energy of\s*-",
         r"e",
         r"",
+        r"Begin|end",
+        r"^(?:wellstate|WARNING):",
     ],
 )
 @pytest.mark.parametrize("start, stop", [(0, None), (2, 7), (3, 4), (5, 5), (8, 20)])
@@ -71,6 +83,47 @@ def test_containing_finds_each_line_once():
     assert list(LineIndex(LINES).containing("e")) == [1, 2, 3, 7, 8]
     assert list(LineIndex(LINES).containing("\n")) == []
     assert list(LineIndex([]).containing("e")) == []
+
+
+@pytest.mark.parametrize(
+    "needles",
+    [
+        {"e"},
+        {"Wellstate", "end"},
+        {"!", "Begin"},
+        {"", "x"},
+        {"\n", "end"},
+        {"zzz"},
+        set(),
+    ],
+)
+@pytest.mark.parametrize("start, stop", [(0, None), (2, 7), (8, 20)])
+def test_containing_any_is_any_containing(needles, start, stop):
+    end = len(LINES) if stop is None else min(stop, len(LINES))
+    expected = [
+        i
+        for i in range(start, end)
+        if any(n in LINES[i] for n in needles if "\n" not in n)
+    ]
+    assert list(LineIndex(LINES).containing_any(needles, start, stop)) == expected
+
+
+PSEUDO_FILE_OUTPUT = """\
+oncvpsp: ERROR debl = 0.0
+Begin PSPCODE8
+oncvpsp: ERROR debl = 1.0
+END_PSP
+Begin PSP_UPF
+<UPF version="2.0.1">
+upfout: ERROR iexc = 99 is presently unsupported for UPF output
+"""
+
+
+def test_messages_are_not_searched_for_in_complete_pseudo_files():
+    parser = OncvpspTextParser(text=PSEUDO_FILE_OUTPUT, check=False)
+    assert parser._pseudo_file_ranges == [(2, 3)]
+    # The UPF file was cut short by its error, and is searched
+    assert [e["line_numbers"][0] for e in parser.errors] == [1, 7]
 
 
 @pytest.mark.parametrize("name", _RE)
