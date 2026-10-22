@@ -5,7 +5,7 @@ from copy import deepcopy
 from math import floor
 import re
 from os import PathLike
-from typing import Annotated, Any, Iterator, TextIO
+from typing import Annotated, Any, Iterator, Literal, TextIO
 import warnings
 
 import numpy as np
@@ -260,6 +260,15 @@ class PseudoPotentialsInput(BaseModel):  # pylint: disable=too-few-public-method
         ncon (list[int]): List of number of constraints for each channel.
         nbas (list[int]): List of number of basis functions for each channel.
         qcut (list[float]): List of cutoff wavevectors for each channel.
+        ep_as_given (bool): The well states take `ep` as given rather than ONCVPSP's
+            replacements of it (azadoks/oncvpsp; `ep_as_given` in `[pseudopotentials]`, or the
+            optional second value of the lmax line, 0 or 1).
+        well_onset (float | None): Onset of the well of the well states as a multiple of rc,
+            at least 1; `None` (or 0 or less) for ONCVPSP's default 1.006**5 (the optional
+            third value of the lmax line, 0 for the default).
+        well_tail (str): The tail of the well states beyond rc: "well", that of the well, or
+            "free", the free solution under a window, which does not depend on the well
+            (the optional fourth value of the lmax line, 0 or 1).
     """
 
     lmax: Annotated[
@@ -274,6 +283,23 @@ class PseudoPotentialsInput(BaseModel):  # pylint: disable=too-few-public-method
     ncon: Annotated[list[int], Field(min_length=1)]
     nbas: Annotated[list[int], Field(min_length=1)]
     qcut: Annotated[list[float], Field(min_length=1)]
+    ep_as_given: bool = False
+    well_onset: Annotated[float | None, Field(ge=1.0)] = None
+    well_tail: Literal["well", "free"] = "well"
+
+    @field_validator("well_onset", mode="before")
+    @classmethod
+    def _nonpositive_is_default(cls, value: Any) -> Any:
+        if isinstance(value, (int, float)) and value <= 0:
+            return None
+        return value
+
+    @property
+    def has_well_options(self) -> bool:
+        """Whether any of `ep_as_given`, `well_onset` and `well_tail` is not its default."""
+        return (
+            self.ep_as_given or self.well_onset is not None or self.well_tail != "well"
+        )
 
     def __len__(self) -> int:
         return self.lmax + 1
@@ -320,10 +346,18 @@ class PseudoPotentialsInput(BaseModel):  # pylint: disable=too-few-public-method
         """String representation of the pseudopotential input in .dat file format."""
         psps: list[PseudopotentialInput] = [self[ell] for ell in range(self.lmax + 1)]
         lines: list[str] = []
+        lmax = f"{self.lmax:>10d}"
+        head = f"# {'lmax':>8s}"
+        if self.has_well_options:
+            # ep_as_given, well_onset (0 for the default) and well_tail after lmax
+            onset = self.well_onset if self.well_onset is not None else 0.0
+            tail = 1 if self.well_tail == "free" else 0
+            lmax += f" {int(self.ep_as_given):>5d} {onset:>24.16e} {tail:>5d}"
+            head += ", ep_as_given, well_onset, well_tail"
         if with_comment:
-            lines.append(f"# {'lmax':>8s}\n{self.lmax:>10d}\n#")
+            lines.append(f"{head}\n{lmax}\n#")
         else:
-            lines.append(f"{self.lmax:>10d}")
+            lines.append(lmax)
         lines.append(psps[0].as_dat_string(with_comment))
         if len(psps) > 1:
             for psp in psps[1:]:
@@ -733,8 +767,17 @@ def _to_oncvpsp_toml(data: dict[str, Any]) -> dict[str, Any]:
     `[linear_mesh]` `a` (drl) and `rmax` (rlmax) with `upf_mesh` in `[pp_output]`, and the icmod
     4 Teter grid as `fcfact_*` and `rcfact_*`. ONCVPSP ignores the keys it does not read, such as
     `teter_relative`. The log mesh parameters that are not given are left out, and `[log_mesh]`
-    too when none is; so are `c_light` when it is not given and `upf_mesh` when it is 0."""
+    too when none is; so are `c_light` when it is not given, `upf_mesh` when it is 0, and
+    `ep_as_given`, `well_onset` and `well_tail` at their defaults."""
     data = deepcopy(data)
+    psps = data["pseudopotentials"]
+    for key, default in (
+        ("ep_as_given", False),
+        ("well_onset", None),
+        ("well_tail", "well"),
+    ):
+        if psps.get(key, default) == default:
+            psps.pop(key, None)
     data["pp_output"] = {"psfile": data["oncvpsp"].pop("psfile")}
     if data["oncvpsp"].get("c_light", 0) is None:
         del data["oncvpsp"]["c_light"]
@@ -993,8 +1036,14 @@ class OncvpspInput(BaseModel):
             la[i] = int(words[1])
             fa[i] = float(words[2])
         # PSEUDOPOTENTIAL AND OPTIMIZATION
-        # lmax
-        lmax = int(next(iter_).split()[0])
+        # lmax, (ep_as_given, (well_onset, (well_tail)))
+        words = next(iter_).split()
+        lmax = int(words[0])
+        ep_as_given = len(words) >= 2 and int(words[1]) == 1
+        well_onset = (
+            float(words[2].lower().replace("d", "e")) if len(words) >= 3 else None
+        )
+        well_tail = "free" if len(words) >= 4 and int(words[3]) == 1 else "well"
         # l, rc, ep, ncon, nbas, qcut (lmax + 1 lines, l's must be in order)
         rc: list[float] = [0.0] * (lmax + 1)
         ep: list[float] = [0.0] * (lmax + 1)
@@ -1112,6 +1161,9 @@ class OncvpspInput(BaseModel):
                 "ncon": ncon,
                 "nbas": nbas,
                 "qcut": qcut,
+                "ep_as_given": ep_as_given,
+                "well_onset": well_onset,
+                "well_tail": well_tail,
             },
             "local_potential": {
                 "lloc": lloc,

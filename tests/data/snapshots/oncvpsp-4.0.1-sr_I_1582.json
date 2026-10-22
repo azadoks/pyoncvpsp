@@ -209,6 +209,7 @@
     -0.2604,
     0.1
    ],
+   "ep_as_given": false,
    "l": [
     0,
     1,
@@ -234,7 +235,9 @@
     2.1898,
     2.29998,
     2.5
-   ]
+   ],
+   "well_onset": null,
+   "well_tail": "well"
   },
   "reference_configuration": {
    "f": [

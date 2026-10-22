@@ -439,3 +439,76 @@ def test_vwn_functionals(nitrogen_flags, iexc):
     vwn = nitrogen_flags.merge(oncvpsp={"iexc": iexc})
     assert OncvpspInput.from_dat_string(vwn.as_dat_string()) == vwn
     assert OncvpspInput.from_toml_string(vwn.as_toml_string()) == vwn
+
+
+# ep_as_given, well_onset and well_tail: the optional second to fourth values of the lmax line
+# (azadoks/oncvpsp, phase 8 of doc/smoothness_plan.md), and keys of [pseudopotentials] in TOML
+N_WELL_DAT = N_DAT.replace("# lmax\n    1\n", "# lmax\n    1    1    1.2    1\n")
+
+
+@pytest.fixture
+def nitrogen_well() -> OncvpspInput:
+    return OncvpspInput.from_dat_string(N_WELL_DAT)
+
+
+def test_well_options_default(nitrogen):
+    psps = nitrogen.pseudopotentials
+    assert not psps.ep_as_given and psps.well_onset is None and psps.well_tail == "well"
+    assert not psps.has_well_options
+    assert psps.as_dat_string().split("\n")[0].split() == ["1"]
+    data = toml.loads(nitrogen.as_toml_string())
+    assert not {"ep_as_given", "well_onset", "well_tail"} & set(
+        data["pseudopotentials"]
+    )
+
+
+def test_well_options_from_dat_string(nitrogen_well, nitrogen):
+    psps = nitrogen_well.pseudopotentials
+    assert psps.ep_as_given and psps.well_onset == 1.2 and psps.well_tail == "free"
+    assert (
+        nitrogen_well.merge(
+            pseudopotentials={
+                "ep_as_given": False,
+                "well_onset": None,
+                "well_tail": "well",
+            }
+        )
+        == nitrogen
+    )
+
+
+@pytest.mark.parametrize("with_comment", [True, False])
+def test_well_options_dat_round_trip(nitrogen_well, with_comment):
+    dat = nitrogen_well.as_dat_string(with_comment=with_comment)
+    assert OncvpspInput.from_dat_string(dat) == nitrogen_well
+
+
+def test_well_options_partial_line(nitrogen):
+    # a line that ends early leaves the rest at their defaults; 0 is the default onset
+    dat = N_DAT.replace("# lmax\n    1\n", "# lmax\n    1    0    0.0\n")
+    assert OncvpspInput.from_dat_string(dat) == nitrogen
+    dat = N_DAT.replace("# lmax\n    1\n", "# lmax\n    1    1\n")
+    assert OncvpspInput.from_dat_string(dat).pseudopotentials.ep_as_given
+
+
+def test_well_options_toml(nitrogen_well):
+    data = toml.loads(nitrogen_well.as_toml_string())
+    psps = data["pseudopotentials"]
+    assert psps["ep_as_given"] is True
+    assert psps["well_onset"] == 1.2
+    assert psps["well_tail"] == "free"
+    assert (
+        OncvpspInput.from_toml_string(nitrogen_well.as_toml_string()) == nitrogen_well
+    )
+
+
+@pytest.mark.parametrize(
+    "update",
+    [
+        {"pseudopotentials": {"well_onset": 0.99}},
+        {"pseudopotentials": {"well_tail": "open"}},
+    ],
+)
+def test_well_options_invalid(nitrogen, update):
+    with pytest.raises(ValueError):
+        nitrogen.merge(update)
