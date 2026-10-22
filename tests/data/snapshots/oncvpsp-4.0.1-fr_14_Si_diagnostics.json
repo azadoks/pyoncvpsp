@@ -803,7 +803,10 @@
     },
     "rxpsh": 2.686901711246098
    }
-  ]
+  ],
+  "model_core": null,
+  "projector_conditioning": [],
+  "test_configurations": []
  },
  "errors": [],
  "ghosts": [],

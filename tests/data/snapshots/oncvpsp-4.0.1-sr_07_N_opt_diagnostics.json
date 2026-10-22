@@ -361,7 +361,10 @@
     },
     "rxpsh": 4.020175948413654
    }
-  ]
+  ],
+  "model_core": null,
+  "projector_conditioning": [],
+  "test_configurations": []
  },
  "errors": [],
  "ghosts": [],

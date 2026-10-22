@@ -487,3 +487,59 @@ def test_diagnostics(parse_output):
         for iproj in (1, 2)
     }
     assert parse_output("oncvpsp-4.0.1-sr_14_Si").diagnostics == {}
+
+
+def test_diagnostics_full(parse_output):
+    # azadoks/oncvpsp 9889e33: Ecut crossings to 1e-7 with ekin_check, the projectors'
+    # conditioning, the test configurations and the model core's extent, to 17 digits
+    parser = parse_output("oncvpsp-4.0.1-sr_14_Si_diagnostics_full")
+    diagnostics = parser.diagnostics
+    for crossing in diagnostics["ecut_crossings"]:
+        assert crossing["eresid"] == pytest.approx(
+            1e-2 * 10.0 ** (-0.5 * np.arange(11))
+        )
+        assert abs(crossing["ekin_check"]) < 1e-8
+    conditioning = diagnostics["projector_conditioning"]
+    assert [(c["l"], c["j"]) for c in conditioning] == [(0, None), (1, None), (2, None)]
+    for channel in conditioning:
+        b = channel["b_eigenvalues"]
+        assert list(b) == sorted(b)
+        assert channel["condition"] == pytest.approx(abs(b).max() / abs(b).min())
+        coefficients = channel["coefficients"]
+        assert list(abs(coefficients)) == sorted(abs(coefficients), reverse=True)
+    configurations = diagnostics["test_configurations"]
+    assert [c["index"] for c in configurations] == [0, 1, 2, 3]
+    assert not any(c["failed"] for c in configurations)
+    assert configurations[0]["de_ae"] == 0.0
+    for full in configurations:
+        assert full["error"] == pytest.approx(full["de_ae"] - full["de_ps"], abs=1e-15)
+        assert [(s["n"], s["l"], s["j"]) for s in full["states"]] == [
+            (3, 0, None),
+            (3, 1, None),
+        ]
+    assert configurations[1]["states"][0]["occupation"] == 1.0
+    core = diagnostics["model_core"]
+    assert core["rc"] == pytest.approx(2.7)
+    assert [e["fraction"] for e in core["extent"]] == [1e-2, 1e-4]
+    for extent in core["extent"]:
+        assert core["rc"] < extent["r_ae"] == pytest.approx(extent["r_model"])
+    assert core["max"]["rho"] > core["min"]["rho"] == pytest.approx(core["rho_model"])
+    relativistic = parse_output("oncvpsp-4.0.1-fr_14_Si_diagnostics_full").diagnostics
+    assert [(c["l"], c["j"]) for c in relativistic["projector_conditioning"]] == [
+        (0, 0.5),
+        (1, 1.5),
+        (1, 0.5),
+        (2, 2.5),
+        (2, 1.5),
+    ]
+    assert [
+        (s["l"], s["j"]) for s in relativistic["test_configurations"][0]["states"]
+    ] == [
+        (0, 0.5),
+        (1, 1.5),
+        (1, 0.5),
+    ]
+    # an output from before these lines has none of them
+    old = parse_output("oncvpsp-4.0.1-sr_07_N_opt_diagnostics").diagnostics
+    assert old["projector_conditioning"] == old["test_configurations"] == []
+    assert old["model_core"] is None

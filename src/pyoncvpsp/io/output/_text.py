@@ -2349,6 +2349,30 @@ class OncvpspTextParser:
                     budget: error (Ha per electron), ecut (Ha) at which the weighted mean of the
                     residual kinetic energies falls to it, and weights (list[dict]: l, j, iproj,
                     weight) of the waves with a weight; else None.
+                projector_conditioning (list[dict]): One per channel with projectors (lines
+                    `vkb_b l ikap i b`, `vkb_cond l ikap c`, `vkb_e l ikap i e`): l, j,
+                    b_eigenvalues (np.ndarray, the eigenvalues of the symmetrized B matrix,
+                    ascending), condition (float, the largest over the smallest magnitude) and
+                    coefficients (np.ndarray, the orthonormal projectors' coefficients in Ha,
+                    the eigenvalues of the nonlocal kernel).
+                test_configurations (list[dict]): One per configuration, the reference first
+                    (lines `test_config icfg de_ae de_ps err`, `test_eig icfg n l ikap f eae
+                    eps`, `test_config_failed icfg`): index (int, 0 the reference), failed
+                    (bool), de_ae and de_ps (the all-electron and pseudo total-energy
+                    differences from the reference, Ha), error (the excitation error de_ae -
+                    de_ps, Ha) and states (list[dict]: n, l, j, occupation, eig_ae, eig_ps);
+                    None for the numbers of a failed one.
+                model_core (dict | None): With a model core (lines `core_rc r ae model`,
+                    `core_extent frac r_ae r_model`, `core_model_max r rho`,
+                    `core_model_min r rho`; 4 pi rho): rc (rcmax), rho_ae and rho_model there,
+                    extent (list[dict]: fraction, r_ae, r_model, the radii beyond rc at which
+                    each falls to the fraction of its value at rc), max and min (dict: r, rho,
+                    of the model core on (0, rc]); else None.
+
+            Each ecut_crossings record also has ekin_check (float, line `ekin_check l ikap
+            iproj t`): the r-space kinetic energy of the wave less the Fourier one to the
+            q_infinity of its curve (Ha), by Parseval the energy above q_infinity that the
+            curve leaves out plus the error of the r-space integral, which dominates it.
         """
         lines = self._get_lines_between("^Begin DIAGNOSTICS$", "^End DIAGNOSTICS$")
         if not lines:
@@ -2361,9 +2385,81 @@ class OncvpspTextParser:
         margins: list[dict] = []
         localization: list[dict] = []
         weighted: dict[str, Any] | None = None
+        conditioning: dict[ChannelKey, dict[str, Any]] = defaultdict(
+            lambda: defaultdict(list)
+        )
+        configs: dict[int, dict[str, Any]] = {}
+        core: dict[str, Any] | None = None
+
+        def config(index: int) -> dict[str, Any]:
+            return configs.setdefault(
+                index,
+                {
+                    "index": index,
+                    "failed": False,
+                    "de_ae": None,
+                    "de_ps": None,
+                    "error": None,
+                    "states": [],
+                },
+            )
+
         for line in lines:
             tag, *fields = line.split()
-            if tag == "ecut_w":
+            if tag == "ekin_check":
+                ell, ikap, iproj = (int(f) for f in fields[:3])
+                key = ProjectorKey(j_channels(ell, relativistic)[ikap - 1], iproj)
+                ecut[key]["ekin_check"] = float(fields[3])
+            elif tag in ("vkb_b", "vkb_e"):
+                ell, ikap = int(fields[0]), int(fields[1])
+                name = "b_eigenvalues" if tag == "vkb_b" else "coefficients"
+                conditioning[j_channels(ell, relativistic)[ikap - 1]][name].append(
+                    float(fields[3])
+                )
+            elif tag == "vkb_cond":
+                ell, ikap = int(fields[0]), int(fields[1])
+                conditioning[j_channels(ell, relativistic)[ikap - 1]]["condition"] = (
+                    float(fields[2])
+                )
+            elif tag == "test_config":
+                entry = config(int(fields[0]))
+                entry["de_ae"], entry["de_ps"], entry["error"] = (
+                    float(f) for f in fields[1:4]
+                )
+            elif tag == "test_config_failed":
+                config(int(fields[0]))["failed"] = True
+            elif tag == "test_eig":
+                index, n, ell, ikap = (int(f) for f in fields[:4])
+                config(index)["states"].append(
+                    {
+                        "n": n,
+                        **j_channels(ell, relativistic)[ikap - 1].as_dict(),
+                        "occupation": float(fields[4]),
+                        "eig_ae": float(fields[5]),
+                        "eig_ps": float(fields[6]),
+                    }
+                )
+            elif tag == "core_rc":
+                core = {
+                    "rc": float(fields[0]),
+                    "rho_ae": float(fields[1]),
+                    "rho_model": float(fields[2]),
+                    "extent": [],
+                }
+            elif tag == "core_extent" and core is not None:
+                core["extent"].append(
+                    {
+                        "fraction": float(fields[0]),
+                        "r_ae": float(fields[1]),
+                        "r_model": float(fields[2]),
+                    }
+                )
+            elif tag in ("core_model_max", "core_model_min") and core is not None:
+                core[tag.removeprefix("core_model_")] = {
+                    "r": float(fields[0]),
+                    "rho": float(fields[1]),
+                }
+            elif tag == "ecut_w":
                 weighted = {
                     "error": float(fields[0]),
                     "ecut": float(fields[1]),
@@ -2430,6 +2526,9 @@ class OncvpspTextParser:
             "ghost_margins": margins,
             "ghost_localization": localization,
             "ecut_weighted": weighted,
+            "projector_conditioning": as_records(conditioning),
+            "test_configurations": [configs[k] for k in sorted(configs)],
+            "model_core": core,
         }
 
     @cached_property
