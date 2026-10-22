@@ -37,6 +37,7 @@
    "subroutine": "optimize"
   }
  ],
+ "ghost_basis_cuts": [],
  "ghosts": [],
  "gnuplot_script": "",
  "input": {

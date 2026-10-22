@@ -163,6 +163,7 @@
    "subroutine": "psatom(_r)"
   }
  ],
+ "ghost_basis_cuts": [],
  "ghosts": [
   {
    "ecut": 45.67,

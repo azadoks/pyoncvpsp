@@ -161,6 +161,7 @@
    "subroutine": "psatom(_r)"
   }
  ],
+ "ghost_basis_cuts": [],
  "ghosts": [],
  "gnuplot_script": {
   "len": 3605,

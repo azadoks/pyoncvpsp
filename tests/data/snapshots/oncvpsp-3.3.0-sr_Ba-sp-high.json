@@ -185,6 +185,7 @@
  ],
  "diagnostics": {},
  "errors": [],
+ "ghost_basis_cuts": [],
  "ghosts": [
   {
    "ecut": 22.42,

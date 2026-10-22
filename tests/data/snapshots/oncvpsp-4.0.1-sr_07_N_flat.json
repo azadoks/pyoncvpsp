@@ -499,6 +499,7 @@
   }
  },
  "errors": [],
+ "ghost_basis_cuts": [],
  "ghosts": [],
  "gnuplot_script": {
   "len": 4108,
@@ -1463,7 +1464,28 @@
   {
    "completed": true,
    "config_index": 0,
-   "messages": []
+   "messages": [
+    {
+     "level": "warning",
+     "line_numbers": [
+      268
+     ],
+     "lines": [
+      "ae_converged: WARNING scf stopped on the round-off floor of the residual, res=  1.9779E-11, tolres=  1.0000E-11"
+     ],
+     "name": "ae_scf_residual_floor"
+    },
+    {
+     "level": "warning",
+     "line_numbers": [
+      270
+     ],
+     "lines": [
+      "ae_converged: WARNING scf stopped on the round-off floor of the residual, res=  1.9779E-11, tolres=  1.0000E-11"
+     ],
+     "name": "ae_scf_residual_floor"
+    }
+   ]
   }
  ],
  "test_configurations": [
@@ -1518,7 +1540,86 @@
  ],
  "vkb_scalar_projector_coefficients": [],
  "vkb_spin_orbit_projector_coefficients": [],
- "warnings": [],
+ "warnings": [
+  {
+   "context_line_numbers": [
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24
+   ],
+   "context_lines": [
+    "LXC     [1] J. P. Perdew, K. Burke, and M. Ernzerhof, Phys. Rev. Lett. 77, 3865 (1996)",
+    "",
+    "",
+    "ae_converged: WARNING scf stopped on the round-off floor of the residual, res=  1.9779E-11, tolres=  1.0000E-11",
+    "# ATOM AND REFERENCE CONFIGURATION",
+    "# atsym  z   nc   nv     iexc    psfile",
+    "  N  7.00    1    2 -101130      upf"
+   ],
+   "description": "All-electron self-consistency stopped on the round-off floor of the residual, above its tolerance (benign).",
+   "line_numbers": [
+    21
+   ],
+   "name": "ae_scf_residual_floor",
+   "subroutine": "ae_converged"
+  },
+  {
+   "context_line_numbers": [
+    265,
+    266,
+    267,
+    268,
+    269,
+    270,
+    271
+   ],
+   "context_lines": [
+    "",
+    "Test configuration 0",
+    "",
+    "ae_converged: WARNING scf stopped on the round-off floor of the residual, res=  1.9779E-11, tolres=  1.0000E-11",
+    "",
+    "ae_converged: WARNING scf stopped on the round-off floor of the residual, res=  1.9779E-11, tolres=  1.0000E-11",
+    ""
+   ],
+   "description": "All-electron self-consistency stopped on the round-off floor of the residual, above its tolerance (benign).",
+   "line_numbers": [
+    268
+   ],
+   "name": "ae_scf_residual_floor",
+   "subroutine": "ae_converged"
+  },
+  {
+   "context_line_numbers": [
+    267,
+    268,
+    269,
+    270,
+    271,
+    272,
+    273
+   ],
+   "context_lines": [
+    "",
+    "ae_converged: WARNING scf stopped on the round-off floor of the residual, res=  1.9779E-11, tolres=  1.0000E-11",
+    "",
+    "ae_converged: WARNING scf stopped on the round-off floor of the residual, res=  1.9779E-11, tolres=  1.0000E-11",
+    "",
+    "   n   l     f        eae           eps        diff",
+    "   1   0  2.0000  -14.13822391"
+   ],
+   "description": "All-electron self-consistency stopped on the round-off floor of the residual, above its tolerance (benign).",
+   "line_numbers": [
+    270
+   ],
+   "name": "ae_scf_residual_floor",
+   "subroutine": "ae_converged"
+  }
+ ],
  "wellstate_metadata": [
   {
    "asymptotic_potential": 0.8171,

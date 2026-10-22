@@ -157,6 +157,7 @@
    "subroutine": "vkboutwf"
   }
  ],
+ "ghost_basis_cuts": [],
  "ghosts": [
   {
    "ecut": 19.53,

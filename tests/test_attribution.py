@@ -21,6 +21,7 @@ from pyoncvpsp.io.output import (
     Stage,
 )
 from pyoncvpsp.io.output._attribution import attribution_for
+from pyoncvpsp.io.output._data import UNRECOGNIZED_ERROR
 from pyoncvpsp.io.output._sections import LineContext, line_contexts
 
 DATA_DIR = Path(__file__).parent / "data" / "attribution"
@@ -55,7 +56,11 @@ def test_every_definition_has_attribution(level, name):
 
 
 def test_attribution_has_no_stale_entries():
-    names = {d["name"] for d in WARNINGS} | {d["name"] for d in ERRORS}
+    names = (
+        {d["name"] for d in WARNINGS}
+        | {d["name"] for d in ERRORS}
+        | {UNRECOGNIZED_ERROR["name"]}
+    )
     for key in ATTRIBUTION:
         assert key.split(":", 1)[-1] in names, (
             f"attribution for unknown definition {key}"
@@ -364,3 +369,69 @@ def test_messages_sorted_and_serializable():
     assert [m.name for m in parser.messages if m.level == Level.ERROR] == [
         e["name"] for e in parser.errors
     ]
+
+
+def test_unrecognized_error_is_the_failure_of_an_incomplete_run():
+    # A run which stops after an error the catalogue does not know fails with that line, not
+    # with `incomplete_output`; its stage comes from its position
+    lines = [
+        "ONCVPSP  (Optimized Norm-Conservinng Vanderbilt PSeudopotential)",
+        *V4_HEADER[:2],
+        V4_HEADER[2].format(l=1),
+        "newroutine: ERROR something went wrong, x=   1.0",
+    ]
+    failure = OncvpspTextParser(lines=lines, check=False).failure
+    assert failure is not None
+    assert failure.name == "unrecognized_error"
+    assert failure.primary.subroutine == "newroutine"
+    assert (failure.stage, failure.l) == (Stage.SEMILOCAL, 1)
+    assert failure.primary.line_numbers == [5]
+
+
+def test_unrecognized_error_is_not_a_message_of_a_completed_run():
+    parser = parse("testcfg_bad")
+    assert parser.completed and parser.failure is None
+    assert all(m.name != "unrecognized_error" for m in parser.messages)
+
+
+@pytest.mark.parametrize(
+    ("line", "name", "stage", "scope", "l"),
+    [
+        (
+            "oncvpsp: ERROR node of the local channel l= 2 all-electron wave near rc, at r=  2.345678",
+            "local_channel_ae_node",
+            Stage.VKB,
+            Scope.ELL_AND_LOCAL,
+            2,
+        ),
+        (
+            "qroots: WARNING bisection failed, skipping, ll=1, qlow=  1.2345E+00, qhi=  2.3456E+00",
+            "qroots_bisection_failed",
+            Stage.SEMILOCAL,
+            Scope.ELL,
+            1,
+        ),
+        (
+            "run_ghosts: WARNING basis full below the cutoff, l=2, nbmax=40",
+            "ghost_basis_full",
+            Stage.DIAGNOSTICS,
+            Scope.ELL_AND_LOCAL,
+            2,
+        ),
+        (
+            "ae_converged: WARNING scf stopped on the round-off floor of the residual, res=  1.2345E-12, tolres=  1.0000E-12",
+            "ae_scf_residual_floor",
+            Stage.AE_REFERENCE,
+            Scope.GLOBAL,
+            None,
+        ),
+    ],
+)
+def test_smooooth_messages_attribution(line, name, stage, scope, l):  # noqa: E741
+    (message,) = OncvpspTextParser(lines=["header", line], check=False).messages
+    assert (message.name, message.stage, message.scope, message.l) == (
+        name,
+        stage,
+        scope,
+        l,
+    )

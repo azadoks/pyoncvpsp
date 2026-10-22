@@ -16,6 +16,7 @@
  "diagnostic_tests_vkb": [],
  "diagnostics": {},
  "errors": [],
+ "ghost_basis_cuts": [],
  "ghosts": [],
  "gnuplot_script": "",
  "input": {

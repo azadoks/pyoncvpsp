@@ -257,11 +257,11 @@ ERRORS: list[dict[str, Any]] = [
     },
     {
         "name": "ae_file_mismatch",
-        "pattern": r"read_ae_file: ERROR (?P<reason>(?:atsym|reference configuration|radial mesh|test configuration).*)",
+        "pattern": r"read_ae_file: ERROR (?P<reason>(?:atsym|reference configuration|radial mesh|test configuration|c_light).*)",
         "match_string": "read_ae_file: ERROR",
         "line_count": 1,
         "subroutine": "read_ae_file",
-        "description": "The all-electron data file was written for a different atom, reference or test configuration, or radial mesh than the input.",
+        "description": "The all-electron data file was written for a different atom, reference or test configuration, radial mesh or c_light than the input.",
     },
     {
         "name": "ae_file_read_failed",
@@ -718,3 +718,252 @@ ERRORS += [
         "description": "Fortran runtime error (I/O or formatted-transfer error, floating-point exception, or signal).",
     },
 ]
+
+# azadoks/oncvpsp (branch smooooth)
+WARNINGS += [
+    {
+        "name": "ghost_barrier_state_not_converged",
+        # run_ghosts: the basis is cut below a barrier state it cannot converge, and the ghost test
+        # covers energies only up to the cut (`OncvpspTextParser.ghost_basis_cuts`)
+        "pattern": (
+            rf"run_ghosts: WARNING barrier state n=\s*(?P<n>\d+) l=\s*(?P<l>\d+) near\s*"
+            rf"(?P<e_barrier>{RE_FLOAT}) Ha not converged;"
+        ),
+        "match_string": "run_ghosts: WARNING barrier state",
+        "line_count": 2,
+        "subroutine": "run_ghosts",
+        "description": "A barrier state of the ghost test's basis did not converge; the basis is cut "
+        "there, and the ghost test covers energies only up to the cut.",
+    },
+    {
+        "name": "ghost_basis_full",
+        "pattern": r"run_ghosts: WARNING basis full below the cutoff, l=\s*(?P<l>\d+), nbmax=\s*(?P<nbmax>\d+)",
+        "match_string": "run_ghosts: WARNING basis full",
+        "line_count": 1,
+        "subroutine": "run_ghosts",
+        "description": "The ghost test's basis reached its largest size below the cutoff.",
+    },
+    {
+        "name": "qroots_bisection_failed",
+        "pattern": (
+            rf"qroots: WARNING bisection failed, skipping, ll=\s*(?P<l>\d+), qlow=\s*(?P<qlow>{RE_FLOAT}),"
+            rf" qhi=\s*(?P<qhi>{RE_FLOAT})"
+        ),
+        "match_string": "qroots: WARNING bisection failed",
+        "line_count": 1,
+        "subroutine": "qroots",
+        "description": "Bisection for a root of the spherical Bessel function matching failed; the "
+        "root is skipped.",
+    },
+    {
+        "name": "modcore_budget_radius_misfit",
+        "pattern": rf"modcore_budget: WARNING the radius\s*(?P<r_s>{RE_FLOAT}) of the least mismatch does not fit the budget",
+        "match_string": "modcore_budget: WARNING the radius",
+        "line_count": 1,
+        "subroutine": "modcore_budget",
+        "description": "The model-core radius of the least hardness mismatch does not fit the cutoff budget.",
+    },
+    {
+        "name": "modcore_budget_no_minimum",
+        "pattern": rf"modcore_budget: WARNING no minimum of the mismatch bracketed about\s*(?P<r>{RE_FLOAT})",
+        "match_string": "modcore_budget: WARNING no minimum",
+        "line_count": 1,
+        "subroutine": "modcore_budget",
+        "description": "No minimum of the hardness mismatch is bracketed about the radius.",
+    },
+    {
+        "name": "modcore_budget_root_at_jump",
+        "pattern": rf"modcore_budget: WARNING root at a jump of the function, x=\s*(?P<x>{RE_FLOAT})",
+        "match_string": "modcore_budget: WARNING root at a jump",
+        "line_count": 1,
+        "subroutine": "modcore_budget (zeroin)",
+        "description": "The root found is at a jump of the function, not a zero of it.",
+    },
+    {
+        "name": "ae_scf_residual_floor",
+        "pattern": (
+            rf"ae_converged: WARNING scf stopped on the round-off floor of the residual, "
+            rf"res=\s*(?P<res>{RE_FLOAT}), tolres=\s*(?P<tolres>{RE_FLOAT})"
+        ),
+        "match_string": "ae_converged: WARNING scf stopped",
+        "line_count": 1,
+        "subroutine": "ae_converged",
+        "description": "All-electron self-consistency stopped on the round-off floor of the "
+        "residual, above its tolerance (benign).",
+    },
+    {
+        "name": "test_config_ae_scf_not_converged",
+        # The reason, after `ae_atom_no_solution`, why a test configuration has no output
+        "pattern": r"(?P<subroutine>run_config(?:_r)?): WARNING self-consistency failed to converge",
+        "match_string": "WARNING self-consistency failed to converge",
+        "line_count": 1,
+        "subroutine": "run_config(_r)",
+        "description": "All-electron self-consistency failed for a test configuration.",
+    },
+    {
+        "name": "test_config_ae_no_turning_point",
+        "pattern": r"(?:run_config_r: WARNING )?no classical turning point error, iteration\s*(?P<iteration>\d+)",
+        "match_string": "no classical turning point error, iteration",
+        "line_count": 1,
+        "subroutine": "run_config(_r)",
+        "description": "No classical turning point in the all-electron atom of a test configuration.",
+    },
+    {
+        "name": "rxpsh_inside_rc",
+        "pattern": (
+            rf"(?P<subroutine>run_phsft(?:_r)?): WARNING rxpsh inside the core radius, l=\s*(?P<l>\d+), "
+            rf"rxpsh=\s*(?P<rxpsh>{RE_FLOAT}), rc=\s*(?P<rc>{RE_FLOAT})"
+        ),
+        "match_string": "WARNING rxpsh inside the core radius",
+        "line_count": 1,
+        "subroutine": "run_phsft(_r)",
+        "description": "The log-derivative radius is inside the core radius of the channel; the "
+        "phases are not comparable there.",
+    },
+    {
+        "name": "rxpsh_inside_local_rc",
+        "pattern": (
+            rf"(?P<subroutine>run_phsft(?:_r)?): WARNING rxpsh inside the local potential core radius, "
+            rf"l=\s*(?P<l>\d+), rxpsh=\s*(?P<rxpsh>{RE_FLOAT}), rc=\s*(?P<rc>{RE_FLOAT})"
+        ),
+        "match_string": "WARNING rxpsh inside the local potential core radius",
+        "line_count": 1,
+        "subroutine": "run_phsft(_r)",
+        "description": "The log-derivative radius is inside the core radius of the local potential.",
+    },
+]
+
+ERRORS += [
+    {
+        "name": "local_channel_ae_node",
+        # lloc < 4: the local potential is inverted from the all-electron wave of channel lloc
+        "pattern": (
+            rf"oncvpsp: ERROR node of the local channel l=\s*(?P<l>\d+) all-electron wave near rc, "
+            rf"at r=\s*(?P<r>{RE_FLOAT})"
+        ),
+        "match_string": "oncvpsp: ERROR node of the local channel",
+        "line_count": 1,
+        "subroutine": "oncvpsp",
+        "description": "The all-electron wave of the local channel has a node near rc, where the "
+        "local potential is inverted from it.",
+    },
+    {
+        "name": "local_channel_ps_node",
+        "pattern": (
+            rf"run_vkb: ERROR node of the local channel's pseudo wave within reach of rc, "
+            rf"l=\s*(?P<l>\d+) r=\s*(?P<r>{RE_FLOAT})"
+        ),
+        "match_string": "run_vkb: ERROR node of the local channel",
+        "line_count": 1,
+        "subroutine": "run_vkb",
+        "description": "The pseudo wave of the local channel has a node within reach of rc.",
+    },
+    {
+        "name": "match_point_failed",
+        "pattern": r"match_point: ERROR (?P<reason>matching window at mch=.*leaves the mesh|no sign change below mch=)",
+        "match_string": "match_point: ERROR",
+        "line_count": 1,
+        "subroutine": "match_point",
+        "description": "The matching point of an inward/outward wave solution could not be located "
+        "on the mesh.",
+    },
+    {
+        "name": "mesh_tail_too_short",
+        "pattern": (
+            rf"mesh_tail: ERROR wave function vanishes too close to rc: rc=\s*(?P<rc>{RE_FLOAT}), "
+            rf"last nonzero point\s*(?P<r>{RE_FLOAT})"
+        ),
+        "match_string": "mesh_tail: ERROR",
+        "line_count": 1,
+        "subroutine": "mesh_tail (free_tail_m)",
+        "description": "With well_tail = free, the wave function vanishes too close to rc for its tail.",
+    },
+    {
+        "name": "free_tail_qcut_too_low",
+        "pattern": rf"free_tail_width: ERROR qcut=\s*(?P<qcut>{RE_FLOAT}) is not above the wave vector",
+        "match_string": "free_tail_width: ERROR",
+        "line_count": 2,
+        "subroutine": "free_tail_width (free_tail_m)",
+        "description": "With well_tail = free, qcut is not above the wave vector of the well state.",
+    },
+    {
+        "name": "output_mesh_error",
+        "pattern": r"(?P<subroutine>om_local_values|outmesh): ERROR (?!output mesh to)(?P<reason>.*)",
+        "match_string": ": ERROR",
+        "line_count": 1,
+        "subroutine": "outmesh_m",
+        "description": "The pseudopotential could not be put on the output mesh.",
+    },
+    {
+        "name": "output_mesh_beyond_log_mesh",
+        "pattern": (
+            rf"outmesh: ERROR output mesh to\s*(?P<rlmax>{RE_FLOAT}) bohr, beyond the log mesh,\s*"
+            rf"(?P<rmax>{RE_FLOAT})"
+        ),
+        "match_string": "outmesh: ERROR output mesh to",
+        "line_count": 1,
+        "subroutine": "outmesh_m",
+        "description": "The output mesh extends beyond the log mesh (output_grid rlmax and log_mesh rmax).",
+    },
+    {
+        "name": "outwf_setup_error",
+        "pattern": r"outwf_setup: ERROR (?P<reason>.*)",
+        "match_string": "outwf_setup: ERROR",
+        "line_count": 1,
+        "subroutine": "outwf_setup",
+        "description": "The piecewise potential could not be set up for the outward wave solution.",
+    },
+    {
+        "name": "vploc_bad_lpopt",
+        "pattern": r"vploc_fit: ERROR lpopt\s*(?P<lpopt>-?\d+)",
+        "match_string": "vploc_fit: ERROR lpopt",
+        "line_count": 1,
+        "subroutine": "vploc_fit",
+        "description": "Unsupported lpopt for the local potential polynomial.",
+    },
+    {
+        "name": "input_teter_grid_invalid",
+        "pattern": r"check_data: ERROR icmod=4 needs 0<(?P<parameter>fcfact|rcfact)_min",
+        "match_string": "check_data: ERROR icmod=4 needs",
+        "line_count": 1,
+        "subroutine": "check_data",
+        "description": "The icmod 4 grid of fcfact or rcfact is invalid (min, max, step).",
+    },
+    {
+        "name": "input_rxpsh_inside_rc",
+        "pattern": rf"check_data: ERROR rxpsh not beyond every core radius, rxpsh=\s*(?P<rxpsh>{RE_FLOAT})",
+        "match_string": "check_data: ERROR rxpsh",
+        "line_count": 1,
+        "subroutine": "check_data",
+        "description": "The log-derivative radius rxpsh is not beyond every core radius.",
+    },
+    {
+        "name": "rxpsh_beyond_mesh",
+        "pattern": rf"(?P<subroutine>run_phsft(?:_r)?): ERROR rxpsh beyond radial mesh, rxpsh=\s*(?P<rxpsh>{RE_FLOAT})",
+        "match_string": "ERROR rxpsh beyond radial mesh",
+        "line_count": 1,
+        "subroutine": "run_phsft(_r)",
+        "description": "The log-derivative radius rxpsh is beyond the radial mesh.",
+    },
+    {
+        "name": "functionals_bad_nspin",
+        # `error stop` with the message: written to stderr, so only seen when it is merged
+        "pattern": r"functionals: ERROR bad nspin definition",
+        "match_string": "functionals: ERROR bad nspin",
+        "line_count": 1,
+        "subroutine": "functionals",
+        "description": "Internal error: the potential array does not match the functional's nspin.",
+    },
+]
+
+# A line of azadoks/oncvpsp's `<routine>: ERROR ...` form. A run which stops without a recognized
+# error is attributed to its last such line (see `analyze_failure`); in a completed run these are
+# not errors (e.g. `lschfb: ERROR ll > nn`, which ONCVPSP recovers from)
+UNRECOGNIZED_ERROR: dict[str, Any] = {
+    "name": "unrecognized_error",
+    "pattern": r"^\s*(?P<subroutine>[A-Za-z_][\w-]*(?: \d+)?): (?:\w+ )?ERROR\b",
+    "match_string": "ERROR",
+    "line_count": 1,
+    "subroutine": "Unknown",
+    "description": "Error message of the program not in the catalogue.",
+}

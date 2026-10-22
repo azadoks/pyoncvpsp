@@ -17,6 +17,112 @@ MESSAGES = [
         "optimize: WARNING E_resid flat to round-off at qcut, e1, |f1|=  5.88E-19  2.28E-17",
         "eresid_flat",
     ),
+    # azadoks/oncvpsp (branch smooooth, 1effe97)
+    (
+        "run_ghosts: WARNING barrier state n=4 l=1 near    12.345678 Ha not converged;",
+        "ghost_barrier_state_not_converged",
+    ),
+    (
+        "run_ghosts: WARNING basis full below the cutoff, l=2, nbmax=40",
+        "ghost_basis_full",
+    ),
+    (
+        "qroots: WARNING bisection failed, skipping, ll=1, qlow=  1.2345E+00, qhi=  2.3456E+00",
+        "qroots_bisection_failed",
+    ),
+    (
+        "modcore_budget: WARNING the radius    1.234567 of the least mismatch does not fit the budget",
+        "modcore_budget_radius_misfit",
+    ),
+    (
+        "modcore_budget: WARNING no minimum of the mismatch bracketed about    1.234567",
+        "modcore_budget_no_minimum",
+    ),
+    (
+        "modcore_budget: WARNING root at a jump of the function, x=  1.2345E+00, f from  -1.0000E-03 to   2.0000E-03",
+        "modcore_budget_root_at_jump",
+    ),
+    (
+        "ae_converged: WARNING scf stopped on the round-off floor of the residual, res=  1.2345E-12, tolres=  1.0000E-12",
+        "ae_scf_residual_floor",
+    ),
+    (
+        "run_config: WARNING self-consistency failed to converge",
+        "test_config_ae_scf_not_converged",
+    ),
+    (
+        "run_config_r: WARNING self-consistency failed to converge",
+        "test_config_ae_scf_not_converged",
+    ),
+    (
+        "run_config_r: WARNING no classical turning point error, iteration  12",
+        "test_config_ae_no_turning_point",
+    ),
+    (
+        "no classical turning point error, iteration  12",
+        "test_config_ae_no_turning_point",
+    ),
+    (
+        "run_phsft: WARNING rxpsh inside the core radius, l=1, rxpsh=    1.500000, rc=    2.000000",
+        "rxpsh_inside_rc",
+    ),
+    (
+        "run_phsft_r: WARNING rxpsh inside the local potential core radius, l=4, rxpsh=    1.500000, rc=    2.000000",
+        "rxpsh_inside_local_rc",
+    ),
+    (
+        "oncvpsp: ERROR node of the local channel l= 2 all-electron wave near rc, at r=  2.345678",
+        "local_channel_ae_node",
+    ),
+    (
+        "run_vkb: ERROR node of the local channel's pseudo wave within reach of rc, l= 2 r=  2.345678",
+        "local_channel_ps_node",
+    ),
+    (
+        "match_point: ERROR matching window at mch=  1500 leaves the mesh, mmax=  1501",
+        "match_point_failed",
+    ),
+    ("match_point: ERROR no sign change below mch=   800", "match_point_failed"),
+    (
+        "mesh_tail: ERROR wave function vanishes too close to rc: rc=  2.000000, last nonzero point  2.100000",
+        "mesh_tail_too_short",
+    ),
+    (
+        "free_tail_width: ERROR qcut=  4.000000 is not above the wave vector  5.000000",
+        "free_tail_qcut_too_low",
+    ),
+    ("om_local_values: ERROR the pieces end inside the mesh", "output_mesh_error"),
+    (
+        "outmesh: ERROR more than one output point below the log mesh",
+        "output_mesh_error",
+    ),
+    (
+        "outmesh: ERROR output mesh to   12.0000 bohr, beyond the log mesh,    10.0000",
+        "output_mesh_beyond_log_mesh",
+    ),
+    (
+        "outwf_setup: ERROR the potential's pieces end inside the mesh",
+        "outwf_setup_error",
+    ),
+    ("vploc_fit: ERROR lpopt 7", "vploc_bad_lpopt"),
+    (
+        "check_data: ERROR icmod=4 needs 0<fcfact_min<=fcfact_max and fcfact_step>0, fcfact_min=    0.000000, fcfact_max=    1.000000, fcfact_step=    0.100000",
+        "input_teter_grid_invalid",
+    ),
+    (
+        "check_data: ERROR icmod=4 needs 0<rcfact_min<=rcfact_max and rcfact_step>0, rcfact_min=    1.000000, rcfact_max=    0.500000, rcfact_step=    0.100000",
+        "input_teter_grid_invalid",
+    ),
+    (
+        "check_data: ERROR rxpsh not beyond every core radius, rxpsh=    1.500000, rcmax=    2.000000",
+        "input_rxpsh_inside_rc",
+    ),
+    (
+        "run_phsft: ERROR rxpsh beyond radial mesh, rxpsh=   60.000000, rr(mmax)=   50.000000",
+        "rxpsh_beyond_mesh",
+    ),
+    ("read_ae_file: ERROR c_light differs from the input", "ae_file_mismatch"),
+    ("ERROR STOP functionals: ERROR bad nspin definition", "functionals_bad_nspin"),
     # ONCVPSP 4
     (
         "oncvpsp: ERROR all-electron reference atom not converged",
@@ -472,3 +578,22 @@ def test_multiline_message_lines_are_removed():
     assert warning["name"] == "moderately_localized_bound_state_for_projector"
     assert warning["line_numbers"] == [2, 3, 4]
     assert parser.clean_lines == ["header", "data"]
+
+
+def test_ghost_basis_cut_is_one_two_line_warning():
+    text = "\n".join(
+        [
+            "header",
+            "",
+            "run_ghosts: WARNING barrier state n=4 l=1 near    12.345678 Ha not converged;",
+            "run_ghosts: WARNING basis cut there, ghost test to      2.50 Ha",
+            "data",
+        ]
+    )
+    parser = OncvpspTextParser(text=text, check=False)
+    (warning,) = parser.warnings
+    assert warning["line_numbers"] == [3, 4]
+    assert parser.clean_lines == ["header", "", "data"]
+    assert parser.ghost_basis_cuts == [
+        {"n": 4, "l": 1, "e_barrier": 12.345678, "ecut": 2.5}
+    ]

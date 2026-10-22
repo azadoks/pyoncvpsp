@@ -1717,6 +1717,45 @@ class OncvpspTextParser:
         return rows
 
     @cached_property
+    def ghost_basis_cuts(self) -> list[dict]:
+        """Channels whose ghost-test basis azadoks/oncvpsp cut below a barrier state it could not
+        converge (warning `ghost_barrier_state_not_converged`): the ghost test covers energies only
+        up to `ecut`.
+
+        Returns:
+            list[dict]:
+                n (int): Principal quantum number of the barrier state.
+                l (int): Orbital angular momentum.
+                e_barrier (float): Energy near which the barrier state was sought (Ha).
+                ecut (float): Energy up to which the ghost test goes (Ha).
+        """
+        first = re.compile(
+            rf"run_ghosts: WARNING barrier state n=\s*(?P<n>\d+) l=\s*(?P<l>\d+) near\s*(?P<e>{RE_FLOAT})"
+        )
+        second = re.compile(
+            rf"run_ghosts: WARNING basis cut there, ghost test to\s*(?P<ecut>{RE_FLOAT}) Ha"
+        )
+        cuts = []
+        for warning in self.warnings:
+            if warning["name"] != "ghost_barrier_state_not_converged":
+                continue
+            i = warning["line_numbers"][0] - 1
+            match = first.search(self._lines[i])
+            cut = (
+                second.search(self._lines[i + 1]) if i + 1 < len(self._lines) else None
+            )
+            if match and cut:
+                cuts.append(
+                    {
+                        "n": int(match["n"]),
+                        "l": int(match["l"]),
+                        "e_barrier": fort_float(match["e"]),
+                        "ecut": fort_float(cut["ecut"]),
+                    }
+                )
+        return cuts
+
+    @cached_property
     def pseudoatom_total_energy(self) -> float | None:
         """Total energy of the pseudo-atom in the reference configuration (Ha), `None` if not
         printed."""
@@ -2747,6 +2786,7 @@ class OncvpspTextParser:
         output["diagnostic_tests_vkb"] = self.diagnostic_tests_vkb
         output["ghosts"] = self.ghosts
         output["bound_ghost_tests"] = self.bound_ghost_tests
+        output["ghost_basis_cuts"] = self.ghost_basis_cuts
         output["test_configurations"] = self.test_configurations
         output["test_configuration_energies"] = self.test_configuration_energies
         output["test_configuration_status"] = self.test_configuration_status

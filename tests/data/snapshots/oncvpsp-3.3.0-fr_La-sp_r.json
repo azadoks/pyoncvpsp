@@ -434,6 +434,7 @@
  ],
  "diagnostics": {},
  "errors": [],
+ "ghost_basis_cuts": [],
  "ghosts": [],
  "gnuplot_script": {
   "len": 7152,

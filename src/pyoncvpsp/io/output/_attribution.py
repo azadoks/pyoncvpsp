@@ -9,7 +9,7 @@ after the block of the previous `l` (`l_rule = "pending"`).
 import re
 from typing import TYPE_CHECKING, Any, Mapping
 
-from ._data import ERRORS, WARNINGS
+from ._data import ERRORS, UNRECOGNIZED_ERROR, WARNINGS
 from ._messages import (
     DEFAULT_SCOPE,
     Attribution,
@@ -80,6 +80,34 @@ ATTRIBUTION: dict[str, dict[str, Any]] = {
     "first_pswf_has_node": {"stage": Stage.SEMILOCAL, "scope": Scope.ELL},
     "first_pswf_has_node_qcut_reduced": {"stage": Stage.SEMILOCAL, "scope": Scope.ELL},
     "eresid_flat": {"stage": Stage.SEMILOCAL, "scope": Scope.ELL},
+    "ghost_barrier_state_not_converged": {
+        "stage": Stage.DIAGNOSTICS,
+        "scope": Scope.ELL_AND_LOCAL,
+    },
+    "ghost_basis_full": {"stage": Stage.DIAGNOSTICS, "scope": Scope.ELL_AND_LOCAL},
+    "qroots_bisection_failed": {"stage": Stage.SEMILOCAL, "scope": Scope.ELL},
+    "modcore_budget_radius_misfit": {
+        "stage": Stage.MODEL_CORE,
+        "scope": Scope.MODEL_CORE,
+    },
+    "modcore_budget_no_minimum": {"stage": Stage.MODEL_CORE, "scope": Scope.MODEL_CORE},
+    "modcore_budget_root_at_jump": {
+        "stage": Stage.MODEL_CORE,
+        "scope": Scope.MODEL_CORE,
+    },
+    # The reference atom, or the all-electron atom of a test configuration
+    "ae_scf_residual_floor": {"stage": None, "scope": None, "l_rule": "none"},
+    "test_config_ae_scf_not_converged": {
+        "stage": Stage.TEST_CONFIG,
+        "scope": Scope.TEST_CONFIG,
+    },
+    "test_config_ae_no_turning_point": {
+        "stage": Stage.TEST_CONFIG,
+        "scope": Scope.TEST_CONFIG,
+    },
+    "rxpsh_inside_rc": {"stage": Stage.LOGDER_PLOT, "scope": Scope.ELL},
+    # l is that of the local potential, above lmax
+    "rxpsh_inside_local_rc": {"stage": Stage.LOGDER_PLOT, "scope": Scope.LOCAL},
     # --- errors: input
     "bad_input": {"stage": Stage.INPUT, "scope": Scope.INPUT},
     "input_rc_nonpositive": {"stage": Stage.INPUT, "scope": Scope.ELL},
@@ -184,14 +212,31 @@ ATTRIBUTION: dict[str, dict[str, Any]] = {
     # --- errors: pseudopotential file output
     "upf_unsupported_functional": {"stage": Stage.OUTPUT, "scope": Scope.GLOBAL},
     "psml_not_supported": {"stage": Stage.OUTPUT, "scope": Scope.GLOBAL},
+    # --- errors: azadoks/oncvpsp
+    "local_channel_ae_node": {"stage": Stage.VKB, "scope": Scope.ELL_AND_LOCAL},
+    "local_channel_ps_node": {"stage": Stage.VKB, "scope": Scope.ELL_AND_LOCAL},
+    "mesh_tail_too_short": {"stage": Stage.SEMILOCAL, "scope": Scope.ELL},
+    "free_tail_qcut_too_low": {"stage": Stage.SEMILOCAL, "scope": Scope.ELL},
+    "output_mesh_error": {"stage": Stage.OUTPUT, "scope": Scope.GLOBAL},
+    "output_mesh_beyond_log_mesh": {"stage": Stage.OUTPUT, "scope": Scope.INPUT},
+    "vploc_bad_lpopt": {"stage": Stage.INPUT, "scope": Scope.LOCAL},
+    "input_teter_grid_invalid": {"stage": Stage.INPUT, "scope": Scope.MODEL_CORE},
+    "input_rxpsh_inside_rc": {"stage": Stage.INPUT, "scope": Scope.INPUT},
+    "rxpsh_beyond_mesh": {"stage": Stage.LOGDER_PLOT, "scope": Scope.INPUT},
+    "functionals_bad_nspin": {"stage": None, "scope": Scope.GLOBAL, "l_rule": "none"},
     # --- errors: anywhere
     "dpnint_interpolation_error": {"stage": None, "scope": None},
+    # Called by the wave solvers, in any stage
+    "match_point_failed": {"stage": None, "scope": None},
+    "outwf_setup_error": {"stage": None, "scope": None},
+    "unrecognized_error": {"stage": None, "scope": None},
     "fortran_runtime_error": {"stage": None, "scope": None},
 }
 
 _DEFINITIONS: dict[tuple[Level, str], dict] = {
     **{(Level.WARNING, d["name"]): d for d in WARNINGS},
     **{(Level.ERROR, d["name"]): d for d in ERRORS},
+    (Level.ERROR, UNRECOGNIZED_ERROR["name"]): UNRECOGNIZED_ERROR,
 }
 _PATTERNS: dict[tuple[Level, str], re.Pattern] = {
     key: re.compile(d["pattern"]) for key, d in _DEFINITIONS.items()
@@ -377,8 +422,41 @@ def attribute_messages(parser: "OncvpspTextParser") -> list[OncvpspMessage]:
     return sorted(messages, key=lambda m: m.line_numbers[0])
 
 
+def _last_unrecognized_error(parser: "OncvpspTextParser") -> OncvpspMessage | None:
+    """The last `<routine>: ERROR ...` line which is not part of a recognized message, as an
+    `unrecognized_error` attributed by its position (`None` if there is none)."""
+    lines = parser.raw_lines
+    known = {i for m in parser.warnings + parser.errors for i in m["line_numbers"]}
+    pattern = _PATTERNS[(Level.ERROR, UNRECOGNIZED_ERROR["name"])]
+    for i in range(len(lines) - 1, -1, -1):
+        if i + 1 in known or "ERROR" not in lines[i]:
+            continue
+        if match := pattern.search(lines[i]):
+            start, stop = max(0, i - 3), min(len(lines), i + 4)
+            message = {
+                "name": UNRECOGNIZED_ERROR["name"],
+                "line_numbers": [i + 1],
+                "context_lines": lines[start:stop],
+                "context_line_numbers": list(range(start + 1, stop + 1)),
+                "subroutine": match["subroutine"],
+                "description": f"{UNRECOGNIZED_ERROR['description']}: {lines[i].strip()}",
+            }
+            return attribute_message(
+                message,
+                Level.ERROR,
+                lines,
+                parser.line_contexts,
+                _safe_input(parser),
+                _safe_layout(parser),
+            )
+    return None
+
+
 def analyze_failure(parser: "OncvpspTextParser") -> OncvpspFailure | None:
     """Why the run failed, or `None` if ONCVPSP wrote all of its output.
+
+    A run which stops without a recognized error, but after a line of the form
+    `<routine>: ERROR ...`, fails with that line as an `unrecognized_error`.
 
     Error messages in a completed run (e.g. a skipped test configuration, or `rxpsh < rc`) are not
     failures of the pseudization; they remain available via `parser.errors` / `parser.messages`.
@@ -389,6 +467,8 @@ def analyze_failure(parser: "OncvpspTextParser") -> OncvpspFailure | None:
     contexts = parser.line_contexts
     last = contexts[-1] if contexts else LineContext()
     errors = [m for m in attribute_messages(parser) if m.level == Level.ERROR]
+    if not errors and (unrecognized := _last_unrecognized_error(parser)) is not None:
+        errors = [unrecognized]
     if errors:
         primary = errors[0]
     else:

@@ -100,10 +100,10 @@ Exceptions:
 | `missing_plot_data` | `missing_plot_data` | `list[str]` | Non-empty only for an incomplete run. Possible entries: `DATA FOR PLOTTING`, `unscreened_semilocal_potentials`, `charge_densities`, `wavefunctions`, `convergence_profiles`, `log_derivatives`, `gnuplot_script`. |
 | `stage` | `stage` | `"ae"`, `"ps"` or `None` | `"ae"` or `"ps"` only for the split executables of azadoks/oncvpsp (`oncvpsp*_ae.x`, `oncvpsp*_ps.x`); `None` for the whole program. |
 | `ae_data_file` | `ae_data_file` | `str \| None` | All-electron stage only. |
-| `errors` | `errors` | `list[dict]` | When errors are printed. Each dict has the keys of `OncvpspOutputError` (above). Matched against the 62 definitions in `ERRORS`. |
-| `warnings` | `warnings` | `list[dict]` | Likewise, against the 19 definitions in `WARNINGS`. |
+| `errors` | `errors` | `list[dict]` | When errors are printed. Each dict has the keys of `OncvpspOutputError` (above). Matched against the 75 definitions in `ERRORS`. |
+| `warnings` | `warnings` | `list[dict]` | Likewise, against the 30 definitions in `WARNINGS`. |
 | `messages` | — | `list[OncvpspMessage]` | The warnings and errors in line order, each attributed to a `stage`, `scope`, channel (`l`, `j`, `iproj`, `n`), `config_index` and the input parameters it implicates (`implicated_parameters`, flattened keys such as `pseudopotentials__rc__1`). |
-| `failure` | — | `OncvpspFailure \| None` | `None` for a completed run. Otherwise: the first error (`primary`; a synthetic `incomplete_output` if there is none), all errors, and the last stage and `l` reached. |
+| `failure` | — | `OncvpspFailure \| None` | `None` for a completed run. Otherwise: the first error (`primary`), all errors, and the last stage and `l` reached. A run that stops without a recognized error fails with its last `<routine>: ERROR ...` line as `unrecognized_error`, attributed by its position, or else a synthetic `incomplete_output`. |
 | `last_stage_reached` | — | `Stage` | Always. |
 | `test_configuration_status` | `test_configuration_status` | `list[dict]` | One per test configuration, the reference first (`config_index` 0): `completed`, and the `messages` printed while it was calculated. |
 
@@ -176,6 +176,7 @@ non-relativistic ONCVPSP 4.0.1 executable wrongly says scalar-relativistic.
 | `diagnostic_tests_vkb` | same name | `list[dict]` | All versions. Same fields, but `e_test` (v3) is replaced by `delta_e` (v4, METAPSP); the other is `None`. |
 | `ghosts` | `ghosts` | `list[dict]` | Rows flagged `WARNING - GHOST`: `l`, `j`, `eig`, `ecut`, `sign`, `r_rc` (unbound ghosts only). v3 tests only for bound ghosts and prints no sign; it is reported as `-`. |
 | `bound_ghost_tests` | same name | `list[dict]` | Every row of the bound-ghost tables (v4, METAPSP, later v3): `set` (`+`/`-` for the j-sets of fully-relativistic outputs), `n`, `l`, `eig`, `eig_basis`, `ecut`. |
+| `ghost_basis_cuts` | same name | `list[dict]` | azadoks/oncvpsp, when the ghost test's basis is cut below a barrier state it cannot converge (warning `ghost_barrier_state_not_converged`): `n`, `l`, `e_barrier`, and `ecut`, the energy the ghost test reaches. |
 | `diagnostics` | `diagnostics` | `dict` | azadoks/oncvpsp builds that print the `Begin DIAGNOSTICS` block. The values are at full precision: `ecut_crossings`, `log_derivatives`, `ghost_margins`, `ghost_localization`, `ecut_weighted`, `projector_conditioning`, `test_configurations`, `model_core`, `vloc_cutoff`. A part that is not printed is `[]` or `None`; the docstring lists every field. |
 | `diagnostics_ld_table` | — | `dict[str, np.ndarray]` | The `ld_r`/`ld` lines of the DIAGNOSTICS block as a tidy table, the same as `oncvpsp_ld.x` gives (see below): columns `l`, `ikap`, `r`, `e_ha`, `phase_ae`, `phase_ps`, empty without the block. |
 
