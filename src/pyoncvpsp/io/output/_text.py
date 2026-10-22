@@ -12,6 +12,7 @@ import numpy as np
 
 from pyoncvpsp.channels import ChannelKey, ProjectorKey, j_channels
 from pyoncvpsp.io._utils import fort_float
+from pyoncvpsp.io.ld import ld_table
 from pyoncvpsp.projectors import (
     ProjectorLayout,
     ProjectorSlot,
@@ -2621,6 +2622,15 @@ class OncvpspTextParser:
                 "check": vloc["check"],
             },
         }
+
+    @cached_property
+    def diagnostics_ld_table(self) -> dict[str, np.ndarray]:
+        """The log derivatives of the DIAGNOSTICS block as the tidy table of
+        `pyoncvpsp.io.ld.ld_table`, the form of the output of `oncvpsp_ld.x` (columns `l`, `ikap`,
+        `r`, `e_ha`, `phase_ae`, `phase_ps`; empty if the output has no such block)."""
+        return ld_table(
+            self._get_lines_between("^Begin DIAGNOSTICS$", "^End DIAGNOSTICS$")
+        )
 
     @cached_property
     def plot_data(self) -> dict:

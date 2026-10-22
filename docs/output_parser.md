@@ -177,6 +177,7 @@ non-relativistic ONCVPSP 4.0.1 executable wrongly says scalar-relativistic.
 | `ghosts` | `ghosts` | `list[dict]` | Rows flagged `WARNING - GHOST`: `l`, `j`, `eig`, `ecut`, `sign`, `r_rc` (unbound ghosts only). v3 tests only for bound ghosts and prints no sign; it is reported as `-`. |
 | `bound_ghost_tests` | same name | `list[dict]` | Every row of the bound-ghost tables (v4, METAPSP, later v3): `set` (`+`/`-` for the j-sets of fully-relativistic outputs), `n`, `l`, `eig`, `eig_basis`, `ecut`. |
 | `diagnostics` | `diagnostics` | `dict` | azadoks/oncvpsp builds that print the `Begin DIAGNOSTICS` block. The values are at full precision: `ecut_crossings`, `log_derivatives`, `ghost_margins`, `ghost_localization`, `ecut_weighted`, `projector_conditioning`, `test_configurations`, `model_core`, `vloc_cutoff`. A part that is not printed is `[]` or `None`; the docstring lists every field. |
+| `diagnostics_ld_table` | — | `dict[str, np.ndarray]` | The `ld_r`/`ld` lines of the DIAGNOSTICS block as a tidy table, the same as `oncvpsp_ld.x` gives (see below): columns `l`, `ikap`, `r`, `e_ha`, `phase_ae`, `phase_ps`, empty without the block. |
 
 ## Test configurations
 
@@ -229,6 +230,24 @@ To parse the files themselves, use `pyoncvpsp.io.parse_psp8` and `parse_psml`.
 
 `search` and `findall` first narrow the lines with a literal that every match must contain, so a
 pattern with a long literal is fast.
+
+## `oncvpsp_ld.x`
+
+`oncvpsp_ld.x` (azadoks/oncvpsp) computes the log derivatives at any radii and energies from the
+data files of a split run (`oncvpsp*_ae.x -a`, `oncvpsp*_ps.x -p`). Its output is parsed by
+`pyoncvpsp.io.parse_oncvpsp_ld(text, returncode=None)`. That returns the same table as
+`diagnostics_ld_table`, one row per energy, channel and radius, so one function can take either.
+It raises `OncvpspLdError` for an error line (`<routine>: ERROR ...`), a nonzero `returncode`, or
+an output without log derivatives. `ld_table(lines)` reads the `ld_r`/`ld` lines of any text, and
+`ld_command(ae_file, ps_file, radii=, channels=, energies=, executable=)` builds the command line.
+
+```python
+import subprocess
+from pyoncvpsp.io import ld_command, parse_oncvpsp_ld
+
+run = subprocess.run(ld_command("Si.ae", "Si.ps", radii=[2.5, 3.0]), capture_output=True, text=True)
+table = parse_oncvpsp_ld(run.stdout, run.returncode)
+```
 
 ## Known gaps
 
