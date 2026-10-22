@@ -2422,6 +2422,15 @@ class OncvpspTextParser:
                     each falls to the fraction of its value at rc), max and min (dict: r, rho,
                     of the model core on (0, rc]); else None.
 
+                vloc_cutoff (dict | None): The Fourier convergence of the local potential
+                    (lines `ecut_vloc err ecut` and `vloc_check e`): eresid (np.ndarray, the
+                    levels from 1e-2 down by half decades to 1e-5 that it reaches, Ha per
+                    electron), ecut (np.ndarray, the wave cutoffs at which the tail of
+                    |n(q) V_loc(q)| beyond the density's sphere 2 sqrt(2 ecut), a bound on the
+                    truncation of the local energy of the reference pseudo valence density,
+                    falls to them, Ha) and check (the local energy per electron from the q
+                    grid less that from r space, Ha); else None.
+
             Each ecut_crossings record also has ekin_check (float, line `ekin_check l ikap
             iproj t`): the r-space kinetic energy of the wave less the Fourier one to the
             q_infinity of its curve (Ha), by Parseval the energy above q_infinity that the
@@ -2443,6 +2452,7 @@ class OncvpspTextParser:
         )
         configs: dict[int, dict[str, Any]] = {}
         core: dict[str, Any] | None = None
+        vloc: dict[str, Any] | None = None
 
         def config(index: int) -> dict[str, Any]:
             return configs.setdefault(
@@ -2527,6 +2537,14 @@ class OncvpspTextParser:
                         "weight": float(fields[3]),
                     }
                 )
+            elif tag in ("ecut_vloc", "vloc_check"):
+                if vloc is None:
+                    vloc = {"eresid": [], "ecut": [], "check": None}
+                if tag == "vloc_check":
+                    vloc["check"] = float(fields[0])
+                else:
+                    vloc["eresid"].append(float(fields[0]))
+                    vloc["ecut"].append(float(fields[1]))
             elif tag == "ecut":
                 ell, ikap, iproj = (int(f) for f in fields[:3])
                 key = ProjectorKey(j_channels(ell, relativistic)[ikap - 1], iproj)
@@ -2582,6 +2600,13 @@ class OncvpspTextParser:
             "projector_conditioning": as_records(conditioning),
             "test_configurations": [configs[k] for k in sorted(configs)],
             "model_core": core,
+            "vloc_cutoff": None
+            if vloc is None
+            else {
+                "eresid": np.array(vloc["eresid"]),
+                "ecut": np.array(vloc["ecut"]),
+                "check": vloc["check"],
+            },
         }
 
     @cached_property

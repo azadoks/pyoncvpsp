@@ -543,3 +543,15 @@ def test_diagnostics_full(parse_output):
     old = parse_output("oncvpsp-4.0.1-sr_07_N_opt_diagnostics").diagnostics
     assert old["projector_conditioning"] == old["test_configurations"] == []
     assert old["model_core"] is None
+
+
+def test_diagnostics_vloc_cutoff(parse_output):
+    # azadoks/oncvpsp e7655cd: the cutoffs of the local potential's Fourier convergence at
+    # the table's levels, 1e-2 down by half decades to 1e-5, and the transforms' check
+    vloc = parse_output("oncvpsp-4.0.1-sr_14_Si_vloc_cutoff").diagnostics["vloc_cutoff"]
+    assert vloc["eresid"] == pytest.approx(1e-2 * 10.0 ** (-0.5 * np.arange(7)))
+    assert list(vloc["ecut"]) == sorted(vloc["ecut"])
+    assert vloc["ecut"][0] > 0.0
+    assert abs(vloc["check"]) < 1e-9
+    old = parse_output("oncvpsp-4.0.1-sr_14_Si_diagnostics_full").diagnostics
+    assert old["vloc_cutoff"] is None

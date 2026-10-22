@@ -1079,7 +1079,8 @@
      }
     ]
    }
-  ]
+  ],
+  "vloc_cutoff": null
  },
  "errors": [],
  "ghosts": [],

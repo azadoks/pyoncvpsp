@@ -364,7 +364,8 @@
   ],
   "model_core": null,
   "projector_conditioning": [],
-  "test_configurations": []
+  "test_configurations": [],
+  "vloc_cutoff": null
  },
  "errors": [],
  "ghosts": [],
