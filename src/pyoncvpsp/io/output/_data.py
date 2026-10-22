@@ -172,6 +172,20 @@ WARNINGS: list[dict[str, Any]] = [
         "subroutine": "oncvpsp_mx",
         "description": "First pseudo wavefunction has a node; qcut is reduced (METAPSP).",
     },
+    {
+        "name": "eresid_flat",
+        # azadoks/oncvpsp (branch smooooth): the smallest eigenvalue e1 of E_resid(qcut) in the
+        # null space and |f1| both below 1e-12 Ha, so the optimized wave is set by round-off
+        "pattern": (
+            rf"optimize: WARNING E_resid flat to round-off at qcut, e1, \|f1\|=\s*"
+            rf"(?P<e1>{RE_FLOAT})\s+(?P<f1>{RE_FLOAT})"
+        ),
+        "match_string": "E_resid flat to round-off",
+        "line_count": 2,
+        "subroutine": "optimize",
+        "description": "Residual energy at qcut flat to round-off; the pseudo wave function is not "
+        "determined (wave_regularization).",
+    },
 ]
 
 ERRORS: list[dict[str, Any]] = [

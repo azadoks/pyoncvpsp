@@ -2431,7 +2431,11 @@ class OncvpspTextParser:
                     falls to them, Ha) and check (the local energy per electron from the q
                     grid less that from r space, Ha); else None.
 
-            Each ecut_crossings record also has ekin_check (float, line `ekin_check l ikap
+            Each ecut_crossings record also has, from the line `opt l ikap iproj e reg e1 f1`,
+            eresid_qcut (E_resid at qcut of the optimized wave, Ha), regularization (the
+            term wave_regularization times E_resid at qcut/4, 0 without it), e1 and f1 (the
+            smallest eigenvalue of E_resid(qcut) in the null space and |f1|, Ha: both at
+            round-off, the wave is not determined); and ekin_check (float, line `ekin_check l ikap
             iproj t`): the r-space kinetic energy of the wave less the Fourier one to the
             q_infinity of its curve (Ha), by Parseval the energy above q_infinity that the
             curve leaves out plus the error of the r-space integral, which dominates it.
@@ -2469,7 +2473,14 @@ class OncvpspTextParser:
 
         for line in lines:
             tag, *fields = line.split()
-            if tag == "ekin_check":
+            if tag == "opt":
+                ell, ikap, iproj = (int(f) for f in fields[:3])
+                key = ProjectorKey(j_channels(ell, relativistic)[ikap - 1], iproj)
+                for name, value in zip(
+                    ("eresid_qcut", "regularization", "e1", "f1"), fields[3:7]
+                ):
+                    ecut[key][name] = float(value)
+            elif tag == "ekin_check":
                 ell, ikap, iproj = (int(f) for f in fields[:3])
                 key = ProjectorKey(j_channels(ell, relativistic)[ikap - 1], iproj)
                 ecut[key]["ekin_check"] = float(fields[3])

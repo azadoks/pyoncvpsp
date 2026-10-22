@@ -555,3 +555,18 @@ def test_diagnostics_vloc_cutoff(parse_output):
     assert abs(vloc["check"]) < 1e-9
     old = parse_output("oncvpsp-4.0.1-sr_14_Si_diagnostics_full").diagnostics
     assert old["vloc_cutoff"] is None
+
+
+def test_diagnostics_optimization(parse_output):
+    # azadoks/oncvpsp 9bb82b7: per optimized wave, E_resid at qcut, the regularization's term
+    # and e1 and |f1| of E_resid(qcut) alone; at qcut 22 the l = 0 problem is flat to round-off
+    crossings = parse_output("oncvpsp-4.0.1-sr_07_N_flat").diagnostics["ecut_crossings"]
+    for crossing in crossings:
+        assert crossing["regularization"] > 0.0
+        assert crossing["eresid_qcut"] > 0.0 and crossing["f1"] >= 0.0
+    flat = [c for c in crossings if c["l"] == 0 and c["iproj"] == 1][0]
+    assert flat["e1"] < 1e-12 and flat["f1"] < 1e-12
+    old = parse_output("oncvpsp-4.0.1-sr_14_Si_vloc_cutoff").diagnostics[
+        "ecut_crossings"
+    ]
+    assert all("e1" not in c for c in old)

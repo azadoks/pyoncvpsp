@@ -12,6 +12,11 @@ DEFINITIONS = [*WARNINGS, *ERRORS]
 # Messages as written by the ONCVPSP 4.0.1, 3.3.1 and METAPSP sources, and the definition each
 # should match. Similar messages from different subroutines must be told apart.
 MESSAGES = [
+    # azadoks/oncvpsp
+    (
+        "optimize: WARNING E_resid flat to round-off at qcut, e1, |f1|=  5.88E-19  2.28E-17",
+        "eresid_flat",
+    ),
     # ONCVPSP 4
     (
         "oncvpsp: ERROR all-electron reference atom not converged",

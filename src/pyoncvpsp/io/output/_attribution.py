@@ -79,6 +79,7 @@ ATTRIBUTION: dict[str, dict[str, Any]] = {
     },
     "first_pswf_has_node": {"stage": Stage.SEMILOCAL, "scope": Scope.ELL},
     "first_pswf_has_node_qcut_reduced": {"stage": Stage.SEMILOCAL, "scope": Scope.ELL},
+    "eresid_flat": {"stage": Stage.SEMILOCAL, "scope": Scope.ELL},
     # --- errors: input
     "bad_input": {"stage": Stage.INPUT, "scope": Scope.INPUT},
     "input_rc_nonpositive": {"stage": Stage.INPUT, "scope": Scope.ELL},
