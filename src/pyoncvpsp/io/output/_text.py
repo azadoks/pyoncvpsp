@@ -22,6 +22,7 @@ from pyoncvpsp.io.input._models import OncvpspInput
 from ._data import WARNINGS, ERRORS
 from ._messages import OncvpspFailure, OncvpspMessage, Stage
 from . import _attribution, _sections
+from ._lines import LineIndex
 from ._sections import Block, BlockKind, LineContext
 
 RE_FLOAT: str = r"[+-]?(?:\d+\.\d*|\.\d+|\d+)(?:[eEdD][+-]?\d+)?"
@@ -130,32 +131,35 @@ class OncvpspTextParser:
             else context_window
         )
         patterns = [re.compile(definition["pattern"]) for definition in definitions]
+        # The substring is a fast pre-filter; the pattern distinguishes similar messages
+        hits = sorted(
+            (i, k)
+            for k, (definition, pattern) in enumerate(zip(definitions, patterns))
+            for i in self._raw_index.containing(definition["match_string"])
+            if pattern.search(self._lines[i])
+        )
         errors = []
-        for i, line in enumerate(self._lines):
+        for i, k in hits:
+            definition = definitions[k]
             line_number = i + 1
-            for definition, pattern in zip(definitions, patterns):
-                # The substring check is a fast pre-filter; the pattern distinguishes similar messages
-                if definition["match_string"] in line and pattern.search(line):
-                    line_numbers = range(
-                        line_number, line_number + definition.get("line_count", 1)
-                    )
-                    context_start = max(0, i - _context_window[0])
-                    context_end = min(len(self._lines), i + _context_window[1] + 1)
-                    context_lines = self._lines[context_start:context_end]
-                    context_line_numbers = list(
-                        range(context_start + 1, context_end + 1)
-                    )
-                    warning = {
-                        "line_numbers": list(line_numbers),
-                        "context_lines": context_lines,
-                        "context_line_numbers": context_line_numbers,
-                        "name": definition.get("name", "unknown_error"),
-                        "subroutine": definition.get("subroutine", "Unknown"),
-                        "description": definition.get(
-                            "description", "No description available."
-                        ),
-                    }
-                    errors.append(warning)
+            line_numbers = range(
+                line_number, line_number + definition.get("line_count", 1)
+            )
+            context_start = max(0, i - _context_window[0])
+            context_end = min(len(self._lines), i + _context_window[1] + 1)
+            context_lines = self._lines[context_start:context_end]
+            context_line_numbers = list(range(context_start + 1, context_end + 1))
+            warning = {
+                "line_numbers": list(line_numbers),
+                "context_lines": context_lines,
+                "context_line_numbers": context_line_numbers,
+                "name": definition.get("name", "unknown_error"),
+                "subroutine": definition.get("subroutine", "Unknown"),
+                "description": definition.get(
+                    "description", "No description available."
+                ),
+            }
+            errors.append(warning)
         return errors
 
     def _get_lines_between(
@@ -188,10 +192,7 @@ class OncvpspTextParser:
             tuple[int, re.Match[str]] | None: Tuple of (line index, regex match object) if found, else None.
         """
         regex = re.compile(pattern) if isinstance(pattern, str) else pattern
-        for i in range(start, len(self.clean_lines)):
-            if match := regex.search(self.clean_lines[i]):
-                return i, match
-        return None
+        return next(self._clean_index.finditer(regex, start), None)
 
     def findall(
         self, pattern: str | re.Pattern[str], start: int = 0, stop: int = -1
@@ -208,11 +209,7 @@ class OncvpspTextParser:
         """
         regex = re.compile(pattern) if isinstance(pattern, str) else pattern
         stop = min(stop, len(self.clean_lines)) if stop >= 0 else len(self.clean_lines)
-        matches = []
-        for i in range(start, stop):
-            if match := regex.search(self.clean_lines[i]):
-                matches.append((i, match))
-        return matches
+        return list(self._clean_index.finditer(regex, start, stop))
 
     @cached_property
     def warnings(self) -> list[dict]:
@@ -397,6 +394,16 @@ class OncvpspTextParser:
             for i, line in enumerate(self._lines)
             if i not in self._message_line_indices
         ]
+
+    @cached_property
+    def _raw_index(self) -> LineIndex:
+        """Index of `raw_lines`, to find the lines containing a substring."""
+        return LineIndex(self._lines)
+
+    @cached_property
+    def _clean_index(self) -> LineIndex:
+        """Index of `clean_lines`, to find the lines containing a substring."""
+        return LineIndex(self.clean_lines)
 
     @cached_property
     def line_contexts(self) -> list[LineContext]:
@@ -697,13 +704,13 @@ class OncvpspTextParser:
         unresolved = [slot for slot in self.projector_layout if not slot.is_valence]
 
         def match_float(pattern: re.Pattern[str], i: int, group: str) -> float | None:
-            if i < len(self._lines) and (match := re.match(pattern, self._lines[i])):
+            if i < len(self._lines) and (match := pattern.match(self._lines[i])):
                 return float(match.group(group))
             return None
 
         def renormalization(i: int) -> re.Match[str] | None:
             for k in range(i + 1, min(i + 6, len(self._lines))):
-                if match := re.match(renormalization_pattern, self._lines[k]):
+                if match := renormalization_pattern.match(self._lines[k]):
                     return match
             return None
 
@@ -725,7 +732,7 @@ class OncvpspTextParser:
         # Localized bound state warnings are removed from `clean_lines`, so search the raw lines
         for i, line in enumerate(self._lines):
             solvers = None
-            if match := re.match(wellstate_pattern, line):
+            if match := wellstate_pattern.match(line):
                 ell = int(match.group("ell"))
                 kappa = int(match.group("kappa")) if match.group("kappa") else None
                 state = {
@@ -735,7 +742,7 @@ class OncvpspTextParser:
                     "asymptotic_potential": match_float(ap_pattern, i + 2, "ap"),
                     "half_point_radius": match_float(hpr_pattern, i + 3, "hpr"),
                 }
-            elif match := re.match(localized_pattern, line):
+            elif match := localized_pattern.match(line):
                 ell = int(match.group("ell"))
                 # Only reported for the j = l + 1/2 (kappa = -(l + 1)) state if relativistic
                 kappa = -(ell + 1) if self.is_relativistic else None
@@ -744,7 +751,7 @@ class OncvpspTextParser:
                     "is_bound": True,
                     "eig_ae": match_float(localized_eig_pattern, i + 1, "eig"),
                 }
-            elif match := re.search(negative_energy_pattern, line):
+            elif match := negative_energy_pattern.search(line):
                 ell = int(match.group("ell"))
                 renorm = renormalization(i)
                 kappa = int(renorm.group("kappa")) if renorm else None
@@ -753,7 +760,7 @@ class OncvpspTextParser:
                     "is_bound": True,
                     "eig_ae": match_float(negative_energy_eig_pattern, i + 1, "eig"),
                 }
-            elif re.match(second_projector_pattern, line):
+            elif second_projector_pattern.match(line):
                 renorm = renormalization(i)
                 if renorm:
                     ell, kappa = int(renorm.group("ell")), int(renorm.group("kappa"))
@@ -1692,7 +1699,7 @@ class OncvpspTextParser:
         for block, start, stop in self._blocks(BlockKind.TEST_CONFIG):
             test_configuration: list[dict] = []
             for line in self.clean_lines[start:stop]:
-                if config_match := re.match(pattern, line):
+                if config_match := pattern.match(line):
                     enn = int(config_match.group("enn"))
                     ell = int(config_match.group("ell"))
                     kappa = (
@@ -2051,7 +2058,7 @@ class OncvpspTextParser:
             first_ln, first_match = block[0]
             header_line: str = self.clean_lines[first_ln - 2]
             is_bound: bool | None = None
-            if header_match := re.match(header_pattern, header_line):
+            if header_match := header_pattern.match(header_line):
                 if self.program_information["version"].startswith("4"):
                     is_bound = True
                 block_data["n"] = int(header_match.group("enn"))
@@ -2066,7 +2073,7 @@ class OncvpspTextParser:
                     raise RuntimeError(
                         f"Failed to infer projector index for ONCVPSP v3 from ell={ell} in header line: '{header_line}'"
                     )
-            elif header_match := re.match(v4_scattering_header_pattern, header_line):
+            elif header_match := v4_scattering_header_pattern.match(header_line):
                 is_bound = False
                 ell = int(header_match.group("ell"))
                 iproj = int(header_match.group("iproj"))

@@ -12,6 +12,7 @@ and a projector as `l`, `j` and `iproj`.
 
 from dataclasses import dataclass
 from fractions import Fraction
+from functools import lru_cache
 from typing import Any, Mapping
 
 HALF = Fraction(1, 2)
@@ -54,6 +55,7 @@ class ChannelKey:
         return channel
 
     @classmethod
+    @lru_cache(maxsize=None)  # one call per plot line; channels are immutable
     def from_plot_marker(cls, l: int, marker: str, relativistic: bool) -> "ChannelKey":  # noqa: E741
         """Channel of a plot line, whose marker column is `-` for `j = l + 1/2` (and for `l = 0`)
         and blank for `j = l - 1/2` in fully-relativistic output."""

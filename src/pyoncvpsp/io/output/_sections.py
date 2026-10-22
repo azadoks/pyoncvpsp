@@ -128,6 +128,15 @@ _RE = {
     ),
 }
 
+# Any of the markers above (named groups dropped, as they repeat): a line it does not match changes
+# no context, so the markers need not be tried one by one on it
+_RE_ANY = re.compile(
+    "|".join(
+        "(?:" + re.sub(r"\(\?P<\w+>", "(?:", pattern.pattern) + ")"
+        for pattern in _RE.values()
+    )
+)
+
 
 def line_contexts(lines: list[str]) -> list[LineContext]:
     """Context of every line of the output (the state *after* processing the line's own markers)."""
@@ -135,6 +144,9 @@ def line_contexts(lines: list[str]) -> list[LineContext]:
     contexts: list[LineContext] = []
     seen_test_config_echo = False
     for i, line in enumerate(lines):
+        if not _RE_ANY.match(line):
+            contexts.append(ctx)
+            continue
         if ctx.stage == Stage.INPUT:
             if _RE["test_config_echo"].match(line):
                 seen_test_config_echo = True
