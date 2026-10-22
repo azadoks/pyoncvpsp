@@ -42,7 +42,9 @@ def required_literals(regex: re.Pattern[str]) -> frozenset[str]:
     return _sequence_literals(_sre_parser, tree)
 
 
-def _sequence_literals(sre_parser: Any, items) -> frozenset[str]:
+def _sequence_literals(
+    sre_parser: Any, items: Iterable[tuple[Any, Any]]
+) -> frozenset[str]:
     literal, subpattern = sre_parser.LITERAL, sre_parser.SUBPATTERN
     branch, ignorecase = sre_parser.BRANCH, sre_parser.SRE_FLAG_IGNORECASE
     candidates: list[frozenset[str]] = []
@@ -53,7 +55,7 @@ def _sequence_literals(sre_parser: Any, items) -> frozenset[str]:
             candidates.append(frozenset(["".join(current)]))
             current.clear()
 
-    def walk(items) -> None:
+    def walk(items: Iterable[tuple[Any, Any]]) -> None:
         for op, av in items:
             if op is literal:
                 current.append(chr(av))

@@ -561,13 +561,15 @@ class OncvpspTextParser:
             ).model_dump()
         return {}
 
-    def get_reference_quantum_numbers(self, index) -> list[tuple[int, ChannelKey]]:
+    def get_reference_quantum_numbers(
+        self, index: slice
+    ) -> list[tuple[int, ChannelKey]]:
         """Get the states `(n, channel)` of the reference configuration. `index` acts upon the
         reference configuration _as it is written in the input file_, i.e. per l-channel, before
         splitting into j-channels in the fully-relativistic case.
 
         Args:
-            index (int | slice): State ind(ex|ices)
+            index (slice): States, as a slice of the input's reference configuration.
 
         Returns:
             list[tuple[int, ChannelKey]]: States `(n, channel)`.
@@ -944,7 +946,7 @@ class OncvpspTextParser:
     @cached_property
     def optimization_diagnostics(self) -> list[dict]:
         """Consistency tests and parameters printed by `optimize` for each optimized
-        pseudo-wavefunction (ONCVPSP v4; the fields not printed are None).
+        pseudo-wavefunction (all versions; the fields not printed are None).
 
         Returns:
             list[dict]: One per optimized projector, in output order:
@@ -1319,7 +1321,7 @@ class OncvpspTextParser:
         stop = self.search(r"^Pseudoatom total energy", i)
         window = self.clean_lines[i : stop[0] if stop else len(self.clean_lines)]
 
-        def find(pattern):
+        def find(pattern: str) -> re.Match[str] | None:
             regex = re.compile(pattern)
             for line in window:
                 if match := regex.search(line):
