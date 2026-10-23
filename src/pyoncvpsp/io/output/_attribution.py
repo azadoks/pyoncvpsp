@@ -237,6 +237,8 @@ ATTRIBUTION: dict[str, dict[str, Any]] = {
     "well_norm_space_free_tail": {"stage": Stage.INPUT, "scope": Scope.INPUT},
     # oncvpsp, before the well states of l are solved
     "well_n_below_first_well_state": {"stage": Stage.SEMILOCAL, "scope": Scope.ELL},
+    # oncvpsp, after the cutoff table of l's pseudo-waves
+    "ecut_weight_occupied_channel": {"stage": Stage.SEMILOCAL, "scope": Scope.ELL},
     # --- errors: anywhere
     "dpnint_interpolation_error": {"stage": None, "scope": None},
     # Called by the wave solvers, in any stage

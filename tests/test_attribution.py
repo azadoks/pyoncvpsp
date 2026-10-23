@@ -462,6 +462,14 @@ def test_unrecognized_error_is_not_a_message_of_a_completed_run():
             None,
         ),
         (
+            "oncvpsp: ERROR ecut_weight for l= 1 is for a channel with no occupied state; this "
+            "one has one",
+            "ecut_weight_occupied_channel",
+            Stage.SEMILOCAL,
+            Scope.ELL,
+            1,
+        ),
+        (
             "oncvpsp: ERROR well_n for l= 1 is  3, below the first well state's n,  4",
             "well_n_below_first_well_state",
             Stage.SEMILOCAL,

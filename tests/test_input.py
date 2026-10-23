@@ -736,3 +736,36 @@ def test_model_core_echo_with_wide_fcfact(line, expected):
     )
     core = OncvpspInput.from_dat_string(dat).model_core_charge
     assert {key: getattr(core, key) for key in expected} == pytest.approx(expected)
+
+
+# ecut_weight: the optional fifth column of the projector lines, after well_n (azadoks/oncvpsp
+# 270c1e6); budget_cutoff "max_all", 2 on the icmod line (9ed4066)
+def test_ecut_weight(nitrogen):
+    dat = N_DAT.replace("    1    2    1.50\n", "    1    2    1.50    0    0.3\n")
+    read = OncvpspInput.from_dat_string(dat)
+    assert read.vkb_projectors.ecut_weight == [-1.0, 0.3]
+    assert read.vkb_projectors.well_n is None
+    assert [
+        line.split() for line in read.vkb_projectors.as_dat_string().split("\n")
+    ] == [
+        ["0", "2", "1.50000", "0", "-1.00000"],
+        ["1", "2", "1.50000", "0", "0.30000"],
+    ]
+    assert OncvpspInput.from_dat_string(read.as_dat_string()) == read
+    assert OncvpspInput.from_toml_string(read.as_toml_string()) == read
+    assert toml.loads(read.as_toml_string())["vkb_projectors"]["ecut_weight"] == [
+        -1.0,
+        0.3,
+    ]
+    # all negative is the default
+    assert nitrogen.merge(vkb_projectors={"ecut_weight": [-1.0, -2.0]}) == nitrogen
+    assert "ecut_weight" not in toml.loads(nitrogen.as_toml_string())["vkb_projectors"]
+
+
+def test_budget_cutoff_max_all(nitrogen):
+    core = {"icmod": 6, "fcfact": 0.0, "rcfact": 1e-5, "budget_cutoff": "max_all"}
+    max_all = nitrogen.merge(model_core_charge=core)
+    line = max_all.model_core_charge.as_dat_string().split("\n")[-1].split()
+    assert line[-1] == "2"
+    assert OncvpspInput.from_dat_string(max_all.as_dat_string()) == max_all
+    assert OncvpspInput.from_toml_string(max_all.as_toml_string()) == max_all

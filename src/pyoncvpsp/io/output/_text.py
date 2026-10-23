@@ -1610,8 +1610,10 @@ class OncvpspTextParser:
                 slope_test (float): Slope at rc of pseudo wavefuction / AE wavefunction.
         """
         is_v3 = self.program_information["version"].startswith("3")
+        # anchored: the rows of azadoks/oncvpsp's band cutoffs (3eff290), which follow the tests,
+        # end in numbers too
         pattern = re.compile(
-            r"\s+(?P<ell>\d)(?:\s+(?P<kap>-?\d))?"
+            r"^\s+(?P<ell>\d)(?:\s+(?P<kap>-?\d))?"
             rf"\s+(?P<rcore>{RE_FLOAT})"
             rf"\s+(?P<rmatch>{RE_FLOAT})"
             rf"\s+(?P<e_in>{RE_FLOAT})"
@@ -2493,6 +2495,13 @@ class OncvpspTextParser:
                     truncation of the local energy of the reference pseudo valence density,
                     falls to them, Ha) and check (the local energy per electron from the q
                     grid less that from r space, Ha); else None.
+                band_cutoffs (list[dict]): One per energy of the cutoffs at the valence
+                    energies (azadoks/oncvpsp 3eff290; lines `band_eresid l ikap e eres` and
+                    `band_ecut l ikap e err ecut`), for each channel with no occupied state: the
+                    pseudo scattering state at each energy, normalized to 1 inside rc. l, j, e
+                    (Ha), eresid_qcut (its E_resid at qcut, Ha), eresid (np.ndarray, the levels
+                    from 1e-2 down by decades to 1e-5 that it reaches, Ha) and ecut
+                    (np.ndarray, the cutoffs at which it falls to them, Ha); [] without them.
 
             Each ecut_crossings record also has, from the line `opt l ikap iproj e reg e1 f1`,
             eresid_qcut (E_resid at qcut of the optimized wave, Ha), regularization (the
@@ -2526,6 +2535,21 @@ class OncvpspTextParser:
         configs: dict[int, dict[str, Any]] = {}
         core: dict[str, Any] | None = None
         vloc: dict[str, Any] | None = None
+        band: dict[tuple[ChannelKey, str], dict[str, Any]] = {}
+
+        def band_energy(fields: list[str]) -> dict[str, Any]:
+            # the energy as printed keys the rows of one state
+            channel = j_channels(int(fields[0]), relativistic)[int(fields[1]) - 1]
+            return band.setdefault(
+                (channel, fields[2]),
+                {
+                    **channel.as_dict(),
+                    "e": fort_float(fields[2]),
+                    "eresid_qcut": None,
+                    "eresid": [],
+                    "ecut": [],
+                },
+            )
 
         def config(index: int) -> dict[str, Any]:
             return configs.setdefault(
@@ -2661,6 +2685,12 @@ class OncvpspTextParser:
                         "eig_basis": fort_float(fields[4]),
                     }
                 )
+            elif tag == "band_eresid":
+                band_energy(fields)["eresid_qcut"] = fort_float(fields[3])
+            elif tag == "band_ecut":
+                entry = band_energy(fields)
+                entry["eresid"].append(fort_float(fields[3]))
+                entry["ecut"].append(fort_float(fields[4]))
             elif tag == "ghost_r":
                 ell, ikap = int(fields[0]), int(fields[1])
                 localization.append(
@@ -2699,6 +2729,14 @@ class OncvpspTextParser:
                 "ecut": np.array(vloc["ecut"]),
                 "check": vloc["check"],
             },
+            "band_cutoffs": [
+                {
+                    **entry,
+                    "eresid": np.array(entry["eresid"]),
+                    "ecut": np.array(entry["ecut"]),
+                }
+                for entry in band.values()
+            ],
         }
 
     @cached_property

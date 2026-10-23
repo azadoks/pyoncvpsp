@@ -1046,6 +1046,17 @@ ERRORS += [
         "subroutine": "oncvpsp",
         "description": 'well_norm = "space" with well_tail = "free": the free tail has no finite norm.',
     },
+    {
+        "name": "ecut_weight_occupied_channel",
+        "pattern": (
+            r"oncvpsp: ERROR ecut_weight for l=\s*(?P<l>\d+) is for a channel with no occupied state"
+        ),
+        "match_string": "oncvpsp: ERROR ecut_weight for l=",
+        "line_count": 1,
+        "subroutine": "oncvpsp",
+        "description": "ecut_weight is set for a channel with an occupied valence state; it is for "
+        "the channels with none.",
+    },
 ]
 
 # A line of azadoks/oncvpsp's `<routine>: ERROR ...` form. A run which stops without a recognized

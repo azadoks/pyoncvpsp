@@ -19,6 +19,8 @@ LOGGER: logging.Logger = logging.getLogger(__name__)
 # `well_tail` and `well_norm` (None for that of `well_tail`) by their values on the lmax line
 _WELL_TAILS: tuple[str, ...] = ("well", "free", "confined")
 _WELL_NORMS: tuple[str | None, ...] = (None, "space", "rc")
+# `budget_cutoff` by its value on the icmod line
+_BUDGET_CUTOFFS: tuple[str, ...] = ("max", "weighted", "max_all")
 
 
 class OncvpspAtomInput(BaseModel):  # pylint: disable=too-few-public-methods
@@ -477,20 +479,27 @@ class VKBProjectorInput(BaseModel):  # pylint: disable=too-few-public-methods
             the 2nd (and subsequent) projector(s) if no corresponding occupied bound state exists.
         well_n (int | None): n of the channel's first well state (0 for the default), written as a
             fourth column when not None; see `VKBProjectorsInput.well_n`.
+        ecut_weight (float | None): The channel's weight in the cutoff of the pseudo-waves
+            (negative for the default), written as a fifth column, after `well_n` (0 when None),
+            when not None; see `VKBProjectorsInput.ecut_weight`.
     """
 
     l: Annotated[int, Field(ge=0)]  # noqa: E741
     nproj: Annotated[int, Field(ge=0, le=5)]
     debl: Annotated[float, Field(ge=0.0)] = 0.0
     well_n: Annotated[int | None, Field(ge=0)] = None
+    ecut_weight: float | None = None
 
     def as_dat_string(self, with_comment: bool = False) -> str:
         """String representation of the pseudopotential input in .dat file format."""
         s: str = f"{self.l:>10d} {self.nproj:>10d} {self.debl:>10.5f}"
         head: str = f"# {'l':>8s} {'nproj':>10s} {'debl':>10s}"
-        if self.well_n is not None:
-            s += f" {self.well_n:>10d}"
+        if self.well_n is not None or self.ecut_weight is not None:
+            s += f" {self.well_n or 0:>10d}"
             head += f" {'well_n':>10s}"
+        if self.ecut_weight is not None:
+            s += f" {self.ecut_weight:>10.5f}"
+            head += f" {'ecut_weight':>11s}"
         if with_comment:
             s = f"{head}\n" + s
         return s
@@ -507,12 +516,30 @@ class VKBProjectorsInput(BaseModel):  # pylint: disable=too-few-public-methods
             well state, at least that of ONCVPSP's choice; 0 for its choice, and None for 0 in all
             (azadoks/oncvpsp; `well_n` in `[vkb_projectors]`, or the optional fourth column of the
             projector lines, written for all channels when any is above 0).
+        ecut_weight (list[float] | None): With `icmod in (6, 7)` and `fcfact <= 0`, for each
+            channel with no occupied valence state, the weight of its first pseudo-wave in the
+            cutoff of the pseudo-waves, by default (a negative value) 2(2l+1); 0 leaves the
+            channel out of it. A value of 0 or more for a channel with an occupied state is an
+            error of ONCVPSP. None for the default in all (azadoks/oncvpsp; `ecut_weight` in
+            `[vkb_projectors]`, or the optional fifth column of the projector lines, after
+            `well_n`, written for all channels when any is 0 or more).
     """
 
     l: Annotated[list[int], Field(min_length=1)]  # noqa: E741
     nproj: Annotated[list[int], Field(min_length=1)]
     debl: Annotated[list[float], Field(min_length=1)]
     well_n: list[Annotated[int, Field(ge=0)]] | None = None
+    ecut_weight: list[float] | None = None
+
+    @field_validator("well_n", "ecut_weight", mode="after")
+    @classmethod
+    def _defaults_are_none(cls, value: list | None, info: Any) -> list | None:
+        # 0 is the default of well_n, a negative value that of ecut_weight
+        if value is None:
+            return None
+        if info.field_name == "well_n":
+            return value if any(n > 0 for n in value) else None
+        return value if any(w >= 0.0 for w in value) else None
 
     def __len__(self) -> int:
         return len(self.l)
@@ -522,7 +549,8 @@ class VKBProjectorsInput(BaseModel):  # pylint: disable=too-few-public-methods
             l=self.l[index],
             nproj=self.nproj[index],
             debl=self.debl[index],
-            well_n=self.well_n[index] if self.well_n and any(self.well_n) else None,
+            well_n=self.well_n[index] if self.well_n else None,
+            ecut_weight=self.ecut_weight[index] if self.ecut_weight else None,
         )
 
     def __iter__(self):  # type: ignore
@@ -533,8 +561,12 @@ class VKBProjectorsInput(BaseModel):  # pylint: disable=too-few-public-methods
     def _check(self) -> "VKBProjectorsInput":
         if sorted(self.l) != list(range(max(self.l) + 1)):
             raise ValueError(f"VKB projectors must cover all l from 0 to {max(self.l)}")
-        if self.well_n is not None and len(self.well_n) != len(self.l):
-            raise ValueError("well_n must have one value per VKB projector channel")
+        for name in ("well_n", "ecut_weight"):
+            value = getattr(self, name)
+            if value is not None and len(value) != len(self.l):
+                raise ValueError(
+                    f"{name} must have one value per VKB projector channel"
+                )
         return self
 
     def as_dat_string(self, with_comment: bool = False) -> str:
@@ -594,9 +626,12 @@ class ModelCoreChargeInput(BaseModel):  # pylint: disable=too-few-public-methods
             pseudo-waves: "max", the largest over the pseudo-waves of the cutoff at which each
             one's residual kinetic energy per electron falls to `rcfact` (ONCVPSP's default), or
             "weighted", the cutoff at which their mean weighted by the occupations falls to it
-            (each occupied valence state's occupation, 2(2l+1) for the first wave of a channel
-            with none; azadoks/oncvpsp only). The optional fifth value of the .dat icmod line, 0
-            or 1.
+            (each occupied valence state's occupation, 2(2l+1) or `ecut_weight` for the first
+            wave of a channel with none; azadoks/oncvpsp only), or "max_all", the largest over
+            every pseudo-wave, the well states above the reference energies included. "max" is
+            over the ground-state waves, those with a weight in "weighted", in azadoks/oncvpsp
+            from 9ed4066, and over every wave ("max_all") in ONCVPSP and earlier builds. The
+            optional fifth value of the .dat icmod line, 0, 1 or 2.
         teter_relative (bool): If True, `teter_amp*` and `teter_scale*` specify relative
             ranges for optimizing the Teter parameters. If False, they specify absolute ranges.
         teter_amp_min (None | float): Minimum Teter amplitude for grid search (relative or absolute).
@@ -611,7 +646,7 @@ class ModelCoreChargeInput(BaseModel):  # pylint: disable=too-few-public-methods
     fcfact: Annotated[float, Field()] = 0.0
     rcfact: Annotated[float, Field(ge=0.0)] = 0.0
     slack: Annotated[float, Field(gt=0.0, le=1.0)] = 1.0
-    budget_cutoff: Literal["max", "weighted"] = "max"
+    budget_cutoff: Literal["max", "weighted", "max_all"] = "max"
     teter_relative: Annotated[bool, Field()] = True
     teter_amp_min: None | Annotated[float, Field()] = None
     teter_amp_max: None | Annotated[float, Field()] = None
@@ -655,7 +690,7 @@ class ModelCoreChargeInput(BaseModel):  # pylint: disable=too-few-public-methods
                 rcfact = self.rcfact if self.rcfact > 0.0 else 1.0e-5
                 s = (
                     f" {self.icmod:>10d} {self.fcfact:>10.5f} {rcfact:>12.5e} {self.slack:>10.5f}"
-                    f" {1:>5d}"
+                    f" {_BUDGET_CUTOFFS.index(self.budget_cutoff):>5d}"
                 )
                 if with_comment:
                     s = (
@@ -837,7 +872,7 @@ def _to_oncvpsp_toml(data: dict[str, Any]) -> dict[str, Any]:
     `teter_relative`. The log mesh parameters that are not given are left out, and `[log_mesh]`
     too when none is; so are `c_light` when it is not given, `upf_mesh` when it is 0, and
     `ep_as_given`, `well_onset`, `well_tail`, `wave_regularization` and `well_norm` at their
-    defaults, `well_n` when it is None or 0 for all l, and `budget_cutoff` at "max"."""
+    defaults, `well_n` and `ecut_weight` when None, and `budget_cutoff` at "max"."""
     data = deepcopy(data)
     psps = data["pseudopotentials"]
     for key, default in (
@@ -849,8 +884,9 @@ def _to_oncvpsp_toml(data: dict[str, Any]) -> dict[str, Any]:
     ):
         if psps.get(key, default) == default:
             psps.pop(key, None)
-    if not any(data["vkb_projectors"].get("well_n") or []):
-        data["vkb_projectors"].pop("well_n", None)
+    for key in ("well_n", "ecut_weight"):
+        if data["vkb_projectors"].get(key) is None:
+            data["vkb_projectors"].pop(key, None)
     data["pp_output"] = {"psfile": data["oncvpsp"].pop("psfile")}
     if data["oncvpsp"].get("c_light", 0) is None:
         del data["oncvpsp"]["c_light"]
@@ -1145,10 +1181,11 @@ class OncvpspInput(BaseModel):
         rc5 = float(words[2])
         dvloc0 = float(words[3])
         # VANDERBILT-KLEINMAN-BYLANDER PROJECTORs
-        # nproj, debl, (well_n) (lmax + 1 lines, l's must be in order)
+        # nproj, debl, (well_n, (ecut_weight)) (lmax + 1 lines, l's must be in order)
         nproj: list[int] = [0] * (lmax + 1)
         debl: list[float] = [0.0] * (lmax + 1)
         well_n: list[int] = [0] * (lmax + 1)
+        ecut_weight: list[float] = [-1.0] * (lmax + 1)
         for ell in range(lmax + 1):
             words = next(iter_).split()
             assert ell == int(words[0])
@@ -1156,6 +1193,8 @@ class OncvpspInput(BaseModel):
             debl[ell] = float(words[2])
             if len(words) >= 4:
                 well_n[ell] = int(words[3])
+            if len(words) >= 5:
+                ecut_weight[ell] = float(words[4].lower().replace("d", "e"))
         # MODEL CORE CHARGE
         # icmod, fcfact, (rcfact), (fcfact_min, fcfact_max, fcfact_step, rcfact_min, rcfact_max, rcfact_step)
         words = next(iter_).split()
@@ -1169,8 +1208,8 @@ class OncvpspInput(BaseModel):
         rcfact: float = 0.0 if len(words) < 3 else float(words[2])
         slack: float = float(words[3]) if icmod in (6, 7) and len(words) >= 4 else 1.0
         budget_cutoff = (
-            "weighted"
-            if icmod in (6, 7) and len(words) >= 5 and int(words[4]) == 1
+            _BUDGET_CUTOFFS[int(words[4])]
+            if icmod in (6, 7) and len(words) >= 5
             else "max"
         )
         teter_grid: dict[str, float] = {}
@@ -1269,7 +1308,8 @@ class OncvpspInput(BaseModel):
                 "l": list(range(lmax + 1)),
                 "nproj": nproj,
                 "debl": debl,
-                "well_n": well_n if any(well_n) else None,
+                "well_n": well_n,
+                "ecut_weight": ecut_weight,
             },
             "model_core_charge": {
                 "icmod": icmod,

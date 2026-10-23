@@ -91,6 +91,12 @@ MESSAGES = [
         "tail has no finite norm",
         "well_norm_space_free_tail",
     ),
+    # azadoks/oncvpsp (branch smooooth, 270c1e6)
+    (
+        "oncvpsp: ERROR ecut_weight for l= 1 is for a channel with no occupied state; this one "
+        "has one",
+        "ecut_weight_occupied_channel",
+    ),
     (
         "oncvpsp: ERROR node of the local channel l= 2 all-electron wave near rc, at r=  2.345678",
         "local_channel_ae_node",

@@ -623,3 +623,25 @@ def test_confined_well(parse_output):
     assert parser.messages == []
     hamann = parse_output("oncvpsp-4.0.1-sr_14_Si_well_share")
     assert all(s["wall_radius"] is None for s in hamann.wellstate_metadata)
+
+
+def test_ecut_weight_band_cutoffs(parse_output):
+    # azadoks/oncvpsp 270c1e6 and 3eff290: ecut_weight in the input echo, and the cutoffs at the
+    # valence energies of the d channel, which has no occupied state
+    parser = parse_output("oncvpsp-4.0.1-sr_14_Si_ecut_weight")
+    assert parser.input["vkb_projectors"]["ecut_weight"] == [-1.0, -1.0, 0.3]
+    assert parser.input["vkb_projectors"]["well_n"] is None
+    bands = parser.diagnostics["band_cutoffs"]
+    assert [(b["l"], b["j"]) for b in bands] == [(2, None)] * 3
+    assert [b["e"] for b in bands] == sorted(b["e"] for b in bands)
+    for band in bands:
+        assert band["eresid"] == pytest.approx([1e-2, 1e-3, 1e-4, 1e-5])
+        assert list(band["ecut"]) == sorted(band["ecut"])
+        assert 0.0 < band["eresid_qcut"] < 1e-4
+    # the band rows, which follow the VKB diagnostic tests, are not tests
+    assert {t["l"] for t in parser.diagnostic_tests_vkb} == {0, 1, 2}
+    assert len(parser.diagnostic_tests_vkb) == 6
+    assert (
+        parse_output("oncvpsp-4.0.1-sr_14_Si_confined").diagnostics["band_cutoffs"]
+        == []
+    )

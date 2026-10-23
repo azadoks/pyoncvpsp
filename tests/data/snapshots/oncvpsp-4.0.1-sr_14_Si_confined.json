@@ -147,6 +147,7 @@
   }
  ],
  "diagnostics": {
+  "band_cutoffs": [],
   "ecut_crossings": [
    {
     "e1": 2.3910564101153246e-05,
@@ -851,6 +852,7 @@
     0.75,
     0.75
    ],
+   "ecut_weight": null,
    "l": [
     0,
     1,

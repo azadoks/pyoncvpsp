@@ -136,6 +136,12 @@ def ell_parameters(
         well_n = (input_data or {})["vkb_projectors"]["well_n"][l]
     except (KeyError, IndexError, TypeError):
         pass
+    # the channel's weight in the cutoff of the pseudo-waves, when the input sets it
+    ecut_weight = None
+    try:
+        ecut_weight = (input_data or {})["vkb_projectors"]["ecut_weight"][l]
+    except (KeyError, IndexError, TypeError):
+        pass
     if ep_active:
         keys.append(_key("pseudopotentials", "ep", l))
     if include_vkb:
@@ -145,6 +151,8 @@ def ell_parameters(
             keys.append(_key("vkb_projectors", "debl", l))
         if well_n:
             keys.append(_key("vkb_projectors", "well_n", l))
+        if ecut_weight is not None and ecut_weight >= 0.0:
+            keys.append(_key("vkb_projectors", "ecut_weight", l))
     return keys
 
 
