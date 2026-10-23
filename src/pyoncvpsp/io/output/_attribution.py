@@ -226,6 +226,9 @@ ATTRIBUTION: dict[str, dict[str, Any]] = {
     "input_rxpsh_inside_rc": {"stage": Stage.INPUT, "scope": Scope.INPUT},
     "rxpsh_beyond_mesh": {"stage": Stage.LOGDER_PLOT, "scope": Scope.INPUT},
     "functionals_bad_nspin": {"stage": None, "scope": Scope.GLOBAL, "l_rule": "none"},
+    "wellstate_energy_jump": {"stage": Stage.SEMILOCAL, "scope": Scope.ELL},
+    # `ionic_screening`, after the model core and before the pseudoatom total energy
+    "ionic_valence_lschvkbb_failed": {"stage": Stage.MODEL_CORE, "scope": Scope.ELL},
     # --- errors: anywhere
     "dpnint_interpolation_error": {"stage": None, "scope": None},
     # Called by the wave solvers, in any stage

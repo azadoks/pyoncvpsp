@@ -974,6 +974,27 @@ ERRORS += [
         "subroutine": "functionals",
         "description": "Internal error: the potential array does not match the functional's nspin.",
     },
+    {
+        "name": "wellstate_energy_jump",
+        "pattern": (
+            rf"wellstate: ERROR E\(rwell\) jumps across ep, n=\s*(?P<n>\d+)\s+l=\s*(?P<l>\d+)\s+"
+            rf"E-ep=\s*(?P<e_minus_ep>{RE_FLOAT})"
+        ),
+        "match_string": "wellstate: ERROR E(rwell) jumps across ep",
+        "line_count": 1,
+        "subroutine": "wellstate",
+        "description": "The energy of the well state jumps across the requested energy ep as the "
+        "well radius varies, so no radius gives ep; E-ep is the gap left at the jump.",
+    },
+    {
+        "name": "ionic_valence_lschvkbb_failed",
+        "pattern": r"ionic_valence: ERROR lschvkbb n,l,ierr=\s*(?P<n>\d+)\s+(?P<l>\d+)\s+(?P<ierr>-?\d+)",
+        "match_string": "ionic_valence: ERROR lschvkbb",
+        "line_count": 1,
+        "subroutine": "ionic_valence",
+        "description": "A pseudo valence state could not be solved in the separable potential with "
+        "the ionic tail beyond rcmax.",
+    },
 ]
 
 # A line of azadoks/oncvpsp's `<routine>: ERROR ...` form. A run which stops without a recognized

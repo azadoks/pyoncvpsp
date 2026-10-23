@@ -131,6 +131,14 @@ MESSAGES = [
     ),
     ("read_ae_file: ERROR c_light differs from the input", "ae_file_mismatch"),
     ("ERROR STOP functionals: ERROR bad nspin definition", "functionals_bad_nspin"),
+    (
+        "wellstate: ERROR E(rwell) jumps across ep, n=  5 l=  1 E-ep= -3.98E+00",
+        "wellstate_energy_jump",
+    ),
+    (
+        "ionic_valence: ERROR lschvkbb n,l,ierr=   2   1 100",
+        "ionic_valence_lschvkbb_failed",
+    ),
     # ONCVPSP 4
     (
         "oncvpsp: ERROR all-electron reference atom not converged",

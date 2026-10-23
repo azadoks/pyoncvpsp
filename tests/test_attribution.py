@@ -432,6 +432,20 @@ def test_unrecognized_error_is_not_a_message_of_a_completed_run():
             Scope.GLOBAL,
             None,
         ),
+        (
+            "wellstate: ERROR E(rwell) jumps across ep, n= 12 l=  0 E-ep= -1.08E-01",
+            "wellstate_energy_jump",
+            Stage.SEMILOCAL,
+            Scope.ELL,
+            0,
+        ),
+        (
+            "ionic_valence: ERROR lschvkbb n,l,ierr=   2   1 100",
+            "ionic_valence_lschvkbb_failed",
+            Stage.MODEL_CORE,
+            Scope.ELL,
+            1,
+        ),
     ],
 )
 def test_smooooth_messages_attribution(line, name, stage, scope, l):  # noqa: E741
