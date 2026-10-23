@@ -133,6 +133,25 @@ def test_v4_fully_relativistic_partner_well():
     assert summary(layout, 0, HALF)[1][1] == Solver.WELLSTATE
 
 
+def test_v4_confined_well_n_sets_the_first_wellstate():
+    # azadoks/oncvpsp: well_n is the n of the first wellstate; the next ones follow by one each,
+    # at debl as before
+    inp = make_input(CORE + [(3, 0, 2.0), (3, 1, 2.0)], nc=3, nproj=[2, 3, 2])
+    data = inp.as_dict()
+    data["pseudopotentials"]["well_tail"] = "confined"
+    data["vkb_projectors"]["well_n"] = [0, 5, 0]
+    layout = predict_projector_layout(
+        OncvpspInput.from_dict(data), "ONCVPSP", "4.0.1", relativistic=False
+    )
+    assert summary(layout, 1) == [
+        (3, Solver.BOUND, Energy.VALENCE, 4),
+        (5, Solver.WELLSTATE, Energy.DEBL, None),
+        (6, Solver.WELLSTATE, Energy.DEBL, None),
+    ]
+    assert [s.n for s in layout.channel(ChannelKey(0))] == [3, 4]
+    assert [s.n for s in layout.channel(ChannelKey(2))] == [3, 4]
+
+
 V3 = [("ONCVPSP", "3.3.1"), ("ONCVPSP", "2.1.1")]
 
 

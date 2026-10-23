@@ -133,7 +133,8 @@ def _v4_slots(
     """ONCVPSP 4.0.1 (`oncvpsp.F90:393-449`, `oncvpsp_r.F90:396-533`) and METAPSP
     (`oncvpsp_m.f90`): every valence state of `l` in input order, up to `nproj`; then wellstates, the first at `ep` if no valence state was used, the others at the
     previous energy plus `debl`. The local channel has `nproj = 1`. In fully-relativistic runs,
-    `wellstate` is called for j = l + 1/2 only, and j = l - 1/2 is solved in the same well."""
+    `wellstate` is called for j = l + 1/2 only, and j = l - 1/2 is solved in the same well. With
+    the confined well of azadoks/oncvpsp, `well_n` sets the n of the first wellstate."""
     config = list(inp.reference_configuration)
     l = channel.l  # noqa: E741
     nproj = 1 if _is_local(inp, l) else inp.vkb_projectors.nproj[l]
@@ -154,6 +155,12 @@ def _v4_slots(
             break
     if slots:
         n_next = slots[-1].n + 1
+    # azadoks/oncvpsp, well_tail = "confined": the input's well_n, if set, is the n of the first
+    # wellstate (an error below ONCVPSP's choice); the next ones follow by one each
+    if inp.pseudopotentials.well_tail == "confined" and inp.vkb_projectors.well_n:
+        well_n = inp.vkb_projectors.well_n[inp.vkb_projectors.l.index(l)]
+        if well_n > 0:
+            n_next = well_n
     while len(slots) < nproj:
         slots.append(
             ProjectorSlot(
