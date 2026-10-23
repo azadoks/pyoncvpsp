@@ -679,3 +679,13 @@ def test_free_tail_negative_ep(parse_output):
     assert failure.name == "free_tail_negative_ep"
     assert failure.l == 2
     assert len(failure.primary.line_numbers) == 3
+
+
+def test_modcore_budget_table_mean_unreached(parse_output):
+    # azadoks/oncvpsp fd5aaf0: with budget_cutoff weighted, the weighted mean of the convergence
+    # curves never falls to the error of the budgeted model core
+    failure = parse_output("oncvpsp-4.0.1-sr_N_budget_mean_unreached").failure
+    assert failure is not None
+    assert failure.name == "modcore_budget_table_mean_unreached"
+    assert failure.primary.stage == "model_core"
+    assert float(failure.primary.groups["error"]) == pytest.approx(1e-5)

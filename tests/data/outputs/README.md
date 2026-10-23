@@ -52,6 +52,7 @@ features that no other file in the set covers.
 | `oncvpsp-4.0.1-fr_74_W_ionic_tail.out.gz` | `oncvpspr.x` of the same build on a W input from the oncvpsp test set (sample of the ionic-tail port) | `ionic_tail` fully relativistic |
 | `oncvpsp-4.0.1-sr_N_budget_cap.out.gz` | `oncvpsp.x` of azadoks/oncvpsp a4046c0 on N with rc 3.2, icmod 6, cutoff budget 20 Ha | `budgeted_core:r_core_max` (rc beyond the last radius with core charge) |
 | `oncvpsp-4.0.1-sr_N_budget_too_small.out.gz` | `oncvpsp.x` of azadoks/oncvpsp a4046c0 on N with rc 1.5, icmod 6, cutoff budget 2 Ha | `err:modcore_budget_no_model` |
+| `oncvpsp-4.0.1-sr_N_budget_mean_unreached.out.gz` | `oncvpsp.x` of azadoks/oncvpsp fd5aaf0 (branch `smooooth`, trap preset) on oncvpsp-opt's exploration input `fuzz/batch4/N_unrecognized_error_0.dat` (icmod 6, fcfact -1.5, slack 0.7, budget_cutoff weighted) | `err:modcore_budget_table_mean_unreached` |
 | `oncvpsp-4.0.1-sr_14_Si.out.gz` | data/examples/Si/14_Si.out | `rxpsh:True` |
 | `oncvpsp-4.0.1-sr_I_1582.out.gz` | AiiDA calculation a2/f1/1582-ff21-4760-890f-5a69f1443834 | `warn:icmod4_nm_not_converged` |
 | `oncvpsp-4.0.1-sr_I_f3c1.out.gz` | AiiDA calculation 30/71/f3c1-3044-4a72-b570-e28366a27058 | `err:ps0norm_gt_uunorm` |

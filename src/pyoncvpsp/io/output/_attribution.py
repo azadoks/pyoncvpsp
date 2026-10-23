@@ -208,6 +208,39 @@ ATTRIBUTION: dict[str, dict[str, Any]] = {
         "stage": Stage.MODEL_CORE,
         "scope": Scope.MODEL_CORE,
     },
+    "modcore_budget_table_wave_no_curve": {
+        "stage": Stage.MODEL_CORE,
+        "scope": Scope.MODEL_CORE,
+    },
+    "modcore_budget_table_no_weighted": {
+        "stage": Stage.MODEL_CORE,
+        "scope": Scope.MODEL_CORE,
+    },
+    "modcore_budget_table_mean_unreached": {
+        "stage": Stage.MODEL_CORE,
+        "scope": Scope.MODEL_CORE,
+    },
+    "modcore_budget_table_mean_below": {
+        "stage": Stage.MODEL_CORE,
+        "scope": Scope.MODEL_CORE,
+    },
+    "modcore_budget_table_bracket_lost": {
+        "stage": Stage.MODEL_CORE,
+        "scope": Scope.MODEL_CORE,
+    },
+    "modcore_budget_transform_nodes": {
+        "stage": Stage.MODEL_CORE,
+        "scope": Scope.MODEL_CORE,
+    },
+    "modcore_budget_rs_beyond_table": {
+        "stage": Stage.MODEL_CORE,
+        "scope": Scope.MODEL_CORE,
+    },
+    "modcore_budget_dgglse_failed": {
+        "stage": Stage.MODEL_CORE,
+        "scope": Scope.MODEL_CORE,
+    },
+    "modcore_budget_no_root": {"stage": Stage.MODEL_CORE, "scope": Scope.MODEL_CORE},
     # --- errors: diagnostics
     "ghost_lschpsbar_error": {"stage": Stage.DIAGNOSTICS, "scope": Scope.ELL_AND_LOCAL},
     # --- errors: test configurations (ONCVPSP 4 continues after these; fatal only if incomplete)

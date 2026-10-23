@@ -366,6 +366,39 @@ MESSAGES = [
         "modcore_budget: ERROR stop - ecut beyond    200.00 Ha",
         "modcore_budget_ecut_too_large",
     ),
+    (
+        "modcore_budget_table: ERROR stop - pseudo-wave 3 has a weight and no convergence curve",
+        "modcore_budget_table_wave_no_curve",
+    ),
+    (
+        "modcore_budget_table: ERROR stop - no weighted curves",
+        "modcore_budget_table_no_weighted",
+    ),
+    (
+        "modcore_budget_table: ERROR stop - the weighted mean does not reach  1.00E-05 Ha per electron",
+        "modcore_budget_table_mean_unreached",
+    ),
+    (
+        "modcore_budget_table: ERROR stop - the weighted mean is below  1.00E-05 Ha per electron where the curves start",
+        "modcore_budget_table_mean_below",
+    ),
+    (
+        "modcore_budget_table: ERROR the bracket lost its sign change",
+        "modcore_budget_table_bracket_lost",
+    ),
+    (
+        "modcore_budget: ERROR stop - r_s up to    3.2006 bohr needs more nodes of the transform",
+        "modcore_budget_transform_nodes",
+    ),
+    (
+        "modcore_budget: ERROR stop - r_s beyond the table",
+        "modcore_budget_rs_beyond_table",
+    ),
+    ("modcore_budget: ERROR stop - dgglse info =  -3", "modcore_budget_dgglse_failed"),
+    (
+        "modcore_budget: ERROR stop - no root between  1.234567E+00  2.345678E+00",
+        "modcore_budget_no_root",
+    ),
     ("run_config: WARNING  for AE atom,", "ae_atom_no_solution"),
     (
         "run_config: ERROR for fully non-local PS atom,",

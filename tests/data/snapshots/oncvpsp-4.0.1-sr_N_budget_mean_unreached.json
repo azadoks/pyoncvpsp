@@ -1,0 +1,592 @@
+{
+ "ae_data_file": null,
+ "ae_reference_energies": {
+  "iterations": 20,
+  "screening_residual": 1.99e-11,
+  "terms": {
+   "electron_nucleus": -128.1115892458,
+   "exchange_correlation": -6.5663652636,
+   "hartree": 25.8815621463,
+   "kinetic": 54.3433518319,
+   "total": -54.4530405311
+  },
+  "total_energy": -54.4530405
+ },
+ "bound_ghost_tests": [],
+ "budgeted_core": null,
+ "completed": false,
+ "coulomb_tail": null,
+ "d2exc": {},
+ "d2exc_rmse": null,
+ "diagnostic_tests_semilocal": [],
+ "diagnostic_tests_vkb": [],
+ "diagnostics": {},
+ "errors": [
+  {
+   "context_line_numbers": [
+    224,
+    225,
+    226,
+    227,
+    228
+   ],
+   "context_lines": [
+    "",
+    "  Orthonormal projector coefficients -1.3967E+01 -3.8344E+00",
+    "",
+    "modcore_budget_table: ERROR stop - the weighted mean does not reach  1.00E-05 Ha per electron",
+    ""
+   ],
+   "description": "The weighted mean of the pseudo-waves' convergence curves (budget_cutoff weighted) does not fall to the error of the budgeted model core within the curves.",
+   "line_numbers": [
+    227
+   ],
+   "name": "modcore_budget_table_mean_unreached",
+   "subroutine": "modcore_budget_table"
+  }
+ ],
+ "ghost_basis_cuts": [],
+ "ghosts": [],
+ "gnuplot_script": "",
+ "input": {
+  "local_potential": {
+   "dvloc0": 0.0,
+   "lloc": 4,
+   "lpopt": 5,
+   "rcloc": 1.09746
+  },
+  "log_derivative_analysis": {
+   "depsh": 0.02,
+   "epsh1": -2.18,
+   "epsh2": 6.24,
+   "rxpsh": 2.69695
+  },
+  "log_mesh": {
+   "amesh": 1.004,
+   "rmax": 45.0,
+   "rr1": 7.1428571428571e-05
+  },
+  "model_core_charge": {
+   "budget_cutoff": "weighted",
+   "fcfact": -1.5,
+   "icmod": 6,
+   "rcfact": 1e-05,
+   "slack": 0.7,
+   "teter_amp_max": null,
+   "teter_amp_min": null,
+   "teter_amp_step": null,
+   "teter_relative": true,
+   "teter_scale_max": null,
+   "teter_scale_min": null,
+   "teter_scale_step": null
+  },
+  "oncvpsp": {
+   "atsym": "N",
+   "c_light": null,
+   "iexc": -101130,
+   "nc": 1,
+   "nv": 2,
+   "psfile": "upf",
+   "z": 7.0
+  },
+  "output_grid": {
+   "drl": 0.01,
+   "rlmax": 6.0,
+   "upf_mesh": 750
+  },
+  "pseudopotentials": {
+   "ep": [
+    0.0,
+    0.0
+   ],
+   "ep_as_given": true,
+   "l": [
+    0,
+    1
+   ],
+   "lmax": 1,
+   "nbas": [
+    8,
+    8
+   ],
+   "ncon": [
+    4,
+    4
+   ],
+   "qcut": [
+    3.70374,
+    3.84683
+   ],
+   "rc": [
+    2.6802,
+    1.09952
+   ],
+   "wave_regularization": 1e-10,
+   "well_norm": null,
+   "well_onset": null,
+   "well_tail": "free"
+  },
+  "reference_configuration": {
+   "f": [
+    2.0,
+    2.0,
+    3.0
+   ],
+   "l": [
+    0,
+    0,
+    1
+   ],
+   "n": [
+    1,
+    2,
+    2
+   ]
+  },
+  "test_configurations": [
+   {
+    "f": [
+     2.0,
+     2.0
+    ],
+    "l": [
+     0,
+     1
+    ],
+    "n": [
+     2,
+     2
+    ]
+   },
+   {
+    "f": [
+     1.0,
+     4.0
+    ],
+    "l": [
+     0,
+     1
+    ],
+    "n": [
+     2,
+     2
+    ]
+   }
+  ],
+  "vkb_projectors": {
+   "debl": [
+    6.821,
+    4.15617
+   ],
+   "ecut_weight": null,
+   "l": [
+    0,
+    1
+   ],
+   "nproj": [
+    2,
+    2
+   ],
+   "well_n": null
+  }
+ },
+ "ionic_tail": null,
+ "localized_bound_states": [],
+ "missing_plot_data": [
+  "DATA FOR PLOTTING"
+ ],
+ "optimization_diagnostics": [
+  {
+   "constraints": {
+    "aewf": {
+     "abs_sum": 0.6852374299999999,
+     "nan": 0,
+     "shape": [
+      4
+     ],
+     "sum": -0.11582957000000002
+    },
+    "diff": {
+     "abs_sum": 0.0,
+     "nan": 0,
+     "shape": [
+      4
+     ],
+     "sum": 0.0
+    },
+    "pswf": {
+     "abs_sum": 0.6852374299999999,
+     "nan": 0,
+     "shape": [
+      4
+     ],
+     "sum": -0.11582957000000002
+    }
+   },
+   "e_inf": 201.1,
+   "ecut": 6.86,
+   "iproj": 1,
+   "j": null,
+   "ke_fourier": 0.5633275,
+   "ke_ratio": 1.0,
+   "ke_rspace": 0.5633275,
+   "l": 0,
+   "norm_fraction": 0.968416,
+   "q_infinity_ke": 20.06,
+   "qcut": 3.7,
+   "residual_ke_error": 1.36e-05,
+   "v_ae_rc": -0.22119006,
+   "v_diff_rc": -2.03e-05,
+   "v_ps_rc": -0.22116976
+  },
+  {
+   "constraints": {
+    "aewf": {
+     "abs_sum": 16.94884448,
+     "nan": 0,
+     "shape": [
+      5
+     ],
+     "sum": -14.40525636
+    },
+    "diff": {
+     "abs_sum": 0.0,
+     "nan": 0,
+     "shape": [
+      5
+     ],
+     "sum": 0.0
+    },
+    "pswf": {
+     "abs_sum": 16.94884448,
+     "nan": 0,
+     "shape": [
+      5
+     ],
+     "sum": -14.40525636
+    }
+   },
+   "e_inf": 201.5,
+   "ecut": 6.86,
+   "iproj": 2,
+   "j": null,
+   "ke_fourier": null,
+   "ke_ratio": null,
+   "ke_rspace": null,
+   "l": 0,
+   "norm_fraction": 1.0,
+   "q_infinity_ke": 20.07,
+   "qcut": 3.7,
+   "residual_ke_error": 0.0567,
+   "v_ae_rc": -0.22119006,
+   "v_diff_rc": 0.00827,
+   "v_ps_rc": -0.22946324
+  },
+  {
+   "constraints": {
+    "aewf": {
+     "abs_sum": 2.5799969899999997,
+     "nan": 0,
+     "shape": [
+      4
+     ],
+     "sum": 1.0793485699999998
+    },
+    "diff": {
+     "abs_sum": 0.0,
+     "nan": 0,
+     "shape": [
+      4
+     ],
+     "sum": 0.0
+    },
+    "pswf": {
+     "abs_sum": 2.5799969899999997,
+     "nan": 0,
+     "shape": [
+      4
+     ],
+     "sum": 1.0793485699999998
+    }
+   },
+   "e_inf": 586.0,
+   "ecut": 7.4,
+   "iproj": 1,
+   "j": null,
+   "ke_fourier": 1.67797152,
+   "ke_ratio": 0.99999982,
+   "ke_rspace": 1.67797182,
+   "l": 1,
+   "norm_fraction": 0.38394,
+   "q_infinity_ke": 34.23,
+   "qcut": 3.85,
+   "residual_ke_error": 0.285,
+   "v_ae_rc": -1.61220796,
+   "v_diff_rc": -0.00023,
+   "v_ps_rc": -1.6119782
+  },
+  {
+   "constraints": {
+    "aewf": {
+     "abs_sum": 19.49591799,
+     "nan": 0,
+     "shape": [
+      5
+     ],
+     "sum": 11.276232669999999
+    },
+    "diff": {
+     "abs_sum": 0.0,
+     "nan": 0,
+     "shape": [
+      5
+     ],
+     "sum": 0.0
+    },
+    "pswf": {
+     "abs_sum": 19.49591799,
+     "nan": 0,
+     "shape": [
+      5
+     ],
+     "sum": 11.276232669999999
+    }
+   },
+   "e_inf": 798.1,
+   "ecut": 7.4,
+   "iproj": 2,
+   "j": null,
+   "ke_fourier": null,
+   "ke_ratio": null,
+   "ke_rspace": null,
+   "l": 1,
+   "norm_fraction": 1.0,
+   "q_infinity_ke": 39.95,
+   "qcut": 3.85,
+   "residual_ke_error": 8.36,
+   "v_ae_rc": -1.61220796,
+   "v_diff_rc": 0.00164,
+   "v_ps_rc": -1.61384688
+  }
+ ],
+ "plot_data": {
+  "charge_densities": {},
+  "convergence_profiles": [
+   {
+    "ecut": {
+     "abs_sum": 21.259999999999998,
+     "nan": 0,
+     "shape": [
+      4
+     ],
+     "sum": 21.259999999999998
+    },
+    "eresid": {
+     "abs_sum": 0.011109999999999998,
+     "nan": 0,
+     "shape": [
+      4
+     ],
+     "sum": 0.011109999999999998
+    },
+    "iproj": 1,
+    "j": null,
+    "l": 0
+   },
+   {
+    "ecut": {
+     "abs_sum": 0.0,
+     "nan": 0,
+     "shape": [
+      0
+     ],
+     "sum": 0.0
+    },
+    "eresid": {
+     "abs_sum": 0.0,
+     "nan": 0,
+     "shape": [
+      0
+     ],
+     "sum": 0.0
+    },
+    "iproj": 2,
+    "j": null,
+    "l": 0
+   },
+   {
+    "ecut": {
+     "abs_sum": 709.12,
+     "nan": 0,
+     "shape": [
+      4
+     ],
+     "sum": 709.12
+    },
+    "eresid": {
+     "abs_sum": 0.011109999999999998,
+     "nan": 0,
+     "shape": [
+      4
+     ],
+     "sum": 0.011109999999999998
+    },
+    "iproj": 1,
+    "j": null,
+    "l": 1
+   },
+   {
+    "ecut": {
+     "abs_sum": 923.92,
+     "nan": 0,
+     "shape": [
+      4
+     ],
+     "sum": 923.92
+    },
+    "eresid": {
+     "abs_sum": 0.011109999999999998,
+     "nan": 0,
+     "shape": [
+      4
+     ],
+     "sum": 0.011109999999999998
+    },
+    "iproj": 2,
+    "j": null,
+    "l": 1
+   }
+  ],
+  "kinetic_energy_densities": {},
+  "kinetic_energy_potentials": {},
+  "local_potential": {
+   "dvloc0": 0.0,
+   "lloc": 4,
+   "lpopt": 5,
+   "rcloc": 1.09746
+  },
+  "log_derivatives": [],
+  "optimized_pseudo_wavefunctions": [],
+  "semilocal_potentials": [],
+  "unscreened_semilocal_potentials": [],
+  "vkb_projectors": [],
+  "wavefunctions": []
+ },
+ "program_information": {
+  "build": {
+   "commit": "fd5aaf089cabd7a68d0426dfd6fb8d063468138d",
+   "compiled": "2026-10-23T17:14:23Z",
+   "executable": "oncvpsp.x",
+   "relativistic_treatment": "scalar-relativistic",
+   "source": "clean",
+   "source_diff": null
+  },
+  "date": "03/01/2019",
+  "program": "ONCVPSP",
+  "relativistic_treatment": "scalar-relativistic",
+  "version": "4.0.1"
+ },
+ "pseudoatom_total_energy": null,
+ "psml": "",
+ "psp8": "",
+ "reference_configuration": [
+  {
+   "eig_ae": -14.138224,
+   "f": 2.0,
+   "j": null,
+   "l": 0,
+   "n": 1
+  },
+  {
+   "eig_ae": -0.68290684,
+   "f": 2.0,
+   "j": null,
+   "l": 0,
+   "n": 2
+  },
+  {
+   "eig_ae": -0.2605478,
+   "f": 3.0,
+   "j": null,
+   "l": 1,
+   "n": 2
+  }
+ ],
+ "stage": null,
+ "test_configuration_energies": [],
+ "test_configuration_status": [],
+ "test_configurations": [],
+ "teter_coarse_grid": {},
+ "teter_parameters": {},
+ "upf": "",
+ "vkb_hermiticity_errors": [
+  {
+   "hermiticity_error": 0.00052006,
+   "iproj": 1,
+   "j": null,
+   "jproj": 2,
+   "l": 0
+  },
+  {
+   "hermiticity_error": -0.00060655,
+   "iproj": 1,
+   "j": null,
+   "jproj": 2,
+   "l": 1
+  }
+ ],
+ "vkb_scalar_projector_coefficients": [],
+ "vkb_spin_orbit_projector_coefficients": [],
+ "warnings": [
+  {
+   "context_line_numbers": [
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24
+   ],
+   "context_lines": [
+    "LXC     [1] J. P. Perdew, K. Burke, and M. Ernzerhof, Phys. Rev. Lett. 77, 3865 (1996)",
+    "",
+    "",
+    "ae_converged: WARNING scf stopped on the round-off floor of the residual, res=  1.9879E-11, tolres=  1.0000E-11",
+    "# ATOM AND REFERENCE CONFIGURATION",
+    "# atsym  z   nc   nv     iexc    psfile",
+    "  N  7.00    1    2 -101130      upf"
+   ],
+   "description": "All-electron self-consistency stopped on the round-off floor of the residual, above its tolerance (benign).",
+   "line_numbers": [
+    21
+   ],
+   "name": "ae_scf_residual_floor",
+   "subroutine": "ae_converged"
+  }
+ ],
+ "wellstate_metadata": [
+  {
+   "asymptotic_potential": null,
+   "eig_ae": 6.1381,
+   "energy_guess": null,
+   "half_point_radius": null,
+   "iproj": 2,
+   "j": null,
+   "l": 0,
+   "n": 3,
+   "wall_radius": null
+  },
+  {
+   "asymptotic_potential": null,
+   "eig_ae": 3.8956,
+   "energy_guess": null,
+   "half_point_radius": null,
+   "iproj": 2,
+   "j": null,
+   "l": 1,
+   "n": 3,
+   "wall_radius": null
+  }
+ ]
+}
