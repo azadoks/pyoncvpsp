@@ -6,7 +6,6 @@ from math import floor
 import re
 from os import PathLike
 from typing import Annotated, Any, Iterator, Literal, TextIO
-import warnings
 
 import numpy as np
 import toml
@@ -700,9 +699,6 @@ class LogDerivativeInput(BaseModel):  # pylint: disable=too-few-public-methods
             if with_comment:
                 s = f"# {'epsh1':>8s} {'epsh2':>10s} {'depsh':>10}\n" + s
         else:
-            warnings.warn(
-                "`rxpsh` is not supported by all versions of ONCVPSP! Check that expected behavior is correct."
-            )
             s = f"{self.epsh1:>10.5f} {self.epsh2:>10.5f} {self.depsh:>10.5f} {self.rxpsh:>10.5f}"
             if with_comment:
                 s = (

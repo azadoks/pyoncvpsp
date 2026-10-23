@@ -142,7 +142,6 @@ def test_completed_output_consistency(completed_output_name, parse_output):
     assert len(keys) == len(set(keys))
 
 
-@pytest.mark.filterwarnings("ignore:`rxpsh` is not supported")
 def test_input_round_trip(output_name, parse_output):
     parser = parse_output(output_name)
     if not parser.input:

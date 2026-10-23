@@ -86,6 +86,14 @@ def test_from_dat_string(nitrogen):
     assert nitrogen.log_derivative_analysis.rxpsh is None
 
 
+def test_rxpsh_no_warning(nitrogen, recwarn):
+    """azadoks/oncvpsp reads rxpsh (and checks it against the core radii): writing it warns of nothing."""
+    nitrogen.log_derivative_analysis.rxpsh = 2.5
+    text = nitrogen.as_dat_string()
+    assert not recwarn.list
+    assert OncvpspInput.from_dat_string(text).log_derivative_analysis.rxpsh == 2.5
+
+
 @pytest.mark.parametrize("with_comment", [True, False])
 def test_dat_round_trip(nitrogen, with_comment):
     assert (

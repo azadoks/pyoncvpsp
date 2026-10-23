@@ -16,6 +16,8 @@ import re
 
 import numpy as np
 
+from pyoncvpsp.io._utils import fort_float
+
 __all__ = ("LD_COLUMNS", "OncvpspLdError", "ld_command", "ld_table", "parse_oncvpsp_ld")
 
 # Columns of the table of `ld_table`
@@ -51,12 +53,19 @@ def ld_table(lines: Iterable[str]) -> dict[str, np.ndarray]:
     for line in lines:
         tag, *fields = line.split() or [""]
         if tag == "ld_r":
-            block = (int(fields[0]), int(fields[1]), float(fields[2]))
+            block = (int(fields[0]), int(fields[1]), fort_float(fields[2]))
         elif tag == "ld":
             ell, ikap = int(fields[0]), int(fields[1])
             if block is None or block[:2] != (ell, ikap):
                 raise ValueError(f"`ld` line outside its `ld_r` block: {line!r}")
-            rows.append((*block, float(fields[2]), float(fields[3]), float(fields[4])))
+            rows.append(
+                (
+                    *block,
+                    fort_float(fields[2]),
+                    fort_float(fields[3]),
+                    fort_float(fields[4]),
+                )
+            )
     columns = list(zip(*rows)) if rows else [()] * len(LD_COLUMNS)
     return {
         name: np.array(values, dtype=int if name in ("l", "ikap") else float)

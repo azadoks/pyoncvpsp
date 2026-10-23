@@ -7,7 +7,9 @@ The wording of many messages differs between ONCVPSP v3, v4, and METAPSP; the pa
 
 from typing import Any
 
-RE_FLOAT: str = r"[+-]?(?:\d+\.\d*|\.\d+|\d+)(?:[eEdD][+-]?\d+)?"
+# the exponent with a letter, or of 3 digits without one (an E or D edit descriptor with a 2-digit exponent field
+# at |exponent| > 99: "2.1869480064996404-119"; `fort_float` reads both)
+RE_FLOAT: str = r"[+-]?(?:\d+\.\d*|\.\d+|\d+)(?:[eEdD][+-]?\d+|[+-]\d{3}(?![\d.]))?"
 
 WARNINGS: list[dict[str, Any]] = [
     {

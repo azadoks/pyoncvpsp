@@ -16,6 +16,8 @@ from xml.etree import ElementTree
 
 import numpy as np
 
+from pyoncvpsp.io._utils import fort_float
+
 __all__ = ("parse_psml",)
 
 L_LETTERS = "spdfghi"
@@ -38,7 +40,7 @@ def _child(element: ElementTree.Element, tag: str) -> ElementTree.Element | None
 def _numbers(element: ElementTree.Element | None) -> np.ndarray:
     if element is None or element.text is None:
         return np.array([])
-    return np.array([float(x) for x in element.text.split()])
+    return np.array([fort_float(x) for x in element.text.split()])
 
 
 def _value(text: str) -> Any:

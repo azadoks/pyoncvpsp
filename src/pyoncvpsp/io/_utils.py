@@ -2,14 +2,21 @@
 
 from collections import deque
 from copy import deepcopy
+import re
 from typing import Any, Mapping, Sequence
 
 __all__ = ("fort_float",)
 
 
+#: The exponent of an E or D edit descriptor with a 2-digit exponent field when |exponent| > 99: a sign and 3 digits
+#: with no letter (e24.16 writes 2.1869480064996404E-119 as "2.1869480064996404-119")
+_RE_BARE_EXPONENT = re.compile(r"(?<=[\d.])([+-]\d{3})(?![\d.])")
+
+
 def fort_float(s: str) -> float:
     """Convert Fortran-style floating-point string to Python float.
-    Replaces 'D' or 'd' with 'e' before conversion.
+    Replaces 'D' or 'd' with 'e' before conversion, and reads an exponent of 3 digits written without a letter
+    ("2.1869480064996404-119").
 
     Args:
         s: String to convert.
@@ -17,7 +24,10 @@ def fort_float(s: str) -> float:
     Returns:
         Converted float.
     """
-    return float(s.lower().replace("d", "e"))
+    try:
+        return float(s)
+    except ValueError:
+        return float(_RE_BARE_EXPONENT.sub(r"e\1", s.lower().replace("d", "e")))
 
 
 def flatten(dictionary: Mapping[str, Any], separator="__") -> dict[str, Any]:

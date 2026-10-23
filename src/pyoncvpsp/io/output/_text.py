@@ -26,7 +26,9 @@ from . import _attribution, _sections
 from ._lines import LineIndex, required_literals
 from ._sections import Block, BlockKind, LineContext
 
-RE_FLOAT: str = r"[+-]?(?:\d+\.\d*|\.\d+|\d+)(?:[eEdD][+-]?\d+)?"
+# the exponent with a letter, or of 3 digits without one (an E or D edit descriptor with a 2-digit exponent field
+# at |exponent| > 99: "2.1869480064996404-119"; `fort_float` reads both)
+RE_FLOAT: str = r"[+-]?(?:\d+\.\d*|\.\d+|\d+)(?:[eEdD][+-]?\d+|[+-]\d{3}(?![\d.]))?"
 # Build line printed after the citation notice by builds of azadoks/oncvpsp (see its
 # cmake/BuildInfo.cmake), e.g.
 #   build: oncvpspr.x (fully-relativistic), commit <sha>, source clean, compiled 2026-10-15T10:11:10Z
@@ -655,7 +657,7 @@ class OncvpspTextParser:
         ):
             enn = int(match.group("n"))
             ell = int(match.group("l"))
-            occ = float(match.group("f"))
+            occ = fort_float(match.group("f"))
             # Fully-relativistic eigenvalues are printed for j = l + 1/2, then j = l - 1/2
             channels = j_channels(ell, self.is_relativistic)
             eig_groups = ["eig", "eig_dw"][: len(channels)]
@@ -754,7 +756,7 @@ class OncvpspTextParser:
 
         def match_float(pattern: re.Pattern[str], i: int, group: str) -> float | None:
             if i < len(self._lines) and (match := pattern.match(self._lines[i])):
-                return float(match.group(group))
+                return fort_float(match.group(group))
             return None
 
         def renormalization(i: int) -> re.Match[str] | None:
@@ -937,8 +939,8 @@ class OncvpspTextParser:
                     start=header_index,
                     stop=min(header_index + 5, stop),
                 ):
-                    data[projector]["eresid"].append(float(match.group("eresid")))
-                    data[projector]["ecut"].append(float(match.group("ecut")))
+                    data[projector]["eresid"].append(fort_float(match.group("eresid")))
+                    data[projector]["ecut"].append(fort_float(match.group("ecut")))
         return [
             {**projector.as_dict(), **{k: np.array(v) for k, v in value.items()}}
             for projector, value in data.items()
@@ -1069,7 +1071,7 @@ class OncvpspTextParser:
                 coefficients.append(
                     {
                         **ProjectorKey(channel, iproj).as_dict(),
-                        "coefficient": float(value),
+                        "coefficient": fort_float(value),
                     }
                 )
         return coefficients
@@ -1093,7 +1095,7 @@ class OncvpspTextParser:
                 {
                     **ChannelKey(ell).as_dict(),
                     "coefficients": np.array(
-                        [float(c) for c in self.clean_lines[i + 1].split()]
+                        [fort_float(c) for c in self.clean_lines[i + 1].split()]
                     ),
                 }
             )
@@ -1118,7 +1120,7 @@ class OncvpspTextParser:
                 {
                     **ChannelKey(ell).as_dict(),
                     "coefficients": np.array(
-                        [float(c) for c in self.clean_lines[i + 1].split()]
+                        [fort_float(c) for c in self.clean_lines[i + 1].split()]
                     ),
                 }
             )
@@ -1206,7 +1208,7 @@ class OncvpspTextParser:
         """Root-mean-square error of PS d2Exc/dfi with non-linear core corrections w.r.t. AE d2Exc/dfi."""
         pattern = re.compile(rf"rms 2nd derivative error\s+(?P<rmse>{RE_FLOAT})")
         match = self.search(pattern)
-        return float(match[1].group("rmse")) if match else None
+        return fort_float(match[1].group("rmse")) if match else None
 
     @cached_property
     def teter_parameters(self) -> dict:
@@ -1231,18 +1233,18 @@ class OncvpspTextParser:
         if self.input["model_core_charge"]["icmod"] == 4:
             param_match = self.search(r"amplitude prefactor, scale prefactor")
             if param_match:
-                parameters["fcfact"] = float(
+                parameters["fcfact"] = fort_float(
                     self.clean_lines[param_match[0] + 1].split()[0]
                 )
-                parameters["rcfact"] = float(
+                parameters["rcfact"] = fort_float(
                     self.clean_lines[param_match[0] + 1].split()[1]
                 )
         match_match = self.search(
             rf"rmatch, rhocmatch\s+(?P<rmatch>{RE_FLOAT})\s+(?P<rhocmatch>{RE_FLOAT})"
         )
         if match_match:
-            parameters["rmatch"] = float(match_match[1].group("rmatch"))
-            parameters["rhocmatch"] = float(match_match[1].group("rhocmatch"))
+            parameters["rmatch"] = fort_float(match_match[1].group("rmatch"))
+            parameters["rhocmatch"] = fort_float(match_match[1].group("rhocmatch"))
         return parameters
 
     @cached_property
@@ -1260,11 +1262,11 @@ class OncvpspTextParser:
         if not match:
             return {}
         grid: dict[str, list] = defaultdict(list)
-        grid["fcfact"] = [float(x) for x in self.clean_lines[match[0] + 5].split()]
+        grid["fcfact"] = [fort_float(x) for x in self.clean_lines[match[0] + 5].split()]
         i = match[0] + 7
         while words := self.clean_lines[i].strip().split():
-            grid["rcfact"].append(float(words[0]))
-            grid["d2exc_rmse"].append([float(x) for x in words[1:]])
+            grid["rcfact"].append(fort_float(words[0]))
+            grid["d2exc_rmse"].append([fort_float(x) for x in words[1:]])
             i += 1
         return {k: np.array(v) for k, v in grid.items()}
 
@@ -1572,12 +1574,12 @@ class OncvpspTextParser:
                     int(match.group("ell")),
                     int(match.group("kap")) if match.group("kap") is not None else None,
                 ).as_dict(),
-                "rc": float(match.group("rcore")),
-                "rmatch": float(match.group("rmatch")),
-                "e_in": float(match.group("e_in")),
-                "e_test": float(match.group("e_test")),
-                "norm_test": float(match.group("norm_test")),
-                "slope_test": float(match.group("slope_test")),
+                "rc": fort_float(match.group("rcore")),
+                "rmatch": fort_float(match.group("rmatch")),
+                "e_in": fort_float(match.group("e_in")),
+                "e_test": fort_float(match.group("e_test")),
+                "norm_test": fort_float(match.group("norm_test")),
+                "slope_test": fort_float(match.group("slope_test")),
             }
             for _, start, stop in self._blocks(BlockKind.DIAG_SEMILOCAL)
             for _, match in self.findall(pattern, start, stop)
@@ -1615,15 +1617,17 @@ class OncvpspTextParser:
                     int(match.group("ell")),
                     int(match.group("kap")) if match.group("kap") is not None else None,
                 ).as_dict(),
-                "rc": float(match.group("rcore")),
-                "rmatch": float(match.group("rmatch")),
-                "e_in": float(match.group("e_in")),
-                "e_test": float(match.group("e_or_delta_e_test")) if is_v3 else None,
-                "delta_e": float(match.group("e_or_delta_e_test"))
+                "rc": fort_float(match.group("rcore")),
+                "rmatch": fort_float(match.group("rmatch")),
+                "e_in": fort_float(match.group("e_in")),
+                "e_test": fort_float(match.group("e_or_delta_e_test"))
+                if is_v3
+                else None,
+                "delta_e": fort_float(match.group("e_or_delta_e_test"))
                 if not is_v3
                 else None,
-                "norm_test": float(match.group("norm_test")),
-                "slope_test": float(match.group("slope_test")),
+                "norm_test": fort_float(match.group("norm_test")),
+                "slope_test": fort_float(match.group("slope_test")),
             }
             for _, start, stop in self._blocks(BlockKind.DIAG_VKB)
             for _, match in self.findall(pattern, start, stop)
@@ -1659,11 +1663,11 @@ class OncvpspTextParser:
                         if match.group("kap") is not None
                         else None,
                     ).as_dict(),
-                    "eig": float(match.group("eig")),
-                    "ecut": float(match.group("ecut")),
+                    "eig": fort_float(match.group("eig")),
+                    "ecut": fort_float(match.group("ecut")),
                     # ONCVPSP v3 only tests for bound ghosts, and prints no sign
                     "sign": match.group("sign") or "-",
-                    "r_rc": float(match.group("r_rc"))
+                    "r_rc": fort_float(match.group("r_rc"))
                     if match.group("r_rc") is not None
                     else None,
                 }
@@ -1799,10 +1803,10 @@ class OncvpspTextParser:
                         {
                             "n": enn,
                             **ChannelKey.from_printed_kappa(ell, kappa).as_dict(),
-                            "f": float(config_match.group("occ")),
-                            "eig_ae": float(config_match.group("eig_ae")),
+                            "f": fort_float(config_match.group("occ")),
+                            "eig_ae": fort_float(config_match.group("eig_ae")),
                             "eig_ps": (
-                                float(config_match.group("eig_ps"))
+                                fort_float(config_match.group("eig_ps"))
                                 if config_match.group("eig_ps") is not None
                                 else None
                             ),
@@ -1946,10 +1950,10 @@ class OncvpspTextParser:
         block = self.findall(pattern)
         data: dict[int, dict[str, list]] = defaultdict(lambda: defaultdict(list))
         for _, match in block:
-            r = float(match.group("r"))
+            r = fort_float(match.group("r"))
             for ell in range(self.input["pseudopotentials"]["lmax"] + 1):
                 data[ell]["r"].append(r)
-                data[ell]["v_sl"].append(float(match.group(f"v_sl_{ell}")))
+                data[ell]["v_sl"].append(fort_float(match.group(f"v_sl_{ell}")))
         return [
             {**ChannelKey(ell).as_dict(), **{k: np.array(v) for k, v in values.items()}}
             for ell, values in data.items()
@@ -1976,10 +1980,10 @@ class OncvpspTextParser:
         block = self.findall(pattern)
         data: dict[int, dict[str, list]] = defaultdict(lambda: defaultdict(list))
         for _, match in block:
-            r = float(match.group("r"))
+            r = fort_float(match.group("r"))
             for ell in range(self.input["pseudopotentials"]["lmax"] + 1):
                 data[ell]["r"].append(r)
-                data[ell]["v_sl"].append(float(match.group(f"v_sl_{ell}")))
+                data[ell]["v_sl"].append(fort_float(match.group(f"v_sl_{ell}")))
         return [
             {**ChannelKey(ell).as_dict(), **{k: np.array(v) for k, v in values.items()}}
             for ell, values in data.items()
@@ -1998,8 +2002,8 @@ class OncvpspTextParser:
         block = self.findall(pattern)
         data = defaultdict(list)
         for _, match in block:
-            data["r"].append(float(match.group("r")))
-            data["v_loc"].append(float(match.group("v_loc")))
+            data["r"].append(fort_float(match.group("r")))
+            data["v_loc"].append(fort_float(match.group("v_loc")))
         return {
             **{k: np.array(v) for k, v in data.items()},
             **self.input.get("local_potential", {}),
@@ -2027,10 +2031,10 @@ class OncvpspTextParser:
         block = self.findall(pattern)
         data = defaultdict(list)
         for _, match in block:
-            data["r"].append(float(match.group("r")))
-            data["rho_val"].append(float(match.group("rho_val")))
-            data["rho_core"].append(float(match.group("rho_core")))
-            data["rho_model_core"].append(float(match.group("rho_model_core")))
+            data["r"].append(fort_float(match.group("r")))
+            data["rho_val"].append(fort_float(match.group("rho_val")))
+            data["rho_core"].append(fort_float(match.group("rho_core")))
+            data["rho_model_core"].append(fort_float(match.group("rho_model_core")))
         return {k: np.array(v) for k, v in data.items()}
 
     @cached_property
@@ -2049,9 +2053,9 @@ class OncvpspTextParser:
         block = self.findall(pattern)
         data = defaultdict(list)
         for _, match in block:
-            data["r"].append(float(match.group("r")))
-            data["tau_ps"].append(float(match.group("tau_ps")))
-            data["tau_mod"].append(float(match.group("tau_mod")))
+            data["r"].append(fort_float(match.group("r")))
+            data["tau_ps"].append(fort_float(match.group("tau_ps")))
+            data["tau_mod"].append(fort_float(match.group("tau_mod")))
         return {k: np.array(v) for k, v in data.items()}
 
     @cached_property
@@ -2070,9 +2074,9 @@ class OncvpspTextParser:
         block = self.findall(pattern)
         data = defaultdict(list)
         for _, match in block:
-            data["r"].append(float(match.group("r")))
-            data["vtau_ps"].append(float(match.group("vtau_ps")))
-            data["vtau_mod"].append(float(match.group("vtau_mod")))
+            data["r"].append(fort_float(match.group("r")))
+            data["vtau_ps"].append(fort_float(match.group("vtau_ps")))
+            data["vtau_mod"].append(fort_float(match.group("vtau_mod")))
         return {k: np.array(v) for k, v in data.items()}
 
     @cached_property
@@ -2138,9 +2142,9 @@ class OncvpspTextParser:
             block_data: dict[str, Any] = defaultdict(list)
             # Parse the block data
             for _, match in block:
-                block_data["r"].append(float(match.group("r")))
-                block_data["wfn_ae"].append(float(match.group("wfn_ae")))
-                block_data["wfn_ps"].append(float(match.group("wfn_ps")))
+                block_data["r"].append(fort_float(match.group("r")))
+                block_data["wfn_ae"].append(fort_float(match.group("wfn_ae")))
+                block_data["wfn_ps"].append(fort_float(match.group("wfn_ps")))
             block_data = {k: np.array(v) for k, v in block_data.items()}
             # Parse the header line and first block line for enn, ell, bound vs. scattering state, iproj
             first_ln, first_match = block[0]
@@ -2238,7 +2242,7 @@ class OncvpspTextParser:
                 first_match.group("marker"),
                 self.is_relativistic,
             )
-            r = np.array([float(match.group("r")) for _, match in block])
+            r = np.array([fort_float(match.group("r")) for _, match in block])
             for iproj in (1, 2):
                 data.append(
                     {
@@ -2246,7 +2250,7 @@ class OncvpspTextParser:
                         "r": r,
                         "wfn_ps": np.array(
                             [
-                                float(match.group(f"wfn_ps_{iproj}"))
+                                fort_float(match.group(f"wfn_ps_{iproj}"))
                                 for _, match in block
                             ]
                         ),
@@ -2293,11 +2297,11 @@ class OncvpspTextParser:
             )
             block_data: dict[str, Any] = defaultdict(list)
             for _, match in block:
-                block_data["r"].append(float(match.group("r")))
+                block_data["r"].append(fort_float(match.group("r")))
                 for i in range(1, max_nproj + 1):
                     proj_key = f"proj_{i}"
                     if match.group(proj_key) is not None:
-                        block_data[proj_key].append(float(match.group(proj_key)))
+                        block_data[proj_key].append(fort_float(match.group(proj_key)))
             block_data = {k: np.array(v) for k, v in block_data.items()}
             for iproj in range(1, max_nproj + 1):
                 proj_key = f"proj_{iproj}"
@@ -2325,9 +2329,11 @@ class OncvpspTextParser:
         for _, match in block:
             # Plotted only for the first projector, and for j = l + 1/2 if fully-relativistic
             channel = j_channels(int(match.group("ell")), self.is_relativistic)[0]
-            data[ProjectorKey(channel, 1)]["ecut"].append(float(match.group("ecut")))
+            data[ProjectorKey(channel, 1)]["ecut"].append(
+                fort_float(match.group("ecut"))
+            )
             data[ProjectorKey(channel, 1)]["eresid"].append(
-                float(match.group("eresid"))
+                fort_float(match.group("eresid"))
             )
         return [
             {**projector.as_dict(), **{k: np.array(v) for k, v in value.items()}}
@@ -2397,14 +2403,18 @@ class OncvpspTextParser:
                 first_match.group("marker"),
                 self.is_relativistic,
             )
-            data[channel]["rxpsh"] = float(header_line.split("=")[-1])
+            data[channel]["rxpsh"] = fort_float(header_line.split("=")[-1])
             for _, match in block:
                 channel = ChannelKey.from_plot_marker(
                     int(match.group("ell")), match.group("marker"), self.is_relativistic
                 )
-                data[channel]["e"].append(float(match.group("e")))
-                data[channel]["log_deriv_ae"].append(float(match.group("log_deriv_ae")))
-                data[channel]["log_deriv_ps"].append(float(match.group("log_deriv_ps")))
+                data[channel]["e"].append(fort_float(match.group("e")))
+                data[channel]["log_deriv_ae"].append(
+                    fort_float(match.group("log_deriv_ae"))
+                )
+                data[channel]["log_deriv_ps"].append(
+                    fort_float(match.group("log_deriv_ps"))
+                )
         return [
             {**channel.as_dict(), **{k: np.array(v) for k, v in value.items()}}
             for channel, value in data.items()
@@ -2521,26 +2531,26 @@ class OncvpspTextParser:
                 for name, value in zip(
                     ("eresid_qcut", "regularization", "e1", "f1"), fields[3:7]
                 ):
-                    ecut[key][name] = float(value)
+                    ecut[key][name] = fort_float(value)
             elif tag == "ekin_check":
                 ell, ikap, iproj = (int(f) for f in fields[:3])
                 key = ProjectorKey(j_channels(ell, relativistic)[ikap - 1], iproj)
-                ecut[key]["ekin_check"] = float(fields[3])
+                ecut[key]["ekin_check"] = fort_float(fields[3])
             elif tag in ("vkb_b", "vkb_e"):
                 ell, ikap = int(fields[0]), int(fields[1])
                 name = "b_eigenvalues" if tag == "vkb_b" else "coefficients"
                 conditioning[j_channels(ell, relativistic)[ikap - 1]][name].append(
-                    float(fields[3])
+                    fort_float(fields[3])
                 )
             elif tag == "vkb_cond":
                 ell, ikap = int(fields[0]), int(fields[1])
                 conditioning[j_channels(ell, relativistic)[ikap - 1]]["condition"] = (
-                    float(fields[2])
+                    fort_float(fields[2])
                 )
             elif tag == "test_config":
                 entry = config(int(fields[0]))
                 entry["de_ae"], entry["de_ps"], entry["error"] = (
-                    float(f) for f in fields[1:4]
+                    fort_float(f) for f in fields[1:4]
                 )
             elif tag == "test_config_failed":
                 config(int(fields[0]))["failed"] = True
@@ -2550,35 +2560,35 @@ class OncvpspTextParser:
                     {
                         "n": n,
                         **j_channels(ell, relativistic)[ikap - 1].as_dict(),
-                        "occupation": float(fields[4]),
-                        "eig_ae": float(fields[5]),
-                        "eig_ps": float(fields[6]),
+                        "occupation": fort_float(fields[4]),
+                        "eig_ae": fort_float(fields[5]),
+                        "eig_ps": fort_float(fields[6]),
                     }
                 )
             elif tag == "core_rc":
                 core = {
-                    "rc": float(fields[0]),
-                    "rho_ae": float(fields[1]),
-                    "rho_model": float(fields[2]),
+                    "rc": fort_float(fields[0]),
+                    "rho_ae": fort_float(fields[1]),
+                    "rho_model": fort_float(fields[2]),
                     "extent": [],
                 }
             elif tag == "core_extent" and core is not None:
                 core["extent"].append(
                     {
-                        "fraction": float(fields[0]),
-                        "r_ae": float(fields[1]),
-                        "r_model": float(fields[2]),
+                        "fraction": fort_float(fields[0]),
+                        "r_ae": fort_float(fields[1]),
+                        "r_model": fort_float(fields[2]),
                     }
                 )
             elif tag in ("core_model_max", "core_model_min") and core is not None:
                 core[tag.removeprefix("core_model_")] = {
-                    "r": float(fields[0]),
-                    "rho": float(fields[1]),
+                    "r": fort_float(fields[0]),
+                    "rho": fort_float(fields[1]),
                 }
             elif tag == "ecut_w":
                 weighted = {
-                    "error": float(fields[0]),
-                    "ecut": float(fields[1]),
+                    "error": fort_float(fields[0]),
+                    "ecut": fort_float(fields[1]),
                     "weights": [],
                 }
             elif tag == "ecut_w_weight" and weighted is not None:
@@ -2587,39 +2597,41 @@ class OncvpspTextParser:
                     {
                         **j_channels(ell, relativistic)[ikap - 1].as_dict(),
                         "iproj": iproj,
-                        "weight": float(fields[3]),
+                        "weight": fort_float(fields[3]),
                     }
                 )
             elif tag in ("ecut_vloc", "vloc_check"):
                 if vloc is None:
                     vloc = {"eresid": [], "ecut": [], "check": None}
                 if tag == "vloc_check":
-                    vloc["check"] = float(fields[0])
+                    vloc["check"] = fort_float(fields[0])
                 else:
-                    vloc["eresid"].append(float(fields[0]))
-                    vloc["ecut"].append(float(fields[1]))
+                    vloc["eresid"].append(fort_float(fields[0]))
+                    vloc["ecut"].append(fort_float(fields[1]))
             elif tag == "ecut":
                 ell, ikap, iproj = (int(f) for f in fields[:3])
                 key = ProjectorKey(j_channels(ell, relativistic)[ikap - 1], iproj)
-                ecut[key]["eresid"].append(float(fields[3]))
-                ecut[key]["ecut"].append(float(fields[4]))
+                ecut[key]["eresid"].append(fort_float(fields[3]))
+                ecut[key]["ecut"].append(fort_float(fields[4]))
             elif tag == "ld_r":
                 ell, ikap = int(fields[0]), int(fields[1])
-                ld[j_channels(ell, relativistic)[ikap - 1]]["rxpsh"] = float(fields[2])
+                ld[j_channels(ell, relativistic)[ikap - 1]]["rxpsh"] = fort_float(
+                    fields[2]
+                )
             elif tag == "ld":
                 ell, ikap = int(fields[0]), int(fields[1])
                 data = ld[j_channels(ell, relativistic)[ikap - 1]]
-                data["e"].append(float(fields[2]))
-                data["log_deriv_ae"].append(float(fields[3]))
-                data["log_deriv_ps"].append(float(fields[4]))
+                data["e"].append(fort_float(fields[2]))
+                data["log_deriv_ae"].append(fort_float(fields[3]))
+                data["log_deriv_ps"].append(fort_float(fields[4]))
             elif tag == "ghost":
                 ell, ikap, n = (int(f) for f in fields[:3])
                 margins.append(
                     {
                         **j_channels(ell, relativistic)[ikap - 1].as_dict(),
                         "n": n,
-                        "eig": float(fields[3]),
-                        "eig_basis": float(fields[4]),
+                        "eig": fort_float(fields[3]),
+                        "eig_basis": fort_float(fields[4]),
                     }
                 )
             elif tag == "ghost_r":
@@ -2627,8 +2639,8 @@ class OncvpspTextParser:
                 localization.append(
                     {
                         **j_channels(ell, relativistic)[ikap - 1].as_dict(),
-                        "eig": float(fields[2]),
-                        "r_over_rc": float(fields[3]),
+                        "eig": fort_float(fields[2]),
+                        "r_over_rc": fort_float(fields[3]),
                     }
                 )
 
