@@ -289,7 +289,8 @@
     2,
     2,
     2
-   ]
+   ],
+   "well_n": null
   }
  },
  "ionic_tail": null,
@@ -1122,6 +1123,7 @@
      "sum": 502.55234899999994
     },
     "r_rc": "nan",
+    "wall_radius": "nan",
     "wfn_ae": {
      "abs_sum": 250.43593299999998,
      "nan": 0,
@@ -1159,6 +1161,7 @@
      "sum": 502.55234899999994
     },
     "r_rc": "nan",
+    "wall_radius": "nan",
     "wfn_ae": {
      "abs_sum": 215.09666800000002,
      "nan": 0,
@@ -1197,6 +1200,7 @@
      "sum": 502.55234899999994
     },
     "r_rc": "nan",
+    "wall_radius": null,
     "wfn_ae": {
      "abs_sum": 52.834708,
      "nan": 0,
@@ -1234,6 +1238,7 @@
      "sum": 502.55234899999994
     },
     "r_rc": "nan",
+    "wall_radius": "nan",
     "wfn_ae": {
      "abs_sum": 118.88482599999999,
      "nan": 0,
@@ -1271,6 +1276,7 @@
      "sum": 502.55234899999994
     },
     "r_rc": "nan",
+    "wall_radius": "nan",
     "wfn_ae": {
      "abs_sum": 91.967676,
      "nan": 0,
@@ -1440,7 +1446,8 @@
    "iproj": 1,
    "j": null,
    "l": 2,
-   "n": 3
+   "n": 3,
+   "wall_radius": null
   },
   {
    "asymptotic_potential": 2.2101,
@@ -1450,7 +1457,8 @@
    "iproj": 2,
    "j": null,
    "l": 2,
-   "n": 4
+   "n": 4,
+   "wall_radius": null
   }
  ]
 }

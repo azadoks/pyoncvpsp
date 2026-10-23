@@ -100,7 +100,7 @@ Exceptions:
 | `missing_plot_data` | `missing_plot_data` | `list[str]` | Non-empty only for an incomplete run. Possible entries: `DATA FOR PLOTTING`, `unscreened_semilocal_potentials`, `charge_densities`, `wavefunctions`, `convergence_profiles`, `log_derivatives`, `gnuplot_script`. |
 | `stage` | `stage` | `"ae"`, `"ps"` or `None` | `"ae"` or `"ps"` only for the split executables of azadoks/oncvpsp (`oncvpsp*_ae.x`, `oncvpsp*_ps.x`); `None` for the whole program. |
 | `ae_data_file` | `ae_data_file` | `str \| None` | All-electron stage only. |
-| `errors` | `errors` | `list[dict]` | When errors are printed. Each dict has the keys of `OncvpspOutputError` (above). Matched against the 79 definitions in `ERRORS`. |
+| `errors` | `errors` | `list[dict]` | When errors are printed. Each dict has the keys of `OncvpspOutputError` (above). Matched against the 81 definitions in `ERRORS`. |
 | `warnings` | `warnings` | `list[dict]` | Likewise, against the 32 definitions in `WARNINGS`. |
 | `messages` | — | `list[OncvpspMessage]` | The warnings and errors in line order, each attributed to a `stage`, `scope`, channel (`l`, `j`, `iproj`, `n`), `config_index` and the input parameters it implicates (`implicated_parameters`, flattened keys such as `pseudopotentials__rc__1`). |
 | `failure` | — | `OncvpspFailure \| None` | `None` for a completed run. Otherwise: the first error (`primary`), all errors, and the last stage and `l` reached. A run that stops without a recognized error fails with its last `<routine>: ERROR ...` line as `unrecognized_error`, attributed by its position, or else a synthetic `incomplete_output`. |
@@ -135,7 +135,7 @@ non-relativistic ONCVPSP 4.0.1 executable wrongly says scalar-relativistic.
 
 | Property | In `output` | Type | Present when |
 | --- | --- | --- | --- |
-| `wellstate_metadata` | `wellstate_metadata` | `list[dict]` | When a projector is built from an unbound state (a `Wellstate for l =` block). Fields: `n`, `l`, `j`, `iproj`, `eig_ae`, `energy_guess`, `asymptotic_potential`, `half_point_radius`. In fully-relativistic v4, a j = l − 1/2 state is solved in the well of its partner: its `eig_ae` is `None`, and the printed target energy is `energy_guess`. |
+| `wellstate_metadata` | `wellstate_metadata` | `list[dict]` | When a projector is built from an unbound state (a `Wellstate for l =` block). Fields: `n`, `l`, `j`, `iproj`, `eig_ae`, `energy_guess`, `asymptotic_potential`, `half_point_radius`, `wall_radius` (with `well_tail = "confined"`, in place of the other two). In fully-relativistic v4, a j = l − 1/2 state is solved in the well of its partner: its `eig_ae` is `None`, and the printed target energy is `energy_guess`. |
 | `localized_bound_states` | `localized_bound_states` | `list[dict]` | When an unoccupied bound state is used in place of a wellstate. The program reports it in a warning, or, in v2/v3, with a "negative energy" or "Normal bound state" note. Same fields as `wellstate_metadata`; the potential and radius are always `None`. |
 | `optimization_diagnostics` | `optimization_diagnostics` | `list[dict]` | One per optimized pseudo-wavefunction, in all versions. Fields: `constraints` (`pswf`, `aewf`, `diff` arrays), `norm_fraction`, `qcut`, `ecut`, `q_infinity_ke`, `e_inf`, `residual_ke_error`, `ke_fourier`, `ke_rspace`, `ke_ratio`, `v_ps_rc`, `v_ae_rc`, `v_diff_rc`. A field that is not printed is `None`. |
 | `convergence_profiles` | `plot_data["convergence_profiles"]` | `list[dict]` | `l`, `j`, `iproj`, `ecut`, `eresid`. Contains the tables printed by `optimize` for every projector, then the `!C` plotting data, which covers only the first projector of each `l` (j = l + 1/2 if relativistic). A table with no row is kept as empty arrays. |
@@ -201,7 +201,7 @@ All of it is missing from a run that stops before `DATA FOR PLOTTING`.
 | `charge_densities` | `dict` | `r`, `rho_val`, `rho_core`, `rho_model_core` (`!r`). |
 | `kinetic_energy_densities` | `dict` | METAPSP only (`!t`): `r`, `tau_ps`, `tau_mod`. |
 | `kinetic_energy_potentials` | `dict` | METAPSP only (`!vt`): `r`, `vtau_ps`, `vtau_mod`. |
-| `wavefunctions` | `list[dict]` | One per plotted state (`&`): `r`, `wfn_ae`, `wfn_ps`, and the state's `n`, `l`, `j`, `iproj` and `is_bound`. Also `f`, `eig_ae`, `eig_ps`, `asymptotic_potential`, `half_point_radius` and `r_rc`, which are `nan` when unknown. |
+| `wavefunctions` | `list[dict]` | One per plotted state (`&`): `r`, `wfn_ae`, `wfn_ps`, and the state's `n`, `l`, `j`, `iproj` and `is_bound`. Also `f`, `eig_ae`, `eig_ps`, `asymptotic_potential`, `half_point_radius`, `wall_radius` and `r_rc`, which are `nan` when unknown. |
 | `optimized_pseudo_wavefunctions` | `list[dict]` | v2 and v3 only (`@`), channels with `nproj = 2`: `l`, `j`, `iproj`, `r`, `wfn_ps`. |
 | `vkb_projectors` | `list[dict]` | v4 and METAPSP only (`!J`): `l`, `j`, `iproj`, `r`, `proj`, `coeff`. |
 | `convergence_profiles` | `list[dict]` | See "Semilocal stage". |

@@ -749,6 +749,8 @@ class OncvpspTextParser:
         )
         ap_pattern = re.compile(rf"\s+asymptotic potential =\s*(?P<ap>{RE_FLOAT})")
         hpr_pattern = re.compile(rf"\s+half-point radius =\s*(?P<hpr>{RE_FLOAT})")
+        # azadoks/oncvpsp, well_tail = "confined": the wall's radius in place of these two
+        wall_pattern = re.compile(rf"\s+confined, wall 1 Ha at r =\s*(?P<r>{RE_FLOAT})")
 
         if self.projector_layout is None:
             return []
@@ -792,6 +794,7 @@ class OncvpspTextParser:
                     "eig_ae": match_float(eig_pattern, i + 1, "eig"),
                     "asymptotic_potential": match_float(ap_pattern, i + 2, "ap"),
                     "half_point_radius": match_float(hpr_pattern, i + 3, "hpr"),
+                    "wall_radius": match_float(wall_pattern, i + 2, "r"),
                 }
             elif match := localized_pattern.match(line):
                 ell = int(match.group("ell"))
@@ -839,6 +842,7 @@ class OncvpspTextParser:
                     "energy_guess": None,
                     "asymptotic_potential": None,
                     "half_point_radius": None,
+                    "wall_radius": None,
                     **state,
                 }
             )
@@ -870,6 +874,9 @@ class OncvpspTextParser:
                     for the j = l - 1/2 states of fully-relativistic ONCVPSP v4; else None.
                 asymptotic_potential (float | None): Asymptotic potential (Ha), if reported.
                 half_point_radius (float | None): Half-point radius (a.u.), if reported.
+                wall_radius (float | None): With well_tail = "confined" (azadoks/oncvpsp), the
+                    radius (a.u.) at which the well's wall is 1 Ha above the state, printed in
+                    place of the asymptotic potential and half-point radius; else None.
         """
         return [
             {k: v for k, v in state.items() if k != "is_bound"}
@@ -892,6 +899,7 @@ class OncvpspTextParser:
                 energy_guess (float | None): See `wellstate_metadata`.
                 asymptotic_potential (None): Always None.
                 half_point_radius (None): Always None.
+                wall_radius (None): Always None.
         """
         return [
             {k: v for k, v in state.items() if k != "is_bound"}
@@ -2100,6 +2108,8 @@ class OncvpspTextParser:
                 eig_ps (float, optional): Pseudoeigenvalue (Ha), if available.
                 asymptotic_potential (float, optional): Asymptotic potential (Ha), if available.
                 half_point_radius (float, optional): Half-point radius (a.u.), if available.
+                wall_radius (float, optional): Radius of the confined well's wall (a.u.), if
+                    available; see `wellstate_metadata`.
         """
         data_pattern = re.compile(
             r"&\s+(?P<marker>[\s-])(?P<iproj>\d)?(?P<ell>\d)"
@@ -2193,6 +2203,7 @@ class OncvpspTextParser:
                 "eig_ps": np.nan,
                 "asymptotic_potential": np.nan,
                 "half_point_radius": np.nan,
+                "wall_radius": np.nan,
                 "r_rc": np.nan,
             }  # Default empty metadata
             if state_kind == "valence" and is_bound is not False:
@@ -2491,7 +2502,7 @@ class OncvpspTextParser:
             iproj t`): the r-space kinetic energy of the wave less the Fourier one to the
             q_infinity of its curve (Ha), by Parseval the energy above q_infinity that the
             curve leaves out plus the error of the r-space integral, which dominates it. A well
-            state confined by its well (well_tail = "well") also has, from the line `well_share
+            state confined by its well (well_tail = "well" or "confined") also has, from the line `well_share
             l ikap iproj e_well e_free`, eresid_qcut_well and eresid_qcut_free: E_resid at qcut
             of the optimized wave with the well's tail and with the free tail at its energy (Ha),
             the same wave inside rc, so that their difference is the well's share; both None

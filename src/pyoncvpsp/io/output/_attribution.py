@@ -232,6 +232,10 @@ ATTRIBUTION: dict[str, dict[str, Any]] = {
     "wellstate_energy_jump": {"stage": Stage.SEMILOCAL, "scope": Scope.ELL},
     # `ionic_screening`, after the model core and before the pseudoatom total energy
     "ionic_valence_lschvkbb_failed": {"stage": Stage.MODEL_CORE, "scope": Scope.ELL},
+    # oncvpsp, after reading the input
+    "well_n_not_confined": {"stage": Stage.INPUT, "scope": Scope.INPUT},
+    # oncvpsp, before the well states of l are solved
+    "well_n_below_first_well_state": {"stage": Stage.SEMILOCAL, "scope": Scope.ELL},
     # --- errors: anywhere
     "dpnint_interpolation_error": {"stage": None, "scope": None},
     # Called by the wave solvers, in any stage

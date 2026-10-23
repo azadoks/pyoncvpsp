@@ -76,6 +76,15 @@ MESSAGES = [
         "    WARNING qcut is not above this well state's wave vector  5.1186",
         "well_state_qcut_below_k",
     ),
+    # azadoks/oncvpsp (branch smooooth, 4286074)
+    (
+        'oncvpsp: ERROR well_n is for well_tail = "confined" only',
+        "well_n_not_confined",
+    ),
+    (
+        "oncvpsp: ERROR well_n for l= 1 is  3, below the first well state's n,  4",
+        "well_n_below_first_well_state",
+    ),
     (
         "oncvpsp: ERROR node of the local channel l= 2 all-electron wave near rc, at r=  2.345678",
         "local_channel_ae_node",

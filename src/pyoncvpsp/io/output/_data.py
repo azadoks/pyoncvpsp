@@ -835,8 +835,9 @@ WARNINGS += [
     },
     {
         "name": "well_tail_share",
-        # 74b1c54: E_resid at qcut of a well state confined by its well (well_tail = "well"),
-        # with the well's tail against the free tail; `diagnostics` well_share has both
+        # 74b1c54: E_resid at qcut of a well state confined by its well (well_tail "well" or
+        # "confined"), with the well's tail against the free tail; `diagnostics` well_share has
+        # both
         "pattern": rf"WARNING the well's tail changes it by\s*(?P<share_percent>{RE_FLOAT}) %:",
         "match_string": "WARNING the well's tail changes it by",
         "line_count": 2,
@@ -1016,6 +1017,26 @@ ERRORS += [
         "subroutine": "ionic_valence",
         "description": "A pseudo valence state could not be solved in the separable potential with "
         "the ionic tail beyond rcmax.",
+    },
+    {
+        "name": "well_n_not_confined",
+        "pattern": r'oncvpsp: ERROR well_n is for well_tail = "confined" only',
+        "match_string": "oncvpsp: ERROR well_n is for well_tail",
+        "line_count": 1,
+        "subroutine": "oncvpsp",
+        "description": 'well_n is set for some l while well_tail is not "confined".',
+    },
+    {
+        "name": "well_n_below_first_well_state",
+        "pattern": (
+            r"oncvpsp: ERROR well_n for l=\s*(?P<l>\d+) is\s*(?P<well_n>\d+), below the first "
+            r"well state's n,\s*(?P<n>\d+)"
+        ),
+        "match_string": "oncvpsp: ERROR well_n for l=",
+        "line_count": 1,
+        "subroutine": "oncvpsp",
+        "description": "well_n is below the n that ONCVPSP gives the channel's first well state, "
+        "one above the last bound state's.",
     },
 ]
 

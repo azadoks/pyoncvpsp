@@ -147,7 +147,8 @@
    "nproj": [
     2,
     2
-   ]
+   ],
+   "well_n": null
   }
  },
  "ionic_tail": null,
@@ -507,7 +508,8 @@
    "iproj": 2,
    "j": null,
    "l": 0,
-   "n": 3
+   "n": 3,
+   "wall_radius": null
   },
   {
    "asymptotic_potential": 1.2395,
@@ -517,7 +519,8 @@
    "iproj": 2,
    "j": null,
    "l": 1,
-   "n": 3
+   "n": 3,
+   "wall_radius": null
   }
  ]
 }

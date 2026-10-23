@@ -446,6 +446,20 @@ def test_unrecognized_error_is_not_a_message_of_a_completed_run():
             Scope.ELL,
             1,
         ),
+        (
+            'oncvpsp: ERROR well_n is for well_tail = "confined" only',
+            "well_n_not_confined",
+            Stage.INPUT,
+            Scope.INPUT,
+            None,
+        ),
+        (
+            "oncvpsp: ERROR well_n for l= 1 is  3, below the first well state's n,  4",
+            "well_n_below_first_well_state",
+            Stage.SEMILOCAL,
+            Scope.ELL,
+            1,
+        ),
     ],
 )
 def test_smooooth_messages_attribution(line, name, stage, scope, l):  # noqa: E741

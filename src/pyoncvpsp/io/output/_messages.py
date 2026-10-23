@@ -130,6 +130,12 @@ def ell_parameters(
         nproj = (input_data or {})["vkb_projectors"]["nproj"][l]
     except (KeyError, IndexError, TypeError):
         pass
+    # well_tail = "confined": the n of the channel's first well state, when the input sets it
+    well_n = 0
+    try:
+        well_n = (input_data or {})["vkb_projectors"]["well_n"][l]
+    except (KeyError, IndexError, TypeError):
+        pass
     if ep_active:
         keys.append(_key("pseudopotentials", "ep", l))
     if include_vkb:
@@ -137,6 +143,8 @@ def ell_parameters(
             keys.append(_key("vkb_projectors", "nproj", l))
         if debl_active:
             keys.append(_key("vkb_projectors", "debl", l))
+        if well_n:
+            keys.append(_key("vkb_projectors", "well_n", l))
     return keys
 
 

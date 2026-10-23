@@ -208,7 +208,8 @@
    "nproj": [
     1,
     2
-   ]
+   ],
+   "well_n": null
   }
  },
  "ionic_tail": null,
@@ -833,6 +834,7 @@
      "sum": 343.568596
     },
     "r_rc": "nan",
+    "wall_radius": "nan",
     "wfn_ae": {
      "abs_sum": 67.67357700000001,
      "nan": 0,
@@ -871,6 +873,7 @@
      "sum": 343.568596
     },
     "r_rc": "nan",
+    "wall_radius": "nan",
     "wfn_ae": {
      "abs_sum": 71.945082,
      "nan": 0,
@@ -909,6 +912,7 @@
      "sum": 343.568596
     },
     "r_rc": "nan",
+    "wall_radius": "nan",
     "wfn_ae": {
      "abs_sum": 38.410356,
      "nan": 0,

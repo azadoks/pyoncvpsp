@@ -595,7 +595,8 @@
     2,
     2,
     2
-   ]
+   ],
+   "well_n": null
   }
  },
  "ionic_tail": null,
@@ -608,7 +609,8 @@
    "iproj": 1,
    "j": 3.5,
    "l": 3,
-   "n": 4
+   "n": 4,
+   "wall_radius": null
   },
   {
    "asymptotic_potential": null,
@@ -618,7 +620,8 @@
    "iproj": 1,
    "j": 2.5,
    "l": 3,
-   "n": 4
+   "n": 4,
+   "wall_radius": null
   }
  ],
  "missing_plot_data": [],
@@ -2306,6 +2309,7 @@
      "sum": 503.075714
     },
     "r_rc": "nan",
+    "wall_radius": "nan",
     "wfn_ae": {
      "abs_sum": 140.54865,
      "nan": 0,
@@ -2343,6 +2347,7 @@
      "sum": 503.075714
     },
     "r_rc": "nan",
+    "wall_radius": "nan",
     "wfn_ae": {
      "abs_sum": 133.144405,
      "nan": 0,
@@ -2380,6 +2385,7 @@
      "sum": 503.075714
     },
     "r_rc": "nan",
+    "wall_radius": "nan",
     "wfn_ae": {
      "abs_sum": 137.154378,
      "nan": 0,
@@ -2417,6 +2423,7 @@
      "sum": 503.075714
     },
     "r_rc": "nan",
+    "wall_radius": "nan",
     "wfn_ae": {
      "abs_sum": 98.193251,
      "nan": 0,
@@ -2454,6 +2461,7 @@
      "sum": 503.075714
     },
     "r_rc": "nan",
+    "wall_radius": "nan",
     "wfn_ae": {
      "abs_sum": 99.726737,
      "nan": 0,
@@ -2492,6 +2500,7 @@
      "sum": 503.075714
     },
     "r_rc": "nan",
+    "wall_radius": null,
     "wfn_ae": {
      "abs_sum": 147.734239,
      "nan": 0,
@@ -2530,6 +2539,7 @@
      "sum": 503.075714
     },
     "r_rc": "nan",
+    "wall_radius": null,
     "wfn_ae": {
      "abs_sum": 148.288872,
      "nan": 0,
@@ -2567,6 +2577,7 @@
      "sum": 503.075714
     },
     "r_rc": "nan",
+    "wall_radius": "nan",
     "wfn_ae": {
      "abs_sum": 72.813253,
      "nan": 0,
@@ -3127,7 +3138,8 @@
    "iproj": 2,
    "j": 1.5,
    "l": 1,
-   "n": 6
+   "n": 6,
+   "wall_radius": null
   },
   {
    "asymptotic_potential": 4.0532,
@@ -3137,7 +3149,8 @@
    "iproj": 2,
    "j": 0.5,
    "l": 1,
-   "n": 6
+   "n": 6,
+   "wall_radius": null
   },
   {
    "asymptotic_potential": 4.5681,
@@ -3147,7 +3160,8 @@
    "iproj": 2,
    "j": 2.5,
    "l": 2,
-   "n": 6
+   "n": 6,
+   "wall_radius": null
   },
   {
    "asymptotic_potential": 4.6548,
@@ -3157,7 +3171,8 @@
    "iproj": 2,
    "j": 1.5,
    "l": 2,
-   "n": 6
+   "n": 6,
+   "wall_radius": null
   },
   {
    "asymptotic_potential": 3.7651,
@@ -3167,7 +3182,8 @@
    "iproj": 2,
    "j": 3.5,
    "l": 3,
-   "n": 5
+   "n": 5,
+   "wall_radius": null
   },
   {
    "asymptotic_potential": 3.7668,
@@ -3177,7 +3193,8 @@
    "iproj": 2,
    "j": 2.5,
    "l": 3,
-   "n": 5
+   "n": 5,
+   "wall_radius": null
   }
  ]
 }

@@ -147,7 +147,8 @@
    "nproj": [
     2,
     2
-   ]
+   ],
+   "well_n": null
   }
  },
  "ionic_tail": null,
@@ -256,7 +257,8 @@
    "iproj": 2,
    "j": null,
    "l": 0,
-   "n": 3
+   "n": 3,
+   "wall_radius": null
   }
  ]
 }

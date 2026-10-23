@@ -531,6 +531,47 @@ def test_well_options_invalid(nitrogen, update):
         nitrogen.merge(update)
 
 
+# well_tail = "confined" (2 on the lmax line) and well_n, the optional fourth column of the
+# projector lines (azadoks/oncvpsp 4286074)
+N_CONFINED_DAT = N_DAT.replace(
+    "# lmax\n    1\n", "# lmax\n    1    0    0.0    2\n"
+).replace("    1    2    1.50\n", "    1    2    1.50    4\n")
+
+
+def test_confined_well_n(nitrogen):
+    confined = OncvpspInput.from_dat_string(N_CONFINED_DAT)
+    assert confined.pseudopotentials.well_tail == "confined"
+    assert confined.vkb_projectors.well_n == [0, 4]
+    assert [
+        line.split() for line in confined.vkb_projectors.as_dat_string().split("\n")
+    ] == [["0", "2", "1.50000", "0"], ["1", "2", "1.50000", "4"]]
+    assert OncvpspInput.from_dat_string(confined.as_dat_string()) == confined
+    assert OncvpspInput.from_toml_string(confined.as_toml_string()) == confined
+    assert toml.loads(confined.as_toml_string())["vkb_projectors"]["well_n"] == [0, 4]
+    # without well_n the projector lines keep three columns, and TOML leaves it out
+    plain = confined.merge(vkb_projectors={"well_n": None})
+    assert all(
+        len(line.split()) == 3
+        for line in plain.vkb_projectors.as_dat_string().split("\n")
+    )
+    assert "well_n" not in toml.loads(plain.as_toml_string())["vkb_projectors"]
+    assert "well_n" not in toml.loads(nitrogen.as_toml_string())["vkb_projectors"]
+
+
+@pytest.mark.parametrize(
+    "update",
+    [
+        # oncvpsp: ERROR well_n is for well_tail = "confined" only
+        {"pseudopotentials": {"well_tail": "well"}},
+        {"vkb_projectors": {"well_n": [0, -1]}},
+        {"vkb_projectors": {"well_n": [4]}},
+    ],
+)
+def test_confined_well_n_invalid(update):
+    with pytest.raises(ValueError):
+        OncvpspInput.from_dat_string(N_CONFINED_DAT).merge(update)
+
+
 # wave_regularization: the optional fifth value of the lmax line (azadoks/oncvpsp), after the well
 # options, and a key of [pseudopotentials] in TOML
 def test_wave_regularization_default(nitrogen):

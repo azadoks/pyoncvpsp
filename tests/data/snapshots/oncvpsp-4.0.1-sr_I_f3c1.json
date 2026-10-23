@@ -180,7 +180,8 @@
     2,
     2,
     2
-   ]
+   ],
+   "well_n": null
   }
  },
  "ionic_tail": null,
@@ -360,7 +361,8 @@
    "iproj": 2,
    "j": null,
    "l": 0,
-   "n": 7
+   "n": 7,
+   "wall_radius": null
   }
  ]
 }

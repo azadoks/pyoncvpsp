@@ -596,3 +596,30 @@ def test_diagnostics_well_share(parse_output):
     ]
     old = parse_output("oncvpsp-4.0.1-sr_07_N_flat").diagnostics["ecut_crossings"]
     assert all("eresid_qcut_well" not in c for c in old)
+
+
+def test_confined_well(parse_output):
+    # azadoks/oncvpsp 4286074, well_tail = "confined": the wall's radius in place of the
+    # asymptotic potential and half-point radius, and well_n in the input echo
+    parser = parse_output("oncvpsp-4.0.1-sr_14_Si_confined")
+    assert parser.input["pseudopotentials"]["well_tail"] == "confined"
+    assert parser.input["vkb_projectors"]["well_n"] == [0, 5, 0]
+    states = {(s["l"], s["iproj"]): s for s in parser.wellstate_metadata}
+    assert {k: s["n"] for k, s in states.items()} == {
+        (0, 2): 4,
+        (1, 2): 5,
+        (2, 1): 3,
+        (2, 2): 4,
+    }
+    for state in states.values():
+        assert state["wall_radius"] > 2.7
+        assert state["asymptotic_potential"] is None
+        assert state["half_point_radius"] is None
+    # the confined states have the well's share too
+    crossings = parser.diagnostics["ecut_crossings"]
+    assert {(c["l"], c["iproj"]) for c in crossings if "eresid_qcut_well" in c} == set(
+        states
+    )
+    assert parser.messages == []
+    hamann = parse_output("oncvpsp-4.0.1-sr_14_Si_well_share")
+    assert all(s["wall_radius"] is None for s in hamann.wellstate_metadata)

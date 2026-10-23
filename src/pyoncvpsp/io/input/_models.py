@@ -16,6 +16,9 @@ from .._utils import flatten, recursive_merge
 
 LOGGER: logging.Logger = logging.getLogger(__name__)
 
+# `well_tail` by its value on the lmax line
+_WELL_TAILS: tuple[str, ...] = ("well", "free", "confined")
+
 
 class OncvpspAtomInput(BaseModel):  # pylint: disable=too-few-public-methods
     r"""Input parameters defining the atom being pseudized.
@@ -265,9 +268,11 @@ class PseudoPotentialsInput(BaseModel):  # pylint: disable=too-few-public-method
         well_onset (float | None): Onset of the well of the well states as a multiple of rc,
             at least 1; `None` (or 0 or less) for ONCVPSP's default 1.006**5 (the optional
             third value of the lmax line, 0 for the default).
-        well_tail (str): The tail of the well states beyond rc: "well", that of the well, or
-            "free", the free solution under a window, which does not depend on the well
-            (the optional fourth value of the lmax line, 0 or 1).
+        well_tail (str): The tail of the well states beyond rc: "well", that of the well,
+            "free", the free solution under a window, which does not depend on the well, or
+            "confined", that of a well whose wall rises without bound, with the n of each l's
+            first well state fixed (`VKBProjectorsInput.well_n`) rather than found (the
+            optional fourth value of the lmax line, 0, 1 or 2).
         wave_regularization (float): Weight w >= 0 of the residual energy at qcut/4 added to
             that at qcut in the optimization of the pseudo waves, which determines the wave
             where E_resid(qcut) is flat (azadoks/oncvpsp; `wave_regularization` in
@@ -289,7 +294,7 @@ class PseudoPotentialsInput(BaseModel):  # pylint: disable=too-few-public-method
     qcut: Annotated[list[float], Field(min_length=1)]
     ep_as_given: bool = False
     well_onset: Annotated[float | None, Field(ge=1.0)] = None
-    well_tail: Literal["well", "free"] = "well"
+    well_tail: Literal["well", "free", "confined"] = "well"
     wave_regularization: Annotated[float, Field(ge=0.0)] = 0.0
 
     @field_validator("well_onset", mode="before")
@@ -357,7 +362,7 @@ class PseudoPotentialsInput(BaseModel):  # pylint: disable=too-few-public-method
             # ep_as_given, well_onset (0 for the default) and well_tail after lmax, and
             # wave_regularization after them when it is not 0
             onset = self.well_onset if self.well_onset is not None else 0.0
-            tail = 1 if self.well_tail == "free" else 0
+            tail = _WELL_TAILS.index(self.well_tail)
             lmax += f" {int(self.ep_as_given):>5d} {onset:>24.16e} {tail:>5d}"
             head += ", ep_as_given, well_onset, well_tail"
             if self.wave_regularization != 0.0:
@@ -450,17 +455,24 @@ class VKBProjectorInput(BaseModel):  # pylint: disable=too-few-public-methods
         nproj (int): Number of projectors for this angular momentum channel.
         debl (float): [Hartree] Energy added to that of the previous pseudo-wavefunction for constructing
             the 2nd (and subsequent) projector(s) if no corresponding occupied bound state exists.
+        well_n (int | None): n of the channel's first well state (0 for the default), written as a
+            fourth column when not None; see `VKBProjectorsInput.well_n`.
     """
 
     l: Annotated[int, Field(ge=0)]  # noqa: E741
     nproj: Annotated[int, Field(ge=0, le=5)]
     debl: Annotated[float, Field(ge=0.0)] = 0.0
+    well_n: Annotated[int | None, Field(ge=0)] = None
 
     def as_dat_string(self, with_comment: bool = False) -> str:
         """String representation of the pseudopotential input in .dat file format."""
         s: str = f"{self.l:>10d} {self.nproj:>10d} {self.debl:>10.5f}"
+        head: str = f"# {'l':>8s} {'nproj':>10s} {'debl':>10s}"
+        if self.well_n is not None:
+            s += f" {self.well_n:>10d}"
+            head += f" {'well_n':>10s}"
         if with_comment:
-            s = f"# {'l':>8s} {'nproj':>10s} {'debl':>10s}\n" + s
+            s = f"{head}\n" + s
         return s
 
 
@@ -471,11 +483,16 @@ class VKBProjectorsInput(BaseModel):  # pylint: disable=too-few-public-methods
         l (list[int]): List of angular momentum quantum numbers for each channel (`all(li <= lmax for li in l)`).
         nproj (list[int]): List of number of projectors for each channel.
         debl (list[float]): List of energy increments for constructing additional projectors for each channel.
+        well_n (list[int] | None): With `well_tail` "confined" only, the n of each channel's first
+            well state, at least that of ONCVPSP's choice; 0 for its choice, and None for 0 in all
+            (azadoks/oncvpsp; `well_n` in `[vkb_projectors]`, or the optional fourth column of the
+            projector lines, written for all channels when any is above 0).
     """
 
     l: Annotated[list[int], Field(min_length=1)]  # noqa: E741
     nproj: Annotated[list[int], Field(min_length=1)]
     debl: Annotated[list[float], Field(min_length=1)]
+    well_n: list[Annotated[int, Field(ge=0)]] | None = None
 
     def __len__(self) -> int:
         return len(self.l)
@@ -485,6 +502,7 @@ class VKBProjectorsInput(BaseModel):  # pylint: disable=too-few-public-methods
             l=self.l[index],
             nproj=self.nproj[index],
             debl=self.debl[index],
+            well_n=self.well_n[index] if self.well_n and any(self.well_n) else None,
         )
 
     def __iter__(self):  # type: ignore
@@ -495,6 +513,8 @@ class VKBProjectorsInput(BaseModel):  # pylint: disable=too-few-public-methods
     def _check(self) -> "VKBProjectorsInput":
         if sorted(self.l) != list(range(max(self.l) + 1)):
             raise ValueError(f"VKB projectors must cover all l from 0 to {max(self.l)}")
+        if self.well_n is not None and len(self.well_n) != len(self.l):
+            raise ValueError("well_n must have one value per VKB projector channel")
         return self
 
     def as_dat_string(self, with_comment: bool = False) -> str:
@@ -796,8 +816,8 @@ def _to_oncvpsp_toml(data: dict[str, Any]) -> dict[str, Any]:
     4 Teter grid as `fcfact_*` and `rcfact_*`. ONCVPSP ignores the keys it does not read, such as
     `teter_relative`. The log mesh parameters that are not given are left out, and `[log_mesh]`
     too when none is; so are `c_light` when it is not given, `upf_mesh` when it is 0, and
-    `ep_as_given`, `well_onset`, `well_tail` and `wave_regularization` at their defaults, and
-    `budget_cutoff` at "max"."""
+    `ep_as_given`, `well_onset`, `well_tail` and `wave_regularization` at their defaults,
+    `well_n` when it is None or 0 for all l, and `budget_cutoff` at "max"."""
     data = deepcopy(data)
     psps = data["pseudopotentials"]
     for key, default in (
@@ -808,6 +828,8 @@ def _to_oncvpsp_toml(data: dict[str, Any]) -> dict[str, Any]:
     ):
         if psps.get(key, default) == default:
             psps.pop(key, None)
+    if not any(data["vkb_projectors"].get("well_n") or []):
+        data["vkb_projectors"].pop("well_n", None)
     data["pp_output"] = {"psfile": data["oncvpsp"].pop("psfile")}
     if data["oncvpsp"].get("c_light", 0) is None:
         del data["oncvpsp"]["c_light"]
@@ -1075,7 +1097,7 @@ class OncvpspInput(BaseModel):
         well_onset = (
             float(words[2].lower().replace("d", "e")) if len(words) >= 3 else None
         )
-        well_tail = "free" if len(words) >= 4 and int(words[3]) == 1 else "well"
+        well_tail = _WELL_TAILS[int(words[3])] if len(words) >= 4 else "well"
         wave_regularization = (
             float(words[4].lower().replace("d", "e")) if len(words) >= 5 else 0.0
         )
@@ -1101,14 +1123,17 @@ class OncvpspInput(BaseModel):
         rc5 = float(words[2])
         dvloc0 = float(words[3])
         # VANDERBILT-KLEINMAN-BYLANDER PROJECTORs
-        # nproj, debl (lmax + 1 lines, l's must be in order)
+        # nproj, debl, (well_n) (lmax + 1 lines, l's must be in order)
         nproj: list[int] = [0] * (lmax + 1)
         debl: list[float] = [0.0] * (lmax + 1)
+        well_n: list[int] = [0] * (lmax + 1)
         for ell in range(lmax + 1):
             words = next(iter_).split()
             assert ell == int(words[0])
             nproj[ell] = int(words[1])
             debl[ell] = float(words[2])
+            if len(words) >= 4:
+                well_n[ell] = int(words[3])
         # MODEL CORE CHARGE
         # icmod, fcfact, (rcfact), (fcfact_min, fcfact_max, fcfact_step, rcfact_min, rcfact_max, rcfact_step)
         words = next(iter_).split()
@@ -1221,6 +1246,7 @@ class OncvpspInput(BaseModel):
                 "l": list(range(lmax + 1)),
                 "nproj": nproj,
                 "debl": debl,
+                "well_n": well_n if any(well_n) else None,
             },
             "model_core_charge": {
                 "icmod": icmod,
@@ -1347,6 +1373,16 @@ class OncvpspInput(BaseModel):
                         f"Pseudopotential with l={psp.l} has rc={psp.rc} "
                         f"smaller than local potential rc={self.local_potential.rcloc}"
                     )
+        return self
+
+    @model_validator(mode="after")
+    def _check_well_n(self) -> "OncvpspInput":
+        # oncvpsp_main stops on a well_n with any other well_tail
+        if (
+            any(self.vkb_projectors.well_n or [])
+            and self.pseudopotentials.well_tail != "confined"
+        ):
+            raise ValueError('well_n is for well_tail = "confined" only')
         return self
 
     @model_validator(mode="after")
