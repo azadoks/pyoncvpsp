@@ -2501,7 +2501,9 @@ class OncvpspTextParser:
                     pseudo scattering state at each energy, normalized to 1 inside rc. l, j, e
                     (Ha), eresid_qcut (its E_resid at qcut, Ha), eresid (np.ndarray, the levels
                     from 1e-2 down by decades to 1e-5 that it reaches, Ha) and ecut
-                    (np.ndarray, the cutoffs at which it falls to them, Ha); [] without them.
+                    (np.ndarray, the cutoffs at which it falls to them, Ha), both empty when it
+                    reaches none, as when qcut is far below its wave vector (no `band_ecut`
+                    line); [] without them.
 
             Each ecut_crossings record also has, from the line `opt l ikap iproj e reg e1 f1`,
             eresid_qcut (E_resid at qcut of the optimized wave, Ha), regularization (the
