@@ -572,6 +572,48 @@ def test_confined_well_n_invalid(update):
         OncvpspInput.from_dat_string(N_CONFINED_DAT).merge(update)
 
 
+# well_norm: the optional sixth value of the lmax line, after wave_regularization, which is then
+# written too (azadoks/oncvpsp a575a64)
+@pytest.mark.parametrize(
+    ("value", "well_norm", "well_tail"),
+    [
+        (0, None, "well"),
+        (1, "space", "well"),
+        (2, "rc", "free"),
+        (1, "space", "confined"),
+    ],
+)
+def test_well_norm(nitrogen, value, well_norm, well_tail):
+    tail = ("well", "free", "confined").index(well_tail)
+    dat = N_DAT.replace(
+        "# lmax\n    1\n", f"# lmax\n    1    0    0.0    {tail}    0.0    {value}\n"
+    )
+    read = OncvpspInput.from_dat_string(dat)
+    assert read.pseudopotentials.well_norm == well_norm
+    assert read == nitrogen.merge(
+        pseudopotentials={"well_tail": well_tail, "well_norm": well_norm}
+    )
+    lmax_line = read.pseudopotentials.as_dat_string().split("\n")[0].split()
+    assert len(lmax_line) == (6 if well_norm else 4 if well_tail != "well" else 1)
+    assert OncvpspInput.from_dat_string(read.as_dat_string()) == read
+    assert OncvpspInput.from_toml_string(read.as_toml_string()) == read
+    psps = toml.loads(read.as_toml_string())["pseudopotentials"]
+    assert psps.get("well_norm") == well_norm
+
+
+@pytest.mark.parametrize(
+    "update",
+    [
+        # oncvpsp: ERROR well_norm = "space" (1) is not defined for well_tail = "free"
+        {"pseudopotentials": {"well_tail": "free", "well_norm": "space"}},
+        {"pseudopotentials": {"well_norm": "matched"}},
+    ],
+)
+def test_well_norm_invalid(nitrogen, update):
+    with pytest.raises(ValueError):
+        nitrogen.merge(update)
+
+
 # wave_regularization: the optional fifth value of the lmax line (azadoks/oncvpsp), after the well
 # options, and a key of [pseudopotentials] in TOML
 def test_wave_regularization_default(nitrogen):

@@ -16,8 +16,9 @@ from .._utils import flatten, recursive_merge
 
 LOGGER: logging.Logger = logging.getLogger(__name__)
 
-# `well_tail` by its value on the lmax line
+# `well_tail` and `well_norm` (None for that of `well_tail`) by their values on the lmax line
 _WELL_TAILS: tuple[str, ...] = ("well", "free", "confined")
+_WELL_NORMS: tuple[str | None, ...] = (None, "space", "rc")
 
 
 class OncvpspAtomInput(BaseModel):  # pylint: disable=too-few-public-methods
@@ -278,6 +279,11 @@ class PseudoPotentialsInput(BaseModel):  # pylint: disable=too-few-public-method
             where E_resid(qcut) is flat (azadoks/oncvpsp; `wave_regularization` in
             `[pseudopotentials]`, or the optional fifth value of the lmax line); 0, the
             default, leaves the optimization as it was.
+        well_norm (str | None): The normalization of the well states that the well confines:
+            "space", over all space, or "rc", inside rc; None for that of `well_tail`, "space"
+            for "well" and "rc" for "free" and "confined" (azadoks/oncvpsp; `well_norm` in
+            `[pseudopotentials]`, or the optional sixth value of the lmax line, 0, 1 or 2).
+            It moves only E_resid and the cutoffs; "space" is not defined for "free".
     """
 
     lmax: Annotated[
@@ -296,6 +302,7 @@ class PseudoPotentialsInput(BaseModel):  # pylint: disable=too-few-public-method
     well_onset: Annotated[float | None, Field(ge=1.0)] = None
     well_tail: Literal["well", "free", "confined"] = "well"
     wave_regularization: Annotated[float, Field(ge=0.0)] = 0.0
+    well_norm: Literal["space", "rc"] | None = None
 
     @field_validator("well_onset", mode="before")
     @classmethod
@@ -306,9 +313,13 @@ class PseudoPotentialsInput(BaseModel):  # pylint: disable=too-few-public-method
 
     @property
     def has_well_options(self) -> bool:
-        """Whether any of `ep_as_given`, `well_onset` and `well_tail` is not its default."""
+        """Whether any of `ep_as_given`, `well_onset`, `well_tail` and `well_norm` is not its
+        default."""
         return (
-            self.ep_as_given or self.well_onset is not None or self.well_tail != "well"
+            self.ep_as_given
+            or self.well_onset is not None
+            or self.well_tail != "well"
+            or self.well_norm is not None
         )
 
     def __len__(self) -> int:
@@ -350,6 +361,11 @@ class PseudoPotentialsInput(BaseModel):  # pylint: disable=too-few-public-method
                 raise ValueError(
                     f"Pseudopotential with l={ell} exceeds l_max={self.lmax}"
                 )
+        if self.well_norm == "space" and self.well_tail == "free":
+            # oncvpsp_main: the free tail has no finite norm
+            raise ValueError(
+                'well_norm = "space" is not defined for well_tail = "free"'
+            )
         return self
 
     def as_dat_string(self, with_comment: bool = False) -> str:
@@ -359,15 +375,19 @@ class PseudoPotentialsInput(BaseModel):  # pylint: disable=too-few-public-method
         lmax = f"{self.lmax:>10d}"
         head = f"# {'lmax':>8s}"
         if self.has_well_options or self.wave_regularization != 0.0:
-            # ep_as_given, well_onset (0 for the default) and well_tail after lmax, and
-            # wave_regularization after them when it is not 0
+            # ep_as_given, well_onset (0 for the default) and well_tail after lmax,
+            # wave_regularization after them when it or well_norm is not its default, and
+            # well_norm (0 for that of well_tail) after it when set
             onset = self.well_onset if self.well_onset is not None else 0.0
             tail = _WELL_TAILS.index(self.well_tail)
             lmax += f" {int(self.ep_as_given):>5d} {onset:>24.16e} {tail:>5d}"
             head += ", ep_as_given, well_onset, well_tail"
-            if self.wave_regularization != 0.0:
+            if self.wave_regularization != 0.0 or self.well_norm is not None:
                 lmax += f" {self.wave_regularization:>24.16e}"
                 head += ", wave_regularization"
+            if self.well_norm is not None:
+                lmax += f" {_WELL_NORMS.index(self.well_norm):>5d}"
+                head += ", well_norm"
         if with_comment:
             lines.append(f"{head}\n{lmax}\n#")
         else:
@@ -816,8 +836,8 @@ def _to_oncvpsp_toml(data: dict[str, Any]) -> dict[str, Any]:
     4 Teter grid as `fcfact_*` and `rcfact_*`. ONCVPSP ignores the keys it does not read, such as
     `teter_relative`. The log mesh parameters that are not given are left out, and `[log_mesh]`
     too when none is; so are `c_light` when it is not given, `upf_mesh` when it is 0, and
-    `ep_as_given`, `well_onset`, `well_tail` and `wave_regularization` at their defaults,
-    `well_n` when it is None or 0 for all l, and `budget_cutoff` at "max"."""
+    `ep_as_given`, `well_onset`, `well_tail`, `wave_regularization` and `well_norm` at their
+    defaults, `well_n` when it is None or 0 for all l, and `budget_cutoff` at "max"."""
     data = deepcopy(data)
     psps = data["pseudopotentials"]
     for key, default in (
@@ -825,6 +845,7 @@ def _to_oncvpsp_toml(data: dict[str, Any]) -> dict[str, Any]:
         ("well_onset", None),
         ("well_tail", "well"),
         ("wave_regularization", 0.0),
+        ("well_norm", None),
     ):
         if psps.get(key, default) == default:
             psps.pop(key, None)
@@ -1090,7 +1111,7 @@ class OncvpspInput(BaseModel):
             la[i] = int(words[1])
             fa[i] = float(words[2])
         # PSEUDOPOTENTIAL AND OPTIMIZATION
-        # lmax, (ep_as_given, (well_onset, (well_tail, (wave_regularization))))
+        # lmax, (ep_as_given, (well_onset, (well_tail, (wave_regularization, (well_norm)))))
         words = next(iter_).split()
         lmax = int(words[0])
         ep_as_given = len(words) >= 2 and int(words[1]) == 1
@@ -1101,6 +1122,7 @@ class OncvpspInput(BaseModel):
         wave_regularization = (
             float(words[4].lower().replace("d", "e")) if len(words) >= 5 else 0.0
         )
+        well_norm = _WELL_NORMS[int(words[5])] if len(words) >= 6 else None
         # l, rc, ep, ncon, nbas, qcut (lmax + 1 lines, l's must be in order)
         rc: list[float] = [0.0] * (lmax + 1)
         ep: list[float] = [0.0] * (lmax + 1)
@@ -1235,6 +1257,7 @@ class OncvpspInput(BaseModel):
                 "well_onset": well_onset,
                 "well_tail": well_tail,
                 "wave_regularization": wave_regularization,
+                "well_norm": well_norm,
             },
             "local_potential": {
                 "lloc": lloc,

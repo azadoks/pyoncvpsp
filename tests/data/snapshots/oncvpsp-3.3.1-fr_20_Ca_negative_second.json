@@ -270,6 +270,7 @@
     2.2
    ],
    "wave_regularization": 0.0,
+   "well_norm": null,
    "well_onset": null,
    "well_tail": "well"
   },

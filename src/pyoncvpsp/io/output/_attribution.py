@@ -234,6 +234,7 @@ ATTRIBUTION: dict[str, dict[str, Any]] = {
     "ionic_valence_lschvkbb_failed": {"stage": Stage.MODEL_CORE, "scope": Scope.ELL},
     # oncvpsp, after reading the input
     "well_n_not_confined": {"stage": Stage.INPUT, "scope": Scope.INPUT},
+    "well_norm_space_free_tail": {"stage": Stage.INPUT, "scope": Scope.INPUT},
     # oncvpsp, before the well states of l are solved
     "well_n_below_first_well_state": {"stage": Stage.SEMILOCAL, "scope": Scope.ELL},
     # --- errors: anywhere

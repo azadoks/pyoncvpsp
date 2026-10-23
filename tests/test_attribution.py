@@ -454,6 +454,14 @@ def test_unrecognized_error_is_not_a_message_of_a_completed_run():
             None,
         ),
         (
+            'oncvpsp: ERROR well_norm = "space" (1) is not defined for well_tail = "free": the '
+            "free tail has no finite norm",
+            "well_norm_space_free_tail",
+            Stage.INPUT,
+            Scope.INPUT,
+            None,
+        ),
+        (
             "oncvpsp: ERROR well_n for l= 1 is  3, below the first well state's n,  4",
             "well_n_below_first_well_state",
             Stage.SEMILOCAL,

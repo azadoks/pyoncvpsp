@@ -1038,6 +1038,14 @@ ERRORS += [
         "description": "well_n is below the n that ONCVPSP gives the channel's first well state, "
         "one above the last bound state's.",
     },
+    {
+        "name": "well_norm_space_free_tail",
+        "pattern": r'oncvpsp: ERROR well_norm = "space" \(1\) is not defined for well_tail = "free"',
+        "match_string": 'oncvpsp: ERROR well_norm = "space"',
+        "line_count": 1,
+        "subroutine": "oncvpsp",
+        "description": 'well_norm = "space" with well_tail = "free": the free tail has no finite norm.',
+    },
 ]
 
 # A line of azadoks/oncvpsp's `<routine>: ERROR ...` form. A run which stops without a recognized

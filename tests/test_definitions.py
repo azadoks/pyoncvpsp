@@ -85,6 +85,12 @@ MESSAGES = [
         "oncvpsp: ERROR well_n for l= 1 is  3, below the first well state's n,  4",
         "well_n_below_first_well_state",
     ),
+    # azadoks/oncvpsp (branch smooooth, a575a64)
+    (
+        'oncvpsp: ERROR well_norm = "space" (1) is not defined for well_tail = "free": the free '
+        "tail has no finite norm",
+        "well_norm_space_free_tail",
+    ),
     (
         "oncvpsp: ERROR node of the local channel l= 2 all-electron wave near rc, at r=  2.345678",
         "local_channel_ae_node",
