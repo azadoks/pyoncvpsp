@@ -52,7 +52,7 @@ def test_every_definition_has_attribution(level, name):
     )
     assert meta["stage"] is None or isinstance(meta["stage"], Stage)
     assert meta["scope"] is None or isinstance(meta["scope"], Scope)
-    assert meta.get("l_rule", "context") in ("pending", "context", "none")
+    assert meta.get("l_rule", "context") in ("pending", "announced", "context", "none")
 
 
 def test_attribution_has_no_stale_entries():
@@ -447,6 +447,13 @@ def test_unrecognized_error_is_not_a_message_of_a_completed_run():
             1,
         ),
         (
+            "ionic_valence: ERROR lschvkbb n,l,ierr=   2   0 200",
+            "ionic_valence_bound_ghost",
+            Stage.MODEL_CORE,
+            Scope.ELL,
+            0,
+        ),
+        (
             'oncvpsp: ERROR well_n is for well_tail = "confined" only',
             "well_n_not_confined",
             Stage.INPUT,
@@ -486,3 +493,35 @@ def test_smooooth_messages_attribution(line, name, stage, scope, l):  # noqa: E7
         scope,
         l,
     )
+
+
+def test_free_tail_message_takes_the_announced_channel():
+    # The free tail is made after the Wellstate header of its channel in the main program, or
+    # inside the channel's run_optimize block
+    error = "free_tail_width: ERROR the free tail of the well state at -0.502360 Ha with qcut=  1.432620"
+    after_wellstate = "\n".join(
+        [
+            "Calculating optimized projector #   1",
+            "",
+            " for l=   1",
+            "   Wellstate for l =  2  n =  5",
+            "     free tail, no well",
+            "",
+            error,
+            "grows too fast for its window (kappa L =   20.74 > 12): raise qcut or the state's energy",
+        ]
+    )
+    in_block = "\n".join(
+        [
+            "   Wellstate for l =  2  n =  5",
+            "Calculating optimized projector #   2",
+            "",
+            " for l=   2",
+            error,
+            "grows too fast for its window (kappa L =   20.74 > 12): raise qcut or the state's energy",
+        ]
+    )
+    for text in (after_wellstate, in_block):
+        (message,) = OncvpspTextParser(text=text, check=False).messages
+        assert message.name == "free_tail_too_fast"
+        assert (message.l, message.attribution) == (2, Attribution.INFERRED)

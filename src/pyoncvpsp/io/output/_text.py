@@ -2496,7 +2496,7 @@ class OncvpspTextParser:
                     falls to them, Ha) and check (the local energy per electron from the q
                     grid less that from r space, Ha); else None.
                 band_cutoffs (list[dict]): One per energy of the cutoffs at the valence
-                    energies (azadoks/oncvpsp 3eff290; lines `band_eresid l ikap e eres` and
+                    energies (azadoks/oncvpsp 3eff290 up to 5fd5556, which removed them; lines `band_eresid l ikap e eres` and
                     `band_ecut l ikap e err ecut`), for each channel with no occupied state: the
                     pseudo scattering state at each energy, normalized to 1 inside rc. l, j, e
                     (Ha), eresid_qcut (its E_resid at qcut, Ha), eresid (np.ndarray, the levels

@@ -391,11 +391,25 @@ ERRORS: list[dict[str, Any]] = [
     {
         "name": "vkb_bound_state_not_converged",
         # "oncvpsp: lschvkbb ERROR" (v3, v4), "oncvpsp-752: lschvkbb_m ERROR" (METAPSP)
-        "pattern": r"oncvpsp(?:-\d+)?: lschvkbb(?:_m)? ERROR\s+(?P<n>\d+)\s+(?P<l>\d+)\s+(?P<ierr>-?\d+)",
+        # ierr 200 is vkb_bound_ghost
+        "pattern": r"oncvpsp(?:-\d+)?: lschvkbb(?:_m)? ERROR\s+(?P<n>\d+)\s+(?P<l>\d+)\s+(?P<ierr>(?!200\b)-?\d+)",
         "match_string": "lschvkbb",
         "line_count": 1,
         "subroutine": "oncvpsp",
         "description": "Unable to solve for bound state in separable pseudopotential when constructing final pseudo-states and densities.",
+    },
+    {
+        "name": "vkb_bound_ghost",
+        # azadoks/oncvpsp from 61e586a: lschvkbb's ierr 200, followed by
+        # "a state of l= 0 lies below   -0.132031 Ha that the node count does not expect:" and
+        # "a bound ghost of the projectors"
+        "pattern": r"oncvpsp: lschvkbb ERROR\s+(?P<n>\d+)\s+(?P<l>\d+)\s+(?P<ierr>200)\b",
+        "match_string": "lschvkbb",
+        "line_count": 3,
+        "subroutine": "oncvpsp",
+        "description": "A valence state could not be solved in the separable pseudopotential because "
+        "the projectors bind a state of the same l below it that the node count does not "
+        "expect: a bound ghost.",
     },
     {
         "name": "vkb_bound_state_not_converged_r",
@@ -854,6 +868,18 @@ WARNINGS += [
         "description": "qcut is not above the wave vector of a well state, which oscillates faster "
         "than the cutoff: its cutoffs are not meaningful with any tail.",
     },
+    {
+        "name": "well_state_free_tail_too_fast",
+        # azadoks/oncvpsp from e781800, well_tail = "well": the free tail of the well's share
+        # grows too fast for its window (kappa L > 12), followed by
+        # "    WARNING its window at qcut (kappa L > 12): no share"
+        "pattern": r"WARNING this well state's free tail grows too fast for",
+        "match_string": "WARNING this well state's free tail grows too fast for",
+        "line_count": 2,
+        "subroutine": "run_optimize",
+        "description": "The free tail of a well state, at a negative energy, grows too fast for "
+        "its window at qcut (kappa L > 12), so the well's share of its E_resid is not defined.",
+    },
 ]
 
 ERRORS += [
@@ -928,6 +954,17 @@ ERRORS += [
         "line_count": 2,
         "subroutine": "free_tail_width (free_tail_m)",
         "description": "With well_tail = free, qcut is not above the wave vector of the well state.",
+    },
+    {
+        "name": "free_tail_too_fast",
+        # azadoks/oncvpsp from e781800, followed by
+        # "grows too fast for its window (kappa L =   20.74 > 12): raise qcut or the state's energy"
+        "pattern": rf"free_tail_width: ERROR the free tail of the well state at\s*(?P<e>{RE_FLOAT}) Ha with qcut=\s*(?P<qcut>{RE_FLOAT})",
+        "match_string": "free_tail_width: ERROR the free tail",
+        "line_count": 2,
+        "subroutine": "free_tail_width (free_tail_m)",
+        "description": "With well_tail = free, the free tail of a well state at a negative energy "
+        "grows too fast for its window at qcut (kappa L > 12).",
     },
     {
         "name": "output_mesh_error",
@@ -1011,12 +1048,25 @@ ERRORS += [
     },
     {
         "name": "ionic_valence_lschvkbb_failed",
-        "pattern": r"ionic_valence: ERROR lschvkbb n,l,ierr=\s*(?P<n>\d+)\s+(?P<l>\d+)\s+(?P<ierr>-?\d+)",
+        # ierr 200 is ionic_valence_bound_ghost
+        "pattern": r"ionic_valence: ERROR lschvkbb n,l,ierr=\s*(?P<n>\d+)\s+(?P<l>\d+)\s+(?P<ierr>(?!200\b)-?\d+)",
         "match_string": "ionic_valence: ERROR lschvkbb",
         "line_count": 1,
         "subroutine": "ionic_valence",
         "description": "A pseudo valence state could not be solved in the separable potential with "
         "the ionic tail beyond rcmax.",
+    },
+    {
+        "name": "ionic_valence_bound_ghost",
+        # azadoks/oncvpsp from 61e586a: lschvkbb's ierr 200, followed by the two lines of
+        # vkb_bound_ghost
+        "pattern": r"ionic_valence: ERROR lschvkbb n,l,ierr=\s*(?P<n>\d+)\s+(?P<l>\d+)\s+(?P<ierr>200)\b",
+        "match_string": "ionic_valence: ERROR lschvkbb",
+        "line_count": 3,
+        "subroutine": "ionic_valence",
+        "description": "A pseudo valence state could not be solved in the separable potential with "
+        "the ionic tail because the projectors bind a state of the same l below it that the "
+        "node count does not expect: a bound ghost.",
     },
     {
         "name": "well_n_not_confined",

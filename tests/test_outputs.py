@@ -645,3 +645,27 @@ def test_ecut_weight_band_cutoffs(parse_output):
         parse_output("oncvpsp-4.0.1-sr_14_Si_confined").diagnostics["band_cutoffs"]
         == []
     )
+
+
+def test_vkb_bound_ghost(parse_output):
+    # azadoks/oncvpsp 61e586a: lschvkbb's ierr 200 is a bound ghost of the projectors, and its
+    # message is three lines
+    parser = parse_output("oncvpsp-4.0.1-sr_3_Li_vkb_bound_ghost")
+    assert parser.failure is not None
+    assert parser.failure.name == "vkb_bound_ghost"
+    assert parser.failure.l == 0
+    assert len(parser.failure.primary.line_numbers) == 3
+    assert not any(
+        "bound ghost of the projectors" in line for line in parser.clean_lines
+    )
+
+
+def test_free_tail_too_fast(parse_output):
+    # azadoks/oncvpsp e781800: with the free tail, a well state at a negative energy whose tail
+    # grows too fast for its window at qcut (kappa L > 12) stops the run
+    failure = parse_output("oncvpsp-4.0.1-sr_53_I_free_tail_too_fast").failure
+    assert failure is not None
+    assert failure.name == "free_tail_too_fast"
+    assert failure.l == 2
+    assert len(failure.primary.line_numbers) == 2
+    assert float(failure.primary.groups["qcut"]) == pytest.approx(1.43262)

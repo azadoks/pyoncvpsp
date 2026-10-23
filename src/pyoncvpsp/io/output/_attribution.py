@@ -3,7 +3,9 @@
 Messages that do not print `l` themselves are attributed using the context of their line (see
 `_sections`). The main program's loop over `l` calls `wellstate`, the `debl` check and `qroots`
 *before* printing the per-`l` header `Calculating optimized projector`, so their messages appear
-after the block of the previous `l` (`l_rule = "pending"`).
+after the block of the previous `l` (`l_rule = "pending"`). The free tail of azadoks/oncvpsp is
+made both by the main program, after a `Wellstate` header, and inside `run_optimize`'s block, so
+its messages take the channel of the header when one was just printed (`l_rule = "announced"`).
 """
 
 import re
@@ -31,7 +33,7 @@ if TYPE_CHECKING:
 # over `"<name>"` where the same name is used for both a warning and an error).
 #   stage: Stage | None  -- None: infer from the position in the output
 #   scope: Scope | None  -- None: default for the stage
-#   l_rule: "pending" | "context" (default) | "none"
+#   l_rule: "pending" | "announced" | "context" (default) | "none"
 #   iproj: int  -- projector the message is always about, when it does not print one
 ATTRIBUTION: dict[str, dict[str, Any]] = {
     # --- warnings
@@ -111,6 +113,7 @@ ATTRIBUTION: dict[str, dict[str, Any]] = {
     # run_optimize, in the block of the well state's projector
     "well_tail_share": {"stage": Stage.SEMILOCAL, "scope": Scope.ELL},
     "well_state_qcut_below_k": {"stage": Stage.SEMILOCAL, "scope": Scope.ELL},
+    "well_state_free_tail_too_fast": {"stage": Stage.SEMILOCAL, "scope": Scope.ELL},
     # --- errors: input
     "bad_input": {"stage": Stage.INPUT, "scope": Scope.INPUT},
     "input_rc_nonpositive": {"stage": Stage.INPUT, "scope": Scope.ELL},
@@ -183,6 +186,7 @@ ATTRIBUTION: dict[str, dict[str, Any]] = {
         "stage": Stage.VKB_SOLVE,
         "scope": Scope.ELL_AND_LOCAL,
     },
+    "vkb_bound_ghost": {"stage": Stage.VKB_SOLVE, "scope": Scope.ELL_AND_LOCAL},
     # --- errors: model core charge
     "no_core_valence_crossing": {"stage": Stage.MODEL_CORE, "scope": Scope.MODEL_CORE},
     "modcore_dgesv_failed": {"stage": Stage.MODEL_CORE, "scope": Scope.MODEL_CORE},
@@ -221,7 +225,16 @@ ATTRIBUTION: dict[str, dict[str, Any]] = {
     "ode_rc_der_mismatch": {"stage": Stage.SEMILOCAL, "scope": Scope.ELL},
     "optimize_q_grid_too_long": {"stage": Stage.SEMILOCAL, "scope": Scope.ELL},
     "mesh_tail_too_short": {"stage": Stage.SEMILOCAL, "scope": Scope.ELL},
-    "free_tail_qcut_too_low": {"stage": Stage.SEMILOCAL, "scope": Scope.ELL},
+    "free_tail_qcut_too_low": {
+        "stage": Stage.SEMILOCAL,
+        "scope": Scope.ELL,
+        "l_rule": "announced",
+    },
+    "free_tail_too_fast": {
+        "stage": Stage.SEMILOCAL,
+        "scope": Scope.ELL,
+        "l_rule": "announced",
+    },
     "output_mesh_error": {"stage": Stage.OUTPUT, "scope": Scope.GLOBAL},
     "output_mesh_beyond_log_mesh": {"stage": Stage.OUTPUT, "scope": Scope.INPUT},
     "vploc_bad_lpopt": {"stage": Stage.INPUT, "scope": Scope.LOCAL},
@@ -232,6 +245,7 @@ ATTRIBUTION: dict[str, dict[str, Any]] = {
     "wellstate_energy_jump": {"stage": Stage.SEMILOCAL, "scope": Scope.ELL},
     # `ionic_screening`, after the model core and before the pseudoatom total energy
     "ionic_valence_lschvkbb_failed": {"stage": Stage.MODEL_CORE, "scope": Scope.ELL},
+    "ionic_valence_bound_ghost": {"stage": Stage.MODEL_CORE, "scope": Scope.ELL},
     # oncvpsp, after reading the input
     "well_n_not_confined": {"stage": Stage.INPUT, "scope": Scope.INPUT},
     "well_norm_space_free_tail": {"stage": Stage.INPUT, "scope": Scope.INPUT},
@@ -342,6 +356,14 @@ def attribute_message(
         and stage == Stage.SEMILOCAL
     ):
         l = ctx.pending_l  # noqa: E741
+        attribution = Attribution.INFERRED
+    elif (
+        l_rule == "announced"
+        and ctx.stage == Stage.SEMILOCAL
+        and stage == Stage.SEMILOCAL
+        and ctx.announced_l is not None
+    ):
+        l = ctx.announced_l  # noqa: E741
         attribution = Attribution.INFERRED
     elif (
         l_rule != "none"

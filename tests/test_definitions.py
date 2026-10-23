@@ -76,6 +76,11 @@ MESSAGES = [
         "    WARNING qcut is not above this well state's wave vector  5.1186",
         "well_state_qcut_below_k",
     ),
+    # azadoks/oncvpsp (branch smooooth, e781800)
+    (
+        "    WARNING this well state's free tail grows too fast for",
+        "well_state_free_tail_too_fast",
+    ),
     # azadoks/oncvpsp (branch smooooth, 4286074)
     (
         'oncvpsp: ERROR well_n is for well_tail = "confined" only',
@@ -126,6 +131,10 @@ MESSAGES = [
         "free_tail_width: ERROR qcut=  4.000000 is not above the wave vector  5.000000",
         "free_tail_qcut_too_low",
     ),
+    (
+        "free_tail_width: ERROR the free tail of the well state at -0.502360 Ha with qcut=  1.432620",
+        "free_tail_too_fast",
+    ),
     ("om_local_values: ERROR the pieces end inside the mesh", "output_mesh_error"),
     (
         "outmesh: ERROR more than one output point below the log mesh",
@@ -166,6 +175,12 @@ MESSAGES = [
         "ionic_valence: ERROR lschvkbb n,l,ierr=   2   1 100",
         "ionic_valence_lschvkbb_failed",
     ),
+    (
+        "ionic_valence: ERROR lschvkbb n,l,ierr=   2   0 200",
+        "ionic_valence_bound_ghost",
+    ),
+    ("oncvpsp: lschvkbb ERROR   2   0 200", "vkb_bound_ghost"),
+    ("oncvpsp: lschvkbb ERROR   2   0 2000", "vkb_bound_state_not_converged"),
     # ONCVPSP 4
     (
         "oncvpsp: ERROR all-electron reference atom not converged",
