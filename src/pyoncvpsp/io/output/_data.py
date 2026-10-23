@@ -956,6 +956,18 @@ ERRORS += [
         "description": "With well_tail = free, qcut is not above the wave vector of the well state.",
     },
     {
+        "name": "free_tail_negative_ep",
+        # azadoks/oncvpsp from fd5aaf0, after the Wellstate header of the state, followed by
+        # "the well state of l= 2, n=  5 at ep=   -1.608320 Ha has a growing tail;" and
+        # "raise its ep (debl), or use well_tail = "confined" or "well""
+        "pattern": r'oncvpsp: ERROR well_tail = "free" needs ep >= 0:',
+        "match_string": 'oncvpsp: ERROR well_tail = "free" needs ep',
+        "line_count": 3,
+        "subroutine": "oncvpsp",
+        "description": "With well_tail = free, a well state is below 0 Ha, where its free tail "
+        "grows and its residual kinetic energy is lost to round-off.",
+    },
+    {
         "name": "free_tail_too_fast",
         # azadoks/oncvpsp from e781800, followed by
         # "grows too fast for its window (kappa L =   20.74 > 12): raise qcut or the state's energy"

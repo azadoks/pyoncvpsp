@@ -614,6 +614,49 @@ def test_well_norm_invalid(nitrogen, update):
         nitrogen.merge(update)
 
 
+def _with_d_well_state(nitrogen: OncvpspInput, d_ep: float, **pseudopotentials) -> dict:
+    # N with a d channel, which has no valence state: its first projector state is a well state
+    # at d_ep
+    return {
+        "pseudopotentials": {
+            "lmax": 2,
+            "l": [0, 1, 2],
+            "rc": [1.7] * 3,
+            "ep": [0.0, 0.0, d_ep],
+            "ncon": [4] * 3,
+            "nbas": [8] * 3,
+            "qcut": [8.0] * 3,
+            **pseudopotentials,
+        },
+        "vkb_projectors": {"l": [0, 1, 2], "nproj": [2, 2, 1], "debl": [1.5, 1.5, 0.0]},
+    }
+
+
+# oncvpsp: ERROR well_tail = "free" needs ep >= 0 (azadoks/oncvpsp fd5aaf0)
+def test_free_tail_negative_ep_invalid(nitrogen):
+    with pytest.raises(ValueError, match="needs ep >= 0"):
+        nitrogen.merge(
+            _with_d_well_state(nitrogen, -0.1, well_tail="free", ep_as_given=True)
+        )
+
+
+@pytest.mark.parametrize(
+    "pseudopotentials",
+    [
+        # ep >= 0
+        {"well_tail": "free", "ep_as_given": True, "ep": [0.0, 0.0, 0.0]},
+        # without ep_as_given the program replaces a negative ep
+        {"well_tail": "free"},
+        # only the free tail needs it
+        {"well_tail": "confined", "ep_as_given": True},
+        # an ep of a channel with a valence state is not a well state's
+        {"well_tail": "free", "ep_as_given": True, "ep": [-0.1, -0.1, 0.0]},
+    ],
+)
+def test_free_tail_negative_ep_valid(nitrogen, pseudopotentials):
+    nitrogen.merge(_with_d_well_state(nitrogen, -0.1, **pseudopotentials))
+
+
 # wave_regularization: the optional fifth value of the lmax line (azadoks/oncvpsp), after the well
 # options, and a key of [pseudopotentials] in TOML
 def test_wave_regularization_default(nitrogen):

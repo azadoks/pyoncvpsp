@@ -96,12 +96,17 @@ The models check the input when they are built, and raise pydantic's `Validation
 - the log mesh: `rr1` below the largest rc, `rmax` above `rlmax`;
 - `fcfact > 0` for `icmod` 1 and 3, `rcfact > 0` for `icmod` 3, and a negative `fcfact`, a
   `slack` other than 1 or a `budget_cutoff` other than `"max"` only with `icmod` 6 or 7;
-- `well_norm = "space"` not with `well_tail = "free"`, and `well_n` only with `"confined"`.
+- `well_norm = "space"` not with `well_tail = "free"`, and `well_n` only with `"confined"`;
+- with `well_tail = "free"` and `ep_as_given`, no negative `ep` for a channel whose first
+  projector state is a well state (azadoks/oncvpsp from fd5aaf0 needs every free-tail well state
+  at 0 Ha or above). Without `ep_as_given`, `wellstate` replaces every negative energy of a well
+  state by 0.25 Ha, so the case does not arise.
 
 They do not check what only the program can: that `well_n` is not below the program's own choice,
-or that `ecut_weight` is negative for every channel with an occupied state. The program stops with
-an error for these, which the output parser reads (`well_n_below_first_well_state`,
-`ecut_weight_occupied_channel`).
+that `ecut_weight` is negative for every channel with an occupied state, or, with `ep_as_given`,
+that a free-tail well state at a valence energy plus `debl` is not below 0 Ha. The program stops with an error for
+these, which the output parser reads (`well_n_below_first_well_state`,
+`ecut_weight_occupied_channel`, `free_tail_negative_ep`).
 
 ## Projector states
 

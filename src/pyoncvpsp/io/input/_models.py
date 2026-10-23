@@ -285,7 +285,9 @@ class PseudoPotentialsInput(BaseModel):  # pylint: disable=too-few-public-method
             "space", over all space, or "rc", inside rc; None for that of `well_tail`, "space"
             for "well" and "rc" for "free" and "confined" (azadoks/oncvpsp; `well_norm` in
             `[pseudopotentials]`, or the optional sixth value of the lmax line, 0, 1 or 2).
-            It moves only E_resid and the cutoffs; "space" is not defined for "free".
+            It moves only E_resid and the cutoffs; "space" is not defined for "free", and from
+            fd5aaf0 "free" needs every well state at 0 Ha or above (checked here only for a
+            channel's first well state at `ep`, with `ep_as_given`).
     """
 
     lmax: Annotated[
@@ -1446,6 +1448,30 @@ class OncvpspInput(BaseModel):
             and self.pseudopotentials.well_tail != "confined"
         ):
             raise ValueError('well_n is for well_tail = "confined" only')
+        return self
+
+    @model_validator(mode="after")
+    def _check_free_tail_ep(self) -> "OncvpspInput":
+        # oncvpsp_main (azadoks/oncvpsp fd5aaf0) stops on a free-tail well state below 0 Ha. The
+        # input decides it only where the first projector state of a channel is a well state at
+        # its ep as given; one at a valence energy plus debl is the program's to report
+        psps = self.pseudopotentials
+        if psps.well_tail != "free" or not psps.ep_as_given:
+            return self
+        valence_l = {
+            state.l for state in list(self.reference_configuration)[self.oncvpsp.nc :]
+        }
+        for l in range(psps.lmax + 1):  # noqa: E741
+            nproj = (
+                1
+                if self.local_potential.lloc == l
+                else self.vkb_projectors.nproj[self.vkb_projectors.l.index(l)]
+            )
+            ep = psps.ep[psps.l.index(l)]
+            if nproj >= 1 and l not in valence_l and ep < 0.0:
+                raise ValueError(
+                    f'well_tail = "free" needs ep >= 0: the well state of l={l} is at ep={ep}'
+                )
         return self
 
     @model_validator(mode="after")

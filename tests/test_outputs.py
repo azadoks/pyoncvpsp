@@ -669,3 +669,13 @@ def test_free_tail_too_fast(parse_output):
     assert failure.l == 2
     assert len(failure.primary.line_numbers) == 2
     assert float(failure.primary.groups["qcut"]) == pytest.approx(1.43262)
+
+
+def test_free_tail_negative_ep(parse_output):
+    # azadoks/oncvpsp fd5aaf0: with the free tail, a well state below 0 Ha stops the run, here
+    # the I d state at the 4d energy plus debl
+    failure = parse_output("oncvpsp-4.0.1-sr_53_I_free_tail_negative_ep").failure
+    assert failure is not None
+    assert failure.name == "free_tail_negative_ep"
+    assert failure.l == 2
+    assert len(failure.primary.line_numbers) == 3

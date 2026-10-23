@@ -135,6 +135,7 @@ MESSAGES = [
         "free_tail_width: ERROR the free tail of the well state at -0.502360 Ha with qcut=  1.432620",
         "free_tail_too_fast",
     ),
+    ('oncvpsp: ERROR well_tail = "free" needs ep >= 0:', "free_tail_negative_ep"),
     ("om_local_values: ERROR the pieces end inside the mesh", "output_mesh_error"),
     (
         "outmesh: ERROR more than one output point below the log mesh",

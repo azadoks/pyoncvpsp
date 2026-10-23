@@ -230,6 +230,11 @@ ATTRIBUTION: dict[str, dict[str, Any]] = {
         "scope": Scope.ELL,
         "l_rule": "announced",
     },
+    "free_tail_negative_ep": {
+        "stage": Stage.SEMILOCAL,
+        "scope": Scope.ELL,
+        "l_rule": "announced",
+    },
     "free_tail_too_fast": {
         "stage": Stage.SEMILOCAL,
         "scope": Scope.ELL,
