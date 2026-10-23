@@ -117,8 +117,8 @@ after which the program stops is an error; an "ERROR" after which it continues i
 | `program_information` | `program_information` | `dict` | Always. `program`, `version`, `date`, `relativistic_treatment`, `build`. |
 | `build_information` | `program_information["build"]` | `dict \| None` | azadoks/oncvpsp builds only: `executable`, `relativistic_treatment`, `commit`, `source` (`clean`, `modified` or `unknown`), `source_diff`, `compiled`. |
 | `is_relativistic` | — | `bool` | Always. True for fully-relativistic outputs. |
-| `input` | `input` | `dict` | Whenever the input is echoed, which every run does. It is the `OncvpspInput` model dumped as a dict: `oncvpsp`, `reference_configuration`, `pseudopotentials`, `local_potential`, `vkb_projectors`, `model_core_charge`, `log_derivative_analysis`, `test_configurations`, `output_grid`, plus the option blocks of azadoks/oncvpsp (e.g. `log_mesh`). |
-| `projector_layout` | — | `ProjectorLayout \| None` | Whenever `input` is non-empty. The projector state of every projector (valence state, wellstate or localized bound state) as the program will choose it, predicted from the input. See `pyoncvpsp.projectors`. |
+| `input` | `input` | `dict` | Whenever the input is echoed, which every run does. It is the `OncvpspInput` model (see `input.md`) dumped as a dict: `oncvpsp`, `reference_configuration`, `pseudopotentials`, `local_potential`, `vkb_projectors`, `model_core_charge`, `log_derivative_analysis`, `test_configurations`, `output_grid`, plus the option blocks of azadoks/oncvpsp (e.g. `log_mesh`). |
+| `projector_layout` | — | `ProjectorLayout \| None` | Whenever `input` is non-empty. The projector state of every projector (valence state, wellstate or localized bound state) as the program will choose it, predicted from the input, with `well_n` for the confined well. See `pyoncvpsp.projectors`. |
 | `core_quantum_numbers`, `valence_quantum_numbers` | — | `list[(n, ChannelKey)]` | Whenever `input` is non-empty. |
 
 The relativistic treatment comes from the build line when there is one. The header of the

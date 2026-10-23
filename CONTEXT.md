@@ -32,7 +32,7 @@ _Avoid_: occupied state, bound state (as a synonym)
 The all-electron reference state a projector is built from: a valence state, a wellstate, or a localized bound state.
 
 **Wellstate**:
-An unbound projector state, confined by a barrier potential so that it is normalizable.
+An unbound projector state, solved in a well potential added beyond rc so that it is normalizable; in azadoks/oncvpsp its tail may instead be the free solution or that of a confining wall.
 _Avoid_: unbound state
 
 **Localized bound state**:

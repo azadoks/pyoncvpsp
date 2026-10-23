@@ -14,7 +14,7 @@ from pyoncvpsp.io import OncvpspInput
     "input_filepath",
     type=click.Path(exists=True, dir_okay=False),
     required=True,
-    help="Path to the ONCVPSP dat file to convert.",
+    help="Path to the ONCVPSP dat file to format.",
 )
 @click.option(
     "--output",
@@ -22,7 +22,7 @@ from pyoncvpsp.io import OncvpspInput
     "output_filepath",
     type=click.Path(dir_okay=False),
     required=False,
-    help="Path to save the converted TOML file.",
+    help="Path to save the formatted dat file (default: print it).",
 )
 def format_dat(input_filepath: PathLike, output_filepath: PathLike | None) -> None:
     """Format an ONCVPSP dat input file.
