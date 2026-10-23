@@ -833,6 +833,26 @@ WARNINGS += [
         "subroutine": "run_phsft(_r)",
         "description": "The log-derivative radius is inside the core radius of the local potential.",
     },
+    {
+        "name": "well_tail_share",
+        # 74b1c54: E_resid at qcut of a well state confined by its well (well_tail = "well"),
+        # with the well's tail against the free tail; `diagnostics` well_share has both
+        "pattern": rf"WARNING the well's tail changes it by\s*(?P<share_percent>{RE_FLOAT}) %:",
+        "match_string": "WARNING the well's tail changes it by",
+        "line_count": 2,
+        "subroutine": "run_optimize",
+        "description": "The well's tail changes the residual kinetic energy at qcut of a well state "
+        "by more than 10 % against the free tail; its cutoffs carry the arbitrary well.",
+    },
+    {
+        "name": "well_state_qcut_below_k",
+        "pattern": rf"WARNING qcut is not above this well state's wave vector\s*(?P<k>{RE_FLOAT})",
+        "match_string": "WARNING qcut is not above this well state's wave vector",
+        "line_count": 2,
+        "subroutine": "run_optimize",
+        "description": "qcut is not above the wave vector of a well state, which oscillates faster "
+        "than the cutoff: its cutoffs are not meaningful with any tail.",
+    },
 ]
 
 ERRORS += [

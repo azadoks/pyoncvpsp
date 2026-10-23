@@ -101,7 +101,7 @@ Exceptions:
 | `stage` | `stage` | `"ae"`, `"ps"` or `None` | `"ae"` or `"ps"` only for the split executables of azadoks/oncvpsp (`oncvpsp*_ae.x`, `oncvpsp*_ps.x`); `None` for the whole program. |
 | `ae_data_file` | `ae_data_file` | `str \| None` | All-electron stage only. |
 | `errors` | `errors` | `list[dict]` | When errors are printed. Each dict has the keys of `OncvpspOutputError` (above). Matched against the 79 definitions in `ERRORS`. |
-| `warnings` | `warnings` | `list[dict]` | Likewise, against the 30 definitions in `WARNINGS`. |
+| `warnings` | `warnings` | `list[dict]` | Likewise, against the 32 definitions in `WARNINGS`. |
 | `messages` | — | `list[OncvpspMessage]` | The warnings and errors in line order, each attributed to a `stage`, `scope`, channel (`l`, `j`, `iproj`, `n`), `config_index` and the input parameters it implicates (`implicated_parameters`, flattened keys such as `pseudopotentials__rc__1`). |
 | `failure` | — | `OncvpspFailure \| None` | `None` for a completed run. Otherwise: the first error (`primary`), all errors, and the last stage and `l` reached. A run that stops without a recognized error fails with its last `<routine>: ERROR ...` line as `unrecognized_error`, attributed by its position, or else a synthetic `incomplete_output`. |
 | `last_stage_reached` | — | `Stage` | Always. |

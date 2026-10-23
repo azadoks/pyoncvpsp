@@ -108,6 +108,9 @@ ATTRIBUTION: dict[str, dict[str, Any]] = {
     "rxpsh_inside_rc": {"stage": Stage.LOGDER_PLOT, "scope": Scope.ELL},
     # l is that of the local potential, above lmax
     "rxpsh_inside_local_rc": {"stage": Stage.LOGDER_PLOT, "scope": Scope.LOCAL},
+    # run_optimize, in the block of the well state's projector
+    "well_tail_share": {"stage": Stage.SEMILOCAL, "scope": Scope.ELL},
+    "well_state_qcut_below_k": {"stage": Stage.SEMILOCAL, "scope": Scope.ELL},
     # --- errors: input
     "bad_input": {"stage": Stage.INPUT, "scope": Scope.INPUT},
     "input_rc_nonpositive": {"stage": Stage.INPUT, "scope": Scope.ELL},

@@ -569,3 +569,30 @@ def test_diagnostics_optimization(parse_output):
         "ecut_crossings"
     ]
     assert all("e1" not in c for c in old)
+
+
+def test_diagnostics_well_share(parse_output):
+    # azadoks/oncvpsp 74b1c54: E_resid at qcut of each confined well state with the well's tail
+    # and the free tail; the second s state, at debl 13.5, is above qcut's wave vector
+    parser = parse_output("oncvpsp-4.0.1-sr_14_Si_well_share")
+    crossings = {(c["l"], c["iproj"]): c for c in parser.diagnostics["ecut_crossings"]}
+    assert {k for k, c in crossings.items() if "eresid_qcut_well" in c} == {
+        (0, 2),
+        (1, 2),
+        (2, 1),
+        (2, 2),
+    }
+    assert crossings[0, 2]["eresid_qcut_well"] is None
+    assert crossings[0, 2]["eresid_qcut_free"] is None
+    for key in [(1, 2), (2, 1), (2, 2)]:
+        # the well's value is the minimization's own E_resid at qcut
+        assert crossings[key]["eresid_qcut_well"] == pytest.approx(
+            crossings[key]["eresid_qcut"], rel=1e-10
+        )
+        assert crossings[key]["eresid_qcut_free"] > 0.0
+    assert [(m.name, m.l, m.iproj) for m in parser.messages] == [
+        ("well_state_qcut_below_k", 0, 2),
+        ("well_tail_share", 1, 2),
+    ]
+    old = parse_output("oncvpsp-4.0.1-sr_07_N_flat").diagnostics["ecut_crossings"]
+    assert all("eresid_qcut_well" not in c for c in old)

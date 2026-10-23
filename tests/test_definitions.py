@@ -70,6 +70,12 @@ MESSAGES = [
         "run_phsft_r: WARNING rxpsh inside the local potential core radius, l=4, rxpsh=    1.500000, rc=    2.000000",
         "rxpsh_inside_local_rc",
     ),
+    # azadoks/oncvpsp (branch smooooth, 74b1c54)
+    ("    WARNING the well's tail changes it by   -40.6 %:", "well_tail_share"),
+    (
+        "    WARNING qcut is not above this well state's wave vector  5.1186",
+        "well_state_qcut_below_k",
+    ),
     (
         "oncvpsp: ERROR node of the local channel l= 2 all-electron wave near rc, at r=  2.345678",
         "local_channel_ae_node",

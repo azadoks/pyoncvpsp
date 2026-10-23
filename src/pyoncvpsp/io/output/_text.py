@@ -2490,7 +2490,13 @@ class OncvpspTextParser:
             round-off, the wave is not determined); and ekin_check (float, line `ekin_check l ikap
             iproj t`): the r-space kinetic energy of the wave less the Fourier one to the
             q_infinity of its curve (Ha), by Parseval the energy above q_infinity that the
-            curve leaves out plus the error of the r-space integral, which dominates it.
+            curve leaves out plus the error of the r-space integral, which dominates it. A well
+            state confined by its well (well_tail = "well") also has, from the line `well_share
+            l ikap iproj e_well e_free`, eresid_qcut_well and eresid_qcut_free: E_resid at qcut
+            of the optimized wave with the well's tail and with the free tail at its energy (Ha),
+            the same wave inside rc, so that their difference is the well's share; both None
+            (line `well_share_undefined l ikap iproj`) where qcut is not above the state's wave
+            vector, which makes its cutoffs meaningless.
         """
         lines = self._get_lines_between("^Begin DIAGNOSTICS$", "^End DIAGNOSTICS$")
         if not lines:
@@ -2536,6 +2542,16 @@ class OncvpspTextParser:
                 ell, ikap, iproj = (int(f) for f in fields[:3])
                 key = ProjectorKey(j_channels(ell, relativistic)[ikap - 1], iproj)
                 ecut[key]["ekin_check"] = fort_float(fields[3])
+            elif tag in ("well_share", "well_share_undefined"):
+                ell, ikap, iproj = (int(f) for f in fields[:3])
+                key = ProjectorKey(j_channels(ell, relativistic)[ikap - 1], iproj)
+                defined = tag == "well_share"
+                ecut[key]["eresid_qcut_well"] = (
+                    fort_float(fields[3]) if defined else None
+                )
+                ecut[key]["eresid_qcut_free"] = (
+                    fort_float(fields[4]) if defined else None
+                )
             elif tag in ("vkb_b", "vkb_e"):
                 ell, ikap = int(fields[0]), int(fields[1])
                 name = "b_eigenvalues" if tag == "vkb_b" else "coefficients"
@@ -2649,7 +2665,7 @@ class OncvpspTextParser:
                 {
                     **key.as_dict(),
                     **{
-                        k: v if isinstance(v, float) else np.array(v)
+                        k: np.array(v) if isinstance(v, list) else v
                         for k, v in value.items()
                     },
                 }
