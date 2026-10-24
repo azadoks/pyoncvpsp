@@ -557,7 +557,7 @@
     "# atsym  z   nc   nv     iexc    psfile",
     "  N  7.00    1    2 -101130      upf"
    ],
-   "description": "All-electron self-consistency stopped on the round-off floor of the residual, above its tolerance (benign).",
+   "description": "All-electron or pseudo-atom self-consistency stopped on the round-off floor of the residual, above its tolerance (benign).",
    "line_numbers": [
     21
    ],

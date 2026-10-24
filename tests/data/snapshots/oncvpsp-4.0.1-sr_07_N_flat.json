@@ -1568,7 +1568,7 @@
     "# atsym  z   nc   nv     iexc    psfile",
     "  N  7.00    1    2 -101130      upf"
    ],
-   "description": "All-electron self-consistency stopped on the round-off floor of the residual, above its tolerance (benign).",
+   "description": "All-electron or pseudo-atom self-consistency stopped on the round-off floor of the residual, above its tolerance (benign).",
    "line_numbers": [
     21
    ],
@@ -1594,7 +1594,7 @@
     "ae_converged: WARNING scf stopped on the round-off floor of the residual, res=  1.9779E-11, tolres=  1.0000E-11",
     ""
    ],
-   "description": "All-electron self-consistency stopped on the round-off floor of the residual, above its tolerance (benign).",
+   "description": "All-electron or pseudo-atom self-consistency stopped on the round-off floor of the residual, above its tolerance (benign).",
    "line_numbers": [
     268
    ],
@@ -1620,7 +1620,7 @@
     "   n   l     f        eae           eps        diff",
     "   1   0  2.0000  -14.13822391"
    ],
-   "description": "All-electron self-consistency stopped on the round-off floor of the residual, above its tolerance (benign).",
+   "description": "All-electron or pseudo-atom self-consistency stopped on the round-off floor of the residual, above its tolerance (benign).",
    "line_numbers": [
     270
    ],

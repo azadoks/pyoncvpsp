@@ -880,8 +880,10 @@ WARNINGS += [
         "match_string": "ae_converged: WARNING scf stopped",
         "line_count": 1,
         "subroutine": "ae_converged",
-        "description": "All-electron self-consistency stopped on the round-off floor of the "
-        "residual, above its tolerance (benign).",
+        # tolres 1e-11 from sratom/relatom, 1e-12 from psatom (azadoks/oncvpsp 360a78a), each
+        # after its test configuration's header
+        "description": "All-electron or pseudo-atom self-consistency stopped on the round-off "
+        "floor of the residual, above its tolerance (benign).",
     },
     {
         "name": "test_config_ae_scf_not_converged",
