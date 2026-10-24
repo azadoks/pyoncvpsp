@@ -90,9 +90,9 @@ def test_missing_and_failed():
     assert list(tables["wall_failed"]["atom"]) == ["ps"]
 
 
-def test_core_band_and_ghost():
-    # Nd with an f ghost, the defaults: the 4f core band has no pseudopotential partner, and the
-    # ghost is a pseudopotential edge with no all-electron one, in each of the three spheres
+def test_core_band():
+    # Nd with an f ghost, the defaults: the 4f core band has no pseudopotential partner, in
+    # each of the three spheres, and every other edge pairs (azadoks/oncvpsp 5731bf5)
     tables = parse_oncvpsp_confine(read("oncvpsp_confine-sr_60_Nd_GHOST"), returncode=0)
     edges = tables["edges"]
     core = edges["partner"] == "core"
@@ -105,16 +105,38 @@ def test_core_band_and_ghost():
         np.isnan(edges["e_ps"][core]).all() and not np.isnan(edges["e_ps"][~core]).any()
     )
     assert edges["e_ae"][core][0] == pytest.approx(-0.2698804675547143)
-    extra = tables["extra"]
-    assert list(extra["l"]) == [3, 3, 3] and list(extra["edge"]) == [3, 3, 3]
-    assert sorted(extra["rs"]) == pytest.approx([3.25, 3.9, 5.2])
-    assert extra["e_ps"] == pytest.approx([0.0508299906645936] * 3)
-    assert len(tables["paired_off"]["l"]) == 0
+    assert len(tables["extra"]["l"]) == 0 and len(tables["paired_off"]["l"]) == 0
     summary = tables["summary"]
-    assert summary["n_missing"] == 0 and summary["n_extra"] == 3
-    assert summary["n_paired_off"] == 0 and summary["n_wall_failed"] == 0
+    assert summary["n_missing"] == summary["n_extra"] == summary["n_paired_off"] == 0
+    assert summary["n_wall_failed"] == 0
     assert summary["max_de"] == pytest.approx(1.001499741151296e-04)
     assert summary["max_dde"] == pytest.approx(1.143558909461717e-03)
+
+
+def test_ghost():
+    # The same files, -l 3 -e -55,-45,0.1 -w none: the bound f ghost at -50.06 Ha has no
+    # all-electron partner, its centre and top edges in each sphere
+    tables = parse_oncvpsp_confine(
+        read("oncvpsp_confine-sr_60_Nd_GHOST_l3_e-55,-45_wnone"), returncode=0
+    )
+    assert len(tables["edges"]["l"]) == 0
+    extra = tables["extra"]
+    assert set(extra["l"]) == {3} and set(extra["ikap"]) == {1}
+    assert sorted(zip(extra["rs"], extra["edge"])) == [
+        (3.25, 2),
+        (3.25, 3),
+        (pytest.approx(3.9), 2),
+        (pytest.approx(3.9), 3),
+        (5.2, 2),
+        (5.2, 3),
+    ]
+    assert extra["e_ps"][0] == pytest.approx(-50.05600858013628)
+    summary = tables["summary"]
+    assert (
+        summary["n_extra"] == 6 and summary["n_missing"] == summary["n_paired_off"] == 0
+    )
+    assert summary["n_wall_failed"] == -1 and np.isnan(summary["max_dde"])
+    assert len(tables["wall"]["k"]) == 0 and tables["wall_r0"] is None
 
 
 def test_paired_off():
