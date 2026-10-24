@@ -44,5 +44,5 @@ for a failed run.
 
 - [The input model](docs/input.md): sections, keys, the options of azadoks/oncvpsp, the checks.
 - [The output parser](docs/output_parser.md): everything parsed, when it is present, the run
-  status and messages, and what each costs.
+  status and messages, and what each costs; also `oncvpsp_ld.x` and `oncvpsp_confine.x`.
 - [CONTEXT.md](CONTEXT.md): the terms (l-channel, projector state, wellstate, ...).

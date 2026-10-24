@@ -250,6 +250,32 @@ run = subprocess.run(ld_command("Si.ae", "Si.ps", radii=[2.5, 3.0]), capture_out
 table = parse_oncvpsp_ld(run.stdout, run.returncode)
 ```
 
+## `oncvpsp_confine.x`
+
+`oncvpsp_confine.x` (azadoks/oncvpsp from 3eb250c) puts the pseudopotential and its all-electron
+atom, from the same data files, in a Wigner-Seitz sphere and compresses them with a wall.
+`pyoncvpsp.io.parse_oncvpsp_confine(text, returncode=None)` returns a dict of tidy tables, each a
+dict of equal-length columns (the names are in `CONFINE_COLUMNS`), and `wall_r0`:
+
+| Key | Lines | Columns |
+| --- | --- | --- |
+| `edges` | `ws`, `ws_missing` | `l`, `ikap`, `rs`, `edge`, `n`, `e_ae`, `e_ps` (NaN for `ws_missing`) |
+| `ecut` | `ws_ecut` | `l`, `ikap`, `rs`, `edge`, `n`, `tol`, `ecut` |
+| `floor` | `ws_floor` | `l`, `ikap`, `rs`, `edge`, `n`, `ecut`, `err` |
+| `conv` | `ws_conv` (`-t` only) | `l`, `ikap`, `rs`, `edge`, `n`, `ecut`, `err` |
+| `wall` | `wall` | `k`, `etot_ae`, `etot_ps`, `de_ae`, `de_ps` |
+| `wall_eig` | `wall_eig` | `k`, `n`, `l`, `ikap`, `e_ae`, `e_ps` |
+| `wall_failed` | `wall_failed` | `k`, `atom` (`"ae"` or `"ps"`) |
+| `wall_r0` | `wall_r0` | the onset of the wall (bohr), `None` without the wall block |
+
+Energies and cutoffs are in Ha, `rs` in bohr, `k` in Ha/bohr². `edge` is 1 for the bottom of
+the band, 2 its centre and 3 its top; the module's docstring gives the meaning of each line. A
+table is empty when its block is left out (`-s`, `-w none`), and a run with both left out has
+every table empty. It raises `OncvpspConfineError` for an error line or a nonzero `returncode`.
+`confine_tables(lines)` reads the lines of any text, and `confine_command(ae_file, ps_file,
+radii=, channels=, energies=, ecut_max=, table=, sphere=, walls=, wall_radius=, executable=)`
+builds the command line.
+
 ## Known gaps
 
 - **Old psp8 files.** `psp8_string` is `""` for v2 and v3 before 3.3. Their psp8 file has no
