@@ -85,19 +85,94 @@ def test_missing_and_failed():
     edges = tables["edges"]
     assert list(edges["edge"]) == [1, 2] and list(edges["n"]) == [3, 4]
     assert edges["e_ae"][1] == 0.5 and np.isnan(edges["e_ps"][1])
+    assert list(edges["partner"]) == ["ps", "missing"]
     assert list(tables["wall_failed"]["k"]) == [0.1]
     assert list(tables["wall_failed"]["atom"]) == ["ps"]
 
 
+def test_core_band_and_ghost():
+    # Nd with an f ghost, the defaults: the 4f core band has no pseudopotential partner, and the
+    # ghost is a pseudopotential edge with no all-electron one, in each of the three spheres
+    tables = parse_oncvpsp_confine(read("oncvpsp_confine-sr_60_Nd_GHOST"), returncode=0)
+    edges = tables["edges"]
+    core = edges["partner"] == "core"
+    assert (
+        core.sum() == 9
+        and set(edges["l"][core]) == {3}
+        and set(edges["n"][core]) == {4}
+    )
+    assert (
+        np.isnan(edges["e_ps"][core]).all() and not np.isnan(edges["e_ps"][~core]).any()
+    )
+    assert edges["e_ae"][core][0] == pytest.approx(-0.2698804675547143)
+    extra = tables["extra"]
+    assert list(extra["l"]) == [3, 3, 3] and list(extra["edge"]) == [3, 3, 3]
+    assert sorted(extra["rs"]) == pytest.approx([3.25, 3.9, 5.2])
+    assert extra["e_ps"] == pytest.approx([0.0508299906645936] * 3)
+    assert len(tables["paired_off"]["l"]) == 0
+    summary = tables["summary"]
+    assert summary["n_missing"] == 0 and summary["n_extra"] == 3
+    assert summary["n_paired_off"] == 0 and summary["n_wall_failed"] == 0
+    assert summary["max_de"] == pytest.approx(1.001499741151296e-04)
+    assert summary["max_dde"] == pytest.approx(1.143558909461717e-03)
+
+
+def test_paired_off():
+    tables = confine_tables(
+        [
+            "ws_r   1   1  3.5000000000000000E+00",
+            "ws   1   1   2   2 -1.0000000000000000E-01 -9.0000000000000000E-02",
+            "ws_paired_off   1   1   2   2 -1.0100000000000000E-01",
+        ]
+    )
+    assert tables["paired_off"] == {
+        "l": [1],
+        "ikap": [1],
+        "rs": [3.5],
+        "edge": [2],
+        "n": [2],
+        "e_ps": [pytest.approx(-0.101)],
+    }
+
+
+def test_summary():
+    tables = parse_oncvpsp_confine(read("oncvpsp_confine-sr_14_Si"))
+    assert tables["summary"] == {
+        "max_de": pytest.approx(6.617900241756569e-06),
+        "ecut4": pytest.approx(7.851065777484514),
+        "ecut5": pytest.approx(9.515190644784115),
+        "n_missing": 0,
+        "n_extra": 0,
+        "n_paired_off": 0,
+        "n_wall_failed": 0,
+        "max_dde": pytest.approx(3.2503680529316625e-05),
+    }
+    # -w none -c 5: no cutoff reached, the walls left out
+    summary = confine_tables(
+        [
+            "confine_summary  1.8065124526289722E-06                Infinity                Infinity"
+            "     0     0     0    -1                     NaN"
+        ]
+    )["summary"]
+    assert summary["ecut4"] == summary["ecut5"] == float("inf")
+    assert summary["n_wall_failed"] == -1 and np.isnan(summary["max_dde"])
+    assert isinstance(summary["n_missing"], int)
+
+
 def test_empty():
-    # -s -w none: only the build line
+    # -s -w none: only the build line and a summary of left-out parts
     tables = parse_oncvpsp_confine(
-        "build: oncvpsp_confine.x (scalar-relativistic)\n", 0
+        "build: oncvpsp_confine.x (scalar-relativistic)\n"
+        "confine_summary                     NaN                     NaN                     NaN"
+        "    -1    -1    -1    -1                     NaN\n",
+        0,
     )
     assert tables["wall_r0"] is None
     assert all(
         len(column) == 0 for name in CONFINE_COLUMNS for column in tables[name].values()
     )
+    assert np.isnan(tables["summary"]["max_de"]) and tables["summary"]["n_extra"] == -1
+    assert confine_tables([])["summary"] is None
 
 
 @pytest.mark.parametrize(

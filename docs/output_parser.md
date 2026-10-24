@@ -259,19 +259,23 @@ dict of equal-length columns (the names are in `CONFINE_COLUMNS`), and `wall_r0`
 
 | Key | Lines | Columns |
 | --- | --- | --- |
-| `edges` | `ws`, `ws_missing` | `l`, `ikap`, `rs`, `edge`, `n`, `e_ae`, `e_ps` (NaN for `ws_missing`) |
+| `edges` | `ws`, `ws_missing`, `ws_core` | `l`, `ikap`, `rs`, `edge`, `n`, `e_ae`, `e_ps`, `partner` (`"ps"`, `"missing"` or `"core"`, the band of a core state; `e_ps` NaN without a partner) |
 | `ecut` | `ws_ecut` | `l`, `ikap`, `rs`, `edge`, `n`, `tol`, `ecut` |
 | `floor` | `ws_floor` | `l`, `ikap`, `rs`, `edge`, `n`, `ecut`, `err` |
 | `conv` | `ws_conv` (`-t` only) | `l`, `ikap`, `rs`, `edge`, `n`, `ecut`, `err` |
+| `paired_off` | `ws_paired_off` | `l`, `ikap`, `rs`, `edge`, `n`, `e_ps`: a pseudopotential edge of another phase nearer the all-electron edge than its partner |
+| `extra` | `ws_extra` | `l`, `ikap`, `rs`, `edge`, `e_ps`: a pseudopotential edge with no all-electron partner (a ghost) |
 | `wall` | `wall` | `k`, `etot_ae`, `etot_ps`, `de_ae`, `de_ps` |
 | `wall_eig` | `wall_eig` | `k`, `n`, `l`, `ikap`, `e_ae`, `e_ps` |
 | `wall_failed` | `wall_failed` | `k`, `atom` (`"ae"` or `"ps"`) |
 | `wall_r0` | `wall_r0` | the onset of the wall (bohr), `None` without the wall block |
+| `summary` | `confine_summary` (from 5c91c31) | a dict of `SUMMARY_KEYS`: `max_de`, `ecut4`, `ecut5`, `n_missing`, `n_extra`, `n_paired_off`, `n_wall_failed`, `max_dde`; `None` without the line |
 
 Energies and cutoffs are in Ha, `rs` in bohr, `k` in Ha/bohr². `edge` is 1 for the bottom of
 the band, 2 its centre and 3 its top; the module's docstring gives the meaning of each line. A
 table is empty when its block is left out (`-s`, `-w none`), and a run with both left out has
-every table empty. It raises `OncvpspConfineError` for an error line or a nonzero `returncode`.
+every table empty. The summary's reals are `inf` for a cutoff not reached, and a part left out
+gives NaN and counts of -1, as the program prints them. It raises `OncvpspConfineError` for an error line or a nonzero `returncode`.
 `confine_tables(lines)` reads the lines of any text, and `confine_command(ae_file, ps_file,
 radii=, channels=, energies=, ecut_max=, table=, sphere=, walls=, wall_radius=, executable=)`
 builds the command line.
