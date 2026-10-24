@@ -168,17 +168,30 @@ def test_summary():
         "n_paired_off": 0,
         "n_wall_failed": 0,
         "max_dde": pytest.approx(3.2503680529316625e-05),
+        "ecut4_top": pytest.approx(7.851065777485118),
+        "ecut5_top": pytest.approx(9.515190644741338),
     }
     # -w none -c 5: no cutoff reached, the walls left out
     summary = confine_tables(
         [
             "confine_summary  1.8065124526289722E-06                Infinity                Infinity"
-            "     0     0     0    -1                     NaN"
+            "     0     0     0    -1                     NaN                Infinity"
+            "                Infinity"
         ]
     )["summary"]
     assert summary["ecut4"] == summary["ecut5"] == float("inf")
+    assert summary["ecut4_top"] == summary["ecut5_top"] == float("inf")
     assert summary["n_wall_failed"] == -1 and np.isnan(summary["max_dde"])
     assert isinstance(summary["n_missing"], int)
+    # Before b1c6ce3 the line ends at max_dde
+    summary = confine_tables(
+        [
+            "confine_summary  1.8065124526289722E-06  7.85E+00  9.52E+00     0     0     0     0"
+            "  3.25E-05"
+        ]
+    )["summary"]
+    assert summary["max_dde"] == 3.25e-05
+    assert summary["ecut4_top"] is None and summary["ecut5_top"] is None
 
 
 def test_empty():

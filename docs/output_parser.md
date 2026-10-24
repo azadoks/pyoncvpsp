@@ -269,7 +269,7 @@ dict of equal-length columns (the names are in `CONFINE_COLUMNS`), and `wall_r0`
 | `wall_eig` | `wall_eig` | `k`, `n`, `l`, `ikap`, `e_ae`, `e_ps` |
 | `wall_failed` | `wall_failed` | `k`, `atom` (`"ae"` or `"ps"`) |
 | `wall_r0` | `wall_r0` | the onset of the wall (bohr), `None` without the wall block |
-| `summary` | `confine_summary` (from 5c91c31) | a dict of `SUMMARY_KEYS`: `max_de`, `ecut4`, `ecut5`, `n_missing`, `n_extra`, `n_paired_off`, `n_wall_failed`, `max_dde`; `None` without the line |
+| `summary` | `confine_summary` (from 5c91c31) | a dict of `SUMMARY_KEYS`: `max_de`, `ecut4`, `ecut5`, `n_missing`, `n_extra`, `n_paired_off`, `n_wall_failed`, `max_dde`, `ecut4_top`, `ecut5_top` (the top edges alone, from b1c6ce3; `None` before); `None` without the line |
 
 Energies and cutoffs are in Ha, `rs` in bohr, `k` in Ha/bohr². `edge` is 1 for the bottom of
 the band, 2 its centre and 3 its top; the module's docstring gives the meaning of each line. A

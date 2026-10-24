@@ -27,7 +27,9 @@ The last line (azadoks/oncvpsp from 5c91c31) is `confine_summary max_de ecut4 ec
 n_extra n_paired_off n_wall_failed max_dde`: over the edges below 0 Ha, the largest
 |e_ps - e_ae| and the largest cutoffs at 1e-4 and 1e-5 Ha (Infinity where one is not reached);
 the counts of the `ws_missing`, `ws_extra`, `ws_paired_off` and `wall_failed` lines; and the
-largest |de_ps - de_ae| of the walls. A part left out (`-s`, `-w none`) gives NaN and -1.
+largest |de_ps - de_ae| of the walls; then (from b1c6ce3) `ecut4_top ecut5_top`, the cutoffs at
+1e-4 and 1e-5 Ha of the top edges (edge 3) below 0 Ha alone. A part left out (`-s`,
+`-w none`) gives NaN and -1.
 
 Comment lines (`#`) and the `build:` line are ignored. Errors are printed on stdout as
 `<routine>: ERROR ...`, with a nonzero exit status.
@@ -73,6 +75,8 @@ SUMMARY_KEYS: tuple[str, ...] = (
     "n_paired_off",
     "n_wall_failed",
     "max_dde",
+    "ecut4_top",
+    "ecut5_top",
 )
 
 _INT_COLUMNS = frozenset(("l", "ikap", "edge", "n"))
@@ -130,11 +134,11 @@ def confine_tables(lines: Iterable[str]) -> dict:
             wall_failed: A row per `wall_failed` line, `atom` "ae" or "ps".
             The sphere tables carry `rs` (bohr) from the block's `ws_r` line. The summary's
             reals may be inf (a cutoff not reached) or NaN, and its counts -1, for a part left
-            out.
+            out; `ecut4_top` and `ecut5_top` are None in a line from before b1c6ce3.
     """
     rows: dict[str, list[tuple]] = {name: [] for name in CONFINE_COLUMNS}
     wall_r0: float | None = None
-    summary: dict[str, float | int] | None = None
+    summary: dict[str, float | int | None] | None = None
     block: tuple[int, int, float] | None = None
     for line in lines:
         tag, *fields = line.split() or [""]
@@ -154,10 +158,12 @@ def confine_tables(lines: Iterable[str]) -> dict:
                 )
             )
         elif tag == "confine_summary":
-            summary = {
-                key: int(value) if key.startswith("n_") else fort_float(value)
+            # the line of 5c91c31 to 5731bf5 ends before ecut4_top
+            summary = dict.fromkeys(SUMMARY_KEYS)
+            summary.update(
+                (key, int(value) if key.startswith("n_") else fort_float(value))
                 for key, value in zip(SUMMARY_KEYS, fields)
-            }
+            )
         elif tag == "wall_r0":
             wall_r0 = fort_float(fields[0])
         elif tag == "wall":
