@@ -50,7 +50,7 @@ have one value per l (`pseudopotentials`, `vkb_projectors`) or per state (config
 | `log_derivative_analysis` | same | `epsh1`, `epsh2`, `depsh`, `rxpsh` | one line |
 | `output_grid` | `[linear_mesh]` | `rlmax` as `rmax`, `drl` as `a`; `upf_mesh` goes in `[pp_output]` | one line |
 | `test_configurations` | `[[test_configurations]]` | lists `n`, `l`, `f` of the valence states | `ncnf`, then each configuration |
-| `log_mesh` | `[log_mesh]` | `amesh`, `rr1`, `rmax`; left out when none is given | optional last line |
+| `log_mesh` | `[log_mesh]` | `amesh`, `rr1`, `rmax`, `adams_order` (4 to 8); left out when none is given | optional last line (`adams_order` its optional fourth value) |
 
 In the TOML, the icmod 4 grid is `fcfact_min`, `fcfact_max`, `fcfact_step`, `rcfact_min`,
 `rcfact_max`, `rcfact_step` (the model's `teter_amp_*` and `teter_scale_*`). `teter_relative`
@@ -80,6 +80,7 @@ ONCVPSP 4.0.1 and METAPSP do not read these. At their defaults the programs beha
 | `budget_cutoff` | `model_core_charge` | 5th value, 0/1/2 | `"max"`, `"weighted"`, `"max_all"`; with `icmod` 6/7 only |
 | `upf_mesh` | `output_grid` | 3rd value of the output-grid line | `0` (the linear grid); most points of the UPF file on the log mesh |
 | `log_mesh` | | last line | all `None` (the built-in mesh) |
+| `adams_order` | `log_mesh` | 4th value of the last line | `None` (order 4); the order, 4 to 8, of the Adams-Moulton steps |
 
 A list of `well_n` that is all 0, or of `ecut_weight` that is all negative, reads as `None`. When
 either is set, the `.dat` writer gives every projector line the column (and `well_n` at 0 before an

@@ -68,6 +68,7 @@
    "rxpsh": 4.02415
   },
   "log_mesh": {
+   "adams_order": null,
    "amesh": 1.004,
    "rmax": 45.0,
    "rr1": 0.00016666666666667

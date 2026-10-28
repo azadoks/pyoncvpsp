@@ -269,13 +269,27 @@ def test_log_mesh(parse_output):
         "amesh": 1.004,
         "rr1": 0.0005 / 14,
         "rmax": 50.0,
+        "adams_order": None,
     }
     for name in ("oncvpsp-4.0.1-sr_14_Si", "oncvpsp-4.0.1-sr_14_Si_bc"):
         assert parse_output(name).input["log_mesh"] == {
             "amesh": None,
             "rr1": None,
             "rmax": None,
+            "adams_order": None,
         }
+
+
+def test_adams_order(parse_output):
+    # the order of the Adams-Moulton steps, the fourth value of the mesh line, echoed when not 4
+    parser = parse_output("oncvpsp-4.0.1-sr_14_Si_adams_order")
+    assert parser.input["log_mesh"] == {
+        "amesh": 1.004,
+        "rr1": 0.0005 / 14,
+        "rmax": 50.0,
+        "adams_order": 6,
+    }
+    assert parser.completed
 
 
 def test_c_light_and_upf_mesh(parse_output):

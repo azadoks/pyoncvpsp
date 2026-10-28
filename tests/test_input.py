@@ -312,6 +312,8 @@ def test_slack_writes_default_error(nitrogen):
         {"log_mesh": {"amesh": 0.999}},
         {"log_mesh": {"rr1": 1.7}},
         {"log_mesh": {"rmax": 4.0}},
+        {"log_mesh": {"adams_order": 3}},
+        {"log_mesh": {"adams_order": 9}},
         {"oncvpsp": {"c_light": 0.5}},
         {"output_grid": {"upf_mesh": -1}},
     ],
@@ -353,6 +355,7 @@ def test_log_mesh_from_dat_string(nitrogen_mesh, nitrogen):
         "amesh": 1.004,
         "rr1": None,
         "rmax": 50.0,
+        "adams_order": None,
     }
     assert nitrogen_mesh.merge(log_mesh={"amesh": None, "rmax": None}) == nitrogen
     mesh = nitrogen_mesh.radial_mesh
@@ -812,3 +815,27 @@ def test_budget_cutoff_max_all(nitrogen):
     assert line[-1] == "2"
     assert OncvpspInput.from_dat_string(max_all.as_dat_string()) == max_all
     assert OncvpspInput.from_toml_string(max_all.as_toml_string()) == max_all
+
+
+def test_adams_order(nitrogen_mesh, nitrogen):
+    # the optional fourth value of the log mesh line: written only when given, and in [log_mesh]
+    order = nitrogen_mesh.merge(log_mesh={"adams_order": 6})
+    for with_comment in (True, False):
+        dat = order.as_dat_string(with_comment=with_comment)
+        assert dat.splitlines()[-1].split() == ["1.004", "-1.0", "50.0", "6"]
+        assert OncvpspInput.from_dat_string(dat) == order
+    assert toml.loads(order.as_toml_string())["log_mesh"] == {
+        "amesh": 1.004,
+        "rmax": 50.0,
+        "adams_order": 6,
+    }
+    # the order alone gives the line too, with the built-in mesh
+    alone = nitrogen.merge(log_mesh={"adams_order": 8})
+    assert alone.log_mesh.is_set
+    assert alone.as_dat_string().splitlines()[-1].split() == [
+        "-1.0",
+        "-1.0",
+        "-1.0",
+        "8",
+    ]
+    assert OncvpspInput.from_dat_string(alone.as_dat_string()) == alone

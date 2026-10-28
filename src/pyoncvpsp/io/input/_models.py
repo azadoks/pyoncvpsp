@@ -820,18 +820,22 @@ class LogMeshInput(BaseModel):  # pylint: disable=too-few-public-methods
     which ONCVPSP solves the atom: the optional last line of the .dat input (after the test
     configurations) or the `[log_mesh]` table of the TOML input, which azadoks/oncvpsp reads.
     ONCVPSP uses its built-in value for each one that is not given, and takes a value of 0 or
-    less to mean the same, which is read here as `None`.
+    less to mean the same, which is read here as `None`. The order of the Adams-Moulton steps of
+    the radial integrations is the optional fourth value of the line (`adams_order` of the
+    table).
 
     Attributes:
         amesh (None | float): Ratio of successive mesh points. If `None`, 1.006.
         rr1 (None | float): [Bohr] First mesh point. If `None`, `0.0005 / z`, capped at
             `0.00005` except in the fully-relativistic code.
         rmax (None | float): [Bohr] Outer radius of the mesh. If `None`, 45.
+        adams_order (None | int): Order of the Adams-Moulton steps, 4 to 8. If `None`, 4.
     """
 
     amesh: None | Annotated[float, Field(gt=1.0)] = None
     rr1: None | Annotated[float, Field(gt=0.0)] = None
     rmax: None | Annotated[float, Field(gt=0.0)] = None
+    adams_order: None | Annotated[int, Field(ge=4, le=8)] = None
 
     @field_validator("amesh", "rr1", "rmax", mode="before")
     @classmethod
@@ -842,16 +846,23 @@ class LogMeshInput(BaseModel):  # pylint: disable=too-few-public-methods
 
     @property
     def is_set(self) -> bool:
-        """Whether any of the mesh parameters is given, so that the input sets the mesh."""
-        return any(v is not None for v in (self.amesh, self.rr1, self.rmax))
+        """Whether any of the mesh parameters or the Adams order is given, so that the input has
+        the log mesh line."""
+        return any(
+            v is not None for v in (self.amesh, self.rr1, self.rmax, self.adams_order)
+        )
 
     def as_dat_string(self, with_comment: bool = False) -> str:
         """String representation of the log mesh input in .dat file format, with -1 for the
-        parameters that are not given."""
+        parameters that are not given, and the Adams order only when it is."""
         values = (-1.0 if v is None else v for v in (self.amesh, self.rr1, self.rmax))
         s = " ".join(f"{v!r:>10s}" for v in values)
+        order = ""
+        if self.adams_order is not None:
+            s += f" {self.adams_order:>4d}"
+            order = f" {'adams_order':>11s}"
         if with_comment:
-            s = f"# {'amesh':>8s} {'rr1':>10s} {'rmax':>10s}\n" + s
+            s = f"# {'amesh':>8s} {'rr1':>10s} {'rmax':>10s}{order}\n" + s
         return s
 
 
@@ -1260,17 +1271,20 @@ class OncvpspInput(BaseModel):
                 test_configurations[i]["l"][j] = int(words[1])
                 test_configurations[i]["f"][j] = float(words[2])
         # LOG MESH (optional; azadoks/oncvpsp)
-        # amesh, rr1, rmax
+        # amesh, rr1, rmax[, adams_order]
         # In an output, the echo of the input is followed by the results, which are not a mesh
-        log_mesh: dict[str, float] = {}
+        log_mesh: dict[str, float | int] = {}
         if (line := next(iter_, None)) is not None:
             words = line.split()
             try:
-                values = [float(w.lower().replace("d", "e")) for w in words]
+                values = [float(w.lower().replace("d", "e")) for w in words[:3]]
+                order = [int(w) for w in words[3:]]
             except ValueError:
-                values = []
-            if len(values) == 3:
+                values, order = [], []
+            if len(values) == 3 and len(order) <= 1:
                 log_mesh = dict(zip(("amesh", "rr1", "rmax"), values))
+                if order:
+                    log_mesh["adams_order"] = order[0]
         data = {
             "oncvpsp": {
                 "atsym": atsym,
