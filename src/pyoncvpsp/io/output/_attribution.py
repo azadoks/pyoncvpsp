@@ -165,10 +165,16 @@ ATTRIBUTION: dict[str, dict[str, Any]] = {
         "scope": Scope.ELL,
         "l_rule": "pending",
     },
+    "qroots_newton_not_converged": {
+        "stage": Stage.SEMILOCAL,
+        "scope": Scope.ELL,
+        "l_rule": "pending",
+    },
     "qcut_reduction_failed": {"stage": Stage.SEMILOCAL, "scope": Scope.ELL},
     "ps0norm_gt_uunorm": {"stage": Stage.SEMILOCAL, "scope": Scope.ELL},
     "optimize_eigenvalue_error": {"stage": Stage.SEMILOCAL, "scope": Scope.ELL},
     "optimize_not_converged": {"stage": Stage.SEMILOCAL, "scope": Scope.ELL},
+    "optimize_newton_not_converged": {"stage": Stage.SEMILOCAL, "scope": Scope.ELL},
     "sbf_overlap_eigenvalue_error": {"stage": Stage.SEMILOCAL, "scope": Scope.ELL},
     "sbf_negative_overlap_eigenvalue": {"stage": Stage.SEMILOCAL, "scope": Scope.ELL},
     "sbf_rc_der_bad_argument": {"stage": Stage.SEMILOCAL, "scope": Scope.ELL},
@@ -257,6 +263,7 @@ ATTRIBUTION: dict[str, dict[str, Any]] = {
     "local_channel_ps_node": {"stage": Stage.VKB, "scope": Scope.ELL_AND_LOCAL},
     "ode_rc_der_mismatch": {"stage": Stage.SEMILOCAL, "scope": Scope.ELL},
     "optimize_q_grid_too_long": {"stage": Stage.SEMILOCAL, "scope": Scope.ELL},
+    "eresid_tail_too_short": {"stage": Stage.SEMILOCAL, "scope": Scope.ELL},
     "mesh_tail_too_short": {"stage": Stage.SEMILOCAL, "scope": Scope.ELL},
     "free_tail_qcut_too_low": {
         "stage": Stage.SEMILOCAL,
@@ -284,6 +291,11 @@ ATTRIBUTION: dict[str, dict[str, Any]] = {
     # `ionic_screening`, after the model core and before the pseudoatom total energy
     "ionic_valence_lschvkbb_failed": {"stage": Stage.MODEL_CORE, "scope": Scope.ELL},
     "ionic_valence_bound_ghost": {"stage": Stage.MODEL_CORE, "scope": Scope.ELL},
+    "ionic_screening_not_converged": {
+        "stage": Stage.MODEL_CORE,
+        "scope": Scope.LOCAL,
+        "l_rule": "none",
+    },
     # oncvpsp, after reading the input
     "well_n_not_confined": {"stage": Stage.INPUT, "scope": Scope.INPUT},
     "well_norm_space_free_tail": {"stage": Stage.INPUT, "scope": Scope.INPUT},

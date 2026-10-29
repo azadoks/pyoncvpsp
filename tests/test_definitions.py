@@ -180,6 +180,23 @@ MESSAGES = [
         "ionic_valence: ERROR lschvkbb n,l,ierr=   2   0 200",
         "ionic_valence_bound_ghost",
     ),
+    (
+        "optimize: ERROR Newton polish not converged, last step       NaN",
+        "optimize_newton_not_converged",
+    ),
+    (
+        "qroots: ERROR Newton polish not converged, ll=1, q=  1.2345E+00, last step  3.4567E-09",
+        "qroots_newton_not_converged",
+    ),
+    ("eresid: ERROR tail too short, nr=-2147483647", "eresid_tail_too_short"),
+    (
+        "ionic_screening: ERROR the ionic tail did not converge in  50 steps, change =  1.53E-13",
+        "ionic_screening_not_converged",
+    ),
+    (
+        "ionic_screening: ERROR the ionic tail did not converge in50 steps, change =  1.5300E-13",
+        "ionic_screening_not_converged",
+    ),
     ("oncvpsp: lschvkbb ERROR   2   0 200", "vkb_bound_ghost"),
     ("oncvpsp: lschvkbb ERROR   2   0 2000", "vkb_bound_state_not_converged"),
     # ONCVPSP 4

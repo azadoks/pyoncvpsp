@@ -167,6 +167,43 @@ def test_qroots_error_for_first_channel():
     )
 
 
+def test_qroots_newton_error_takes_its_printed_channel():
+    lines = _semilocal_prefix(0) + [
+        "qroots: ERROR Newton polish not converged, ll=1, q=  1.2345E+00, last step  3.4567E-09"
+    ]
+    failure = OncvpspTextParser(lines=lines, check=False).failure
+    assert failure is not None
+    assert (failure.name, failure.stage, failure.l) == (
+        "qroots_newton_not_converged",
+        Stage.SEMILOCAL,
+        1,
+    )
+    assert failure.attribution == Attribution.EXPLICIT
+
+
+@pytest.mark.parametrize(
+    ("line", "name"),
+    [
+        (
+            "optimize: ERROR Newton polish not converged, last step       NaN",
+            "optimize_newton_not_converged",
+        ),
+        ("eresid: ERROR tail too short, nr=-2147483647", "eresid_tail_too_short"),
+    ],
+)
+def test_run_optimize_errors_take_the_channel_of_their_block(line, name):
+    # `optimize` and `eresid` run inside `run_optimize`, after the per-l header
+    lines = _semilocal_prefix(0) + [s.format(l=1) for s in V4_HEADER] + [line]
+    failure = OncvpspTextParser(lines=lines, check=False).failure
+    assert failure is not None
+    assert (failure.name, failure.stage, failure.scope, failure.l) == (
+        name,
+        Stage.SEMILOCAL,
+        Scope.ELL,
+        1,
+    )
+
+
 def test_matrix_eigenvalue_error_stage_from_position():
     vkb = _semilocal_prefix(0) + [
         "Construct Vanderbilt / Kleinmman-Bylander projectors",
@@ -452,6 +489,13 @@ def test_unrecognized_error_is_not_a_message_of_a_completed_run():
             Stage.MODEL_CORE,
             Scope.ELL,
             0,
+        ),
+        (
+            "ionic_screening: ERROR the ionic tail did not converge in  50 steps, change =  1.53E-13",
+            "ionic_screening_not_converged",
+            Stage.MODEL_CORE,
+            Scope.LOCAL,
+            None,
         ),
         (
             'oncvpsp: ERROR well_n is for well_tail = "confined" only',

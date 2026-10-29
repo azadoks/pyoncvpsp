@@ -332,6 +332,16 @@ ERRORS: list[dict[str, Any]] = [
         "description": "Interval-halving search for the optimized pseudo wavefunction did not converge.",
     },
     {
+        "name": "optimize_newton_not_converged",
+        # azadoks/oncvpsp smooooth (solve_norm_constraint); the last step can be NaN
+        "pattern": r"optimize: ERROR Newton polish not converged, last step\s*(?P<step>\S+)",
+        "match_string": "optimize: ERROR Newton polish not converged",
+        "line_count": 1,
+        "subroutine": "optimize (solve_norm_constraint)",
+        "description": "The Newton polish of the norm constraint of the optimized pseudo "
+        "wavefunction did not converge.",
+    },
+    {
         "name": "rxpsh_too_small",
         "pattern": rf"ERROR: run_phsft: rxpsh=\s*(?P<rxpsh>{RE_FLOAT}) < rc\((?P<l>\d)\)=\s*(?P<rc>{RE_FLOAT})",
         "match_string": "ERROR: run_phsft: rxpsh=",
@@ -387,6 +397,19 @@ ERRORS: list[dict[str, Any]] = [
         "line_count": 1,
         "subroutine": "qroots",
         "description": "Unable to find a root in qroots subroutine.",
+    },
+    {
+        "name": "qroots_newton_not_converged",
+        # azadoks/oncvpsp smooooth (polish, after the bisection of a root)
+        "pattern": (
+            rf"qroots: ERROR Newton polish not converged, ll=\s*(?P<l>\d+), q=\s*(?P<q>{RE_FLOAT}),"
+            r" last step\s*(?P<step>\S+)"
+        ),
+        "match_string": "qroots: ERROR Newton polish not converged",
+        "line_count": 1,
+        "subroutine": "qroots (polish)",
+        "description": "The Newton polish of a root q of the basis functions' matching condition "
+        "did not converge.",
     },
     {
         "name": "vkb_bound_state_not_converged",
@@ -1006,6 +1029,16 @@ ERRORS += [
         "description": "The q grid of the optimization is longer than the convergence curve.",
     },
     {
+        "name": "eresid_tail_too_short",
+        # azadoks/oncvpsp smooooth; nr can be an overflowed negative integer
+        "pattern": r"eresid: ERROR tail too short, nr=\s*(?P<nr>-?\d+)",
+        "match_string": "eresid: ERROR tail too short",
+        "line_count": 1,
+        "subroutine": "eresid",
+        "description": "The linear mesh of the residual kinetic energy's tail beyond rc has too "
+        "few points.",
+    },
+    {
         "name": "match_point_failed",
         "pattern": r"match_point: ERROR (?P<reason>matching window at mch=.*leaves the mesh|no sign change below mch=)",
         "match_string": "match_point: ERROR",
@@ -1157,6 +1190,19 @@ ERRORS += [
         "description": "A pseudo valence state could not be solved in the separable potential with "
         "the ionic tail because the projectors bind a state of the same l below it that the "
         "node count does not expect: a bound ghost.",
+    },
+    {
+        "name": "ionic_screening_not_converged",
+        # azadoks/oncvpsp smooooth, after the model core
+        "pattern": (
+            r"ionic_screening: ERROR the ionic tail did not converge in\s*(?P<maxiter>\d+) steps, "
+            rf"change =\s*(?P<change>{RE_FLOAT})"
+        ),
+        "match_string": "ionic_screening: ERROR the ionic tail did not converge",
+        "line_count": 1,
+        "subroutine": "ionic_screening (ionic_tail_m)",
+        "description": "The fixed point of the screened local potential with the ionic tail "
+        "beyond rcmax did not converge.",
     },
     {
         "name": "well_n_not_confined",
