@@ -178,6 +178,7 @@ def model_core_parameters() -> list[str]:
         _key("model_core_charge", "icmod"),
         _key("model_core_charge", "fcfact"),
         _key("model_core_charge", "rcfact"),
+        _key("model_core_charge", "r_s"),
     ]
 
 

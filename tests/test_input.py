@@ -275,6 +275,78 @@ def test_budgeted_core_round_trip(nitrogen, icmod, rcfact, slack):
     assert OncvpspInput.from_dat_string(dat) == budgeted
 
 
+@pytest.mark.parametrize("icmod", [8, 9])
+@pytest.mark.parametrize(
+    ("rcfact", "slack", "budget_cutoff"),
+    [
+        (0.0, 1.0, "max"),
+        (1.0e-4, 0.88, "max"),
+        (1.0e-5, 0.7, "weighted"),
+        (1.0e-5, 1.0, "max_all"),
+    ],
+)
+def test_budget_at_r_s_round_trip(nitrogen, icmod, rcfact, slack, budget_cutoff):
+    # smooooth api 9: icmod, fcfact, rcfact, r_s [, slack [, budget_cutoff]]; r_s in full precision
+    budgeted = nitrogen.merge(
+        model_core_charge={
+            "icmod": icmod,
+            "fcfact": -1.0,
+            "rcfact": rcfact or 1.0e-5,
+            "r_s": 0.4299999999999999,
+            "slack": slack,
+            "budget_cutoff": budget_cutoff,
+        }
+    )
+    assert OncvpspInput.from_dat_string(budgeted.as_dat_string()) == budgeted
+    assert OncvpspInput.from_toml_string(budgeted.as_toml_string()) == budgeted
+
+
+def test_budget_at_r_s_line():
+    # the .dat line of azadoks/oncvpsp smooooth tests/data/14_Si_bc9.dat, and the echo of its output
+    for line in (
+        "   9   25.0   1.0e-4   0.43   0.88",
+        "    9  25.00000  1.0000E-04  4.2999999999999999E-01   0.88000    0",
+    ):
+        core = OncvpspInput.from_dat_string(
+            N_DAT.replace("\n    0    0.1\n", "\n" + line + "\n")
+        ).model_core_charge
+        assert (
+            core.icmod,
+            core.fcfact,
+            core.rcfact,
+            core.slack,
+            core.budget_cutoff,
+        ) == (
+            9,
+            25.0,
+            1.0e-4,
+            0.88,
+            "max",
+        )
+        assert core.r_s == pytest.approx(0.43, rel=1e-15)
+    core = OncvpspInput.from_dat_string(
+        N_DAT.replace("\n    0    0.1\n", "\n   8   25.0   1.0e-4   0.9\n")
+    ).model_core_charge
+    assert (core.icmod, core.r_s, core.slack) == (8, 0.9, 1.0)
+
+
+def test_error_shares_toml(nitrogen):
+    # error_shares are TOML input only
+    budgeted = nitrogen.merge(
+        model_core_charge={
+            "icmod": 9,
+            "fcfact": 25.0,
+            "rcfact": 1.0e-4,
+            "r_s": 0.43,
+            "error_shares": [0.88, 1.0, 1.5, 2.0],
+        }
+    )
+    assert "error_shares = [" in budgeted.as_toml_string()
+    assert OncvpspInput.from_toml_string(budgeted.as_toml_string()) == budgeted
+    assert "r_s" not in nitrogen.as_toml_string()
+    assert "error_shares" not in nitrogen.as_toml_string()
+
+
 def test_slack_writes_default_error(nitrogen):
     # slack follows rcfact on the line, and ONCVPSP rejects rcfact 0 there
     slack = nitrogen.merge(model_core_charge={"icmod": 7, "fcfact": 0.0, "slack": 0.7})
@@ -295,6 +367,13 @@ def test_slack_writes_default_error(nitrogen):
         {"oncvpsp": {"atsym": "Abc"}},
         {"model_core_charge": {"icmod": 2, "fcfact": -0.5}},
         {"model_core_charge": {"icmod": 8, "fcfact": 25.0}},
+        {"model_core_charge": {"icmod": 10, "fcfact": 25.0, "r_s": 0.43}},
+        {"model_core_charge": {"icmod": 9, "r_s": 0.0}},
+        {"model_core_charge": {"icmod": 6, "r_s": 0.43}},
+        {"model_core_charge": {"icmod": 9, "r_s": 0.43, "error_shares": []}},
+        {"model_core_charge": {"icmod": 9, "r_s": 0.43, "error_shares": [1.0] * 9}},
+        {"model_core_charge": {"icmod": 9, "r_s": 0.43, "error_shares": [1.0, 0.0]}},
+        {"model_core_charge": {"icmod": 2, "fcfact": 1.0, "error_shares": [1.0]}},
         {"model_core_charge": {"icmod": 4, "slack": 0.7}},
         {"model_core_charge": {"icmod": 6, "slack": 0.0}},
         {"model_core_charge": {"icmod": 7, "slack": 1.5}},

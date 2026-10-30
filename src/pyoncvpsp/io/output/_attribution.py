@@ -93,6 +93,7 @@ ATTRIBUTION: dict[str, dict[str, Any]] = {
         "scope": Scope.MODEL_CORE,
     },
     "modcore_budget_no_minimum": {"stage": Stage.MODEL_CORE, "scope": Scope.MODEL_CORE},
+    "modcore_budget_deprecated": {"stage": Stage.MODEL_CORE, "scope": Scope.MODEL_CORE},
     "modcore_budget_root_at_jump": {
         "stage": Stage.MODEL_CORE,
         "scope": Scope.MODEL_CORE,
@@ -247,6 +248,18 @@ ATTRIBUTION: dict[str, dict[str, Any]] = {
         "scope": Scope.MODEL_CORE,
     },
     "modcore_budget_no_root": {"stage": Stage.MODEL_CORE, "scope": Scope.MODEL_CORE},
+    "modcore_budget_rs_out_of_range": {
+        "stage": Stage.MODEL_CORE,
+        "scope": Scope.MODEL_CORE,
+    },
+    "modcore_budget_fill_not_monotone": {
+        "stage": Stage.MODEL_CORE,
+        "scope": Scope.MODEL_CORE,
+    },
+    "modcore_budget_share_out_of_range": {
+        "stage": Stage.MODEL_CORE,
+        "scope": Scope.MODEL_CORE,
+    },
     # --- errors: diagnostics
     "ghost_lschpsbar_error": {"stage": Stage.DIAGNOSTICS, "scope": Scope.ELL_AND_LOCAL},
     # --- errors: test configurations (ONCVPSP 4 continues after these; fatal only if incomplete)

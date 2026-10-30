@@ -73,8 +73,10 @@
   },
   "model_core_charge": {
    "budget_cutoff": "weighted",
+   "error_shares": null,
    "fcfact": -1.5,
    "icmod": 6,
+   "r_s": null,
    "rcfact": 1e-05,
    "slack": 0.7,
    "teter_amp_max": null,

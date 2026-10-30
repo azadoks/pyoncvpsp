@@ -181,6 +181,33 @@ MESSAGES = [
         "ionic_valence_bound_ghost",
     ),
     (
+        "modcore_budget: ERROR r_s=    0.010000 bohr outside [r_lo, r_top] = [    0.054000,    2.700000]",
+        "modcore_budget_rs_out_of_range",
+    ),
+    (
+        "modcore_budget: ERROR the fill is not monotone at r_s=    0.300000 bohr",
+        "modcore_budget_fill_not_monotone",
+    ),
+    (
+        "modcore_budget: ERROR the error share s=    9.000000 has its cutoff beyond 1800.000000 Ha",
+        "modcore_budget_share_out_of_range",
+    ),
+    (
+        "modcore_budget: WARNING icmod 6 and 7 are deprecated: icmod 8 and 9 take r_s",
+        "modcore_budget_deprecated",
+    ),
+    ("test_data: must have 0<= icmod <=4 or 6<= icmod <=9", "input_model_core_invalid"),
+    ("test_data: must have rcfact>0.0 for icmod= 6 to 9", "input_model_core_invalid"),
+    (
+        "test_data: must have 0.0<slack<=1.0 for icmod= 6 to 9",
+        "input_model_core_invalid",
+    ),
+    (
+        "test_data: must have 0.0<r_s<=min(rc) for icmod= 8 or 9",
+        "input_model_core_invalid",
+    ),
+    ("test_data: must have error_shares>0.0", "input_model_core_invalid"),
+    (
         "optimize: ERROR Newton polish not converged, last step       NaN",
         "optimize_newton_not_converged",
     ),

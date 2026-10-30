@@ -34,6 +34,11 @@ features that no other file in the set covers.
 | `oncvpsp-4.0.1-sr_14_Si_ae.out.gz` | `oncvpsp_ae.x -a si.ae` of azadoks/oncvpsp 5947faf (branch `oncvpsp-opt`) on its `tests/data/14_Si.dat` | `stage:ae` (all-electron stage: input and all-electron sections, then the data file it wrote) |
 | `oncvpsp-4.0.1-sr_14_Si_ps.out.gz` | `oncvpsp_ps.x -a si.ae` of the same build on the same input, reading that file | `stage:ps` (prints what `oncvpsp.x` prints, the build line aside) |
 | `oncvpsp-4.0.1-sr_14_Si_icmod6_auto.out.gz` | `oncvpsp.x` of azadoks/oncvpsp 9b90162 (branch `oncvpsp-opt`, model core v2) on its `tests/data/14_Si_bca.dat` | `budgeted_core:minimum_tail` (icmod 6 with the minimum-tail fill and its coefficients) |
+| `oncvpsp-4.0.1-sr_14_Si_icmod6_deprecated.out.gz` | `oncvpsp.x` of azadoks/oncvpsp 6980298 (branch `smooooth`, api 9, study preset) on its `tests/data/14_Si_bc.dat` (icmod 6) | `warn:modcore_budget_deprecated`, `budgeted_core:error_report` (16-mean, largest, signed errors and monotonicity margin of icmod 6) |
+| `oncvpsp-4.0.1-sr_14_Si_icmod8.out.gz` | the same build on its `tests/data/14_Si_bc9.dat` with icmod 8, r_s 0.9 | `icmod:8` (Martins' fill at the given r_s) |
+| `oncvpsp-4.0.1-sr_14_Si_icmod9.out.gz` | the same build on its `tests/data/14_Si_bc9.dat` (icmod 9, r_s 0.43, slack 0.88) | `icmod:9` (minimum tail at the given r_s; r_s on the input echo) |
+| `oncvpsp-4.0.1-sr_14_Si_icmod9_fill_not_monotone.out.gz` | the same, r_s 0.30 | `err:modcore_budget_fill_not_monotone` |
+| `oncvpsp-4.0.1-sr_14_Si_icmod9_rs_range.out.gz` | the same, r_s 0.01 | `err:modcore_budget_rs_out_of_range` |
 | `oncvpsp-4.0.1-sr_14_Si_icmod7_slack0.7.out.gz` | `oncvpsp.x` of the same build on its `tests/data/14_Si_hm.dat` with slack 0.7 | `icmod:7` (hardness-matched core, its candidates), `slack` (input echo and output) |
 | `oncvpsp-4.0.1-fr_14_Si_icmod7.out.gz` | `oncvpspr.x` of the same build on its `tests/data/14_Si_hm.dat` | `icmod:7` fully relativistic (J-averaged probes) |
 | `oncvpsp-4.0.1-sr_14_Si_icmod7_tables.out.gz` | `oncvpsp.x` of azadoks/oncvpsp 59d0ba8 (branch `oncvpsp-opt`, table budget) on its `tests/data/14_Si_hm.dat` (icmod 7, fcfact 0, 1e-5, slack 0.7) | `budgeted_core:budget_source:tables` (the budget is the largest Ecut of the convergence tables) |

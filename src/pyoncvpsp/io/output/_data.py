@@ -639,6 +639,41 @@ ERRORS: list[dict[str, Any]] = [
         "description": "Root search of the budgeted model core (icmod 6, 7) given an interval without a sign change.",
     },
     {
+        "name": "modcore_budget_rs_out_of_range",
+        # azadoks/oncvpsp smooooth api 9 (msg_budget_rs_range): icmod 8 and 9, r_lo = r_top/50
+        "pattern": (
+            rf"modcore_budget: ERROR r_s=\s*(?P<r_s>{RE_FLOAT}) bohr outside \[r_lo, r_top\] ="
+            rf"\s*\[\s*(?P<r_lo>{RE_FLOAT}),\s*(?P<r_top>{RE_FLOAT})\]"
+        ),
+        "match_string": "modcore_budget: ERROR r_s=",
+        "line_count": 1,
+        "subroutine": "modcore_budget",
+        "description": "The given radius of the budgeted model core (icmod 8, 9) is outside "
+        "[r_top/50, r_top], r_top the smaller of the smallest rc and the last radius with core charge.",
+    },
+    {
+        "name": "modcore_budget_fill_not_monotone",
+        # azadoks/oncvpsp smooooth api 9 (msg_budget_fill_monotone)
+        "pattern": rf"modcore_budget: ERROR the fill is not monotone at r_s=\s*(?P<r_s>{RE_FLOAT}) bohr",
+        "match_string": "modcore_budget: ERROR the fill is not monotone",
+        "line_count": 1,
+        "subroutine": "modcore_budget",
+        "description": "The fill of the budgeted model core (icmod 8, 9) rises inside the given radius r_s.",
+    },
+    {
+        "name": "modcore_budget_share_out_of_range",
+        # azadoks/oncvpsp smooooth api 9 (msg_budget_share_range)
+        "pattern": (
+            rf"modcore_budget: ERROR the error share s=\s*(?P<share>{RE_FLOAT}) has its cutoff beyond"
+            rf"\s*(?P<ecut_max>{RE_FLOAT}) Ha"
+        ),
+        "match_string": "modcore_budget: ERROR the error share",
+        "line_count": 1,
+        "subroutine": "modcore_budget",
+        "description": "An error share of the budgeted model core puts its cutoff beyond the largest "
+        "density cutoff it checks.",
+    },
+    {
         "name": "modcore_budget_no_waves",
         "pattern": r"modcore_budget_ecut: ERROR stop - no residual energy curves",
         "match_string": "modcore_budget_ecut: ERROR stop - no residual energy curves",
@@ -727,6 +762,7 @@ _CHECK_DATA_SPECIFIC = (
     r"must have rc>0\.0|must have 3 <= ncon|must have ncon\+|must have qcut>0\.0|rc < rc\(lloc\)"
     r"|must have debl>0\.0\)|must have nproj in|must have 0 <= lloc|for lloc==4|must have 1 <= lpopt"
     r"|must have 0<= icmod|must have fcfact|must have rcfact|must have rlmax>rcmax"
+    r"|must have 0\.0<slack|must have 0\.0<r_s|must have error_shares"
 )
 
 ERRORS += [
@@ -796,15 +832,19 @@ ERRORS += [
     },
     {
         "name": "input_model_core_invalid",
-        # azadoks/oncvpsp: "0<= icmod <=4 or icmod=6", "fcfact>0.0 and rcfact>0.0 for icmod= 6"
+        # azadoks/oncvpsp: "0<= icmod <=4 or icmod=6", "fcfact>0.0 and rcfact>0.0 for icmod= 6";
+        # smooooth api 9: "0.0<slack<=1.0 for icmod= 6 to 9", "0.0<r_s<=min(rc) for icmod= 8 or 9",
+        # "error_shares>0.0"
         "pattern": (
             r"test_data: must have (?:0<= icmod <=4|fcfact>0\.0 (?:and rcfact>0\.0 )?for icmod"
-            r"|rcfact>0\.0 for icmod)"
+            r"|rcfact>0\.0 for icmod|0\.0<slack<=1\.0 for icmod|0\.0<r_s<=min\(rc\) for icmod"
+            r"|error_shares>0\.0)"
         ),
         "match_string": "test_data: must have",
         "line_count": 1,
         "subroutine": "check_data",
-        "description": "Invalid model-core-charge parameters (icmod, fcfact, or rcfact).",
+        "description": "Invalid model-core-charge parameters (icmod, fcfact, rcfact, slack, r_s "
+        "or error_shares).",
     },
     {
         "name": "input_rlmax_too_small",
@@ -877,6 +917,16 @@ WARNINGS += [
         "line_count": 1,
         "subroutine": "modcore_budget",
         "description": "The model-core radius of the least hardness mismatch does not fit the cutoff budget.",
+    },
+    {
+        "name": "modcore_budget_deprecated",
+        # azadoks/oncvpsp smooooth api 9 (wrn_budget_deprecated), before the model core block
+        "pattern": r"modcore_budget: WARNING icmod 6 and 7 are deprecated",
+        "match_string": "modcore_budget: WARNING icmod 6 and 7 are deprecated",
+        "line_count": 1,
+        "subroutine": "modcore_budget",
+        "description": "The budgeted model cores that search r_s (icmod 6, 7) are deprecated: icmod 8 "
+        "and 9 take r_s.",
     },
     {
         "name": "modcore_budget_no_minimum",

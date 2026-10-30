@@ -228,6 +228,12 @@ def test_budgeted_core(parse_output):
         "r_s_smallest": None,
         "hardness_mismatch": None,
         "candidates": None,
+        "q_window": None,
+        "pnorm_order": None,
+        "pnorm": None,
+        "emax": None,
+        "error_shares": None,
+        "monotonicity_margin": None,
     }
     capped = parse_output("oncvpsp-4.0.1-sr_N_budget_cap").budgeted_core
     assert capped is not None
@@ -380,6 +386,41 @@ def test_budgeted_core_v2(parse_output):
         relativistic["icmod"] == 7
         and relativistic["r_s"] > relativistic["r_s_smallest"]
     )
+
+
+def test_budgeted_core_api9(parse_output):
+    # azadoks/oncvpsp smooooth 6980298 (api 9): icmod 8 and 9 at the input's r_s, the error report
+    parser = parse_output("oncvpsp-4.0.1-sr_14_Si_icmod9")
+    assert parser.input["model_core_charge"]["r_s"] == pytest.approx(0.43, rel=1e-15)
+    core = parser.budgeted_core
+    assert core["icmod"] == 9 and core["fill"] == "minimum tail" and core["r_s"] == 0.43
+    assert core["q_window"] == [13.2665, 42.4264]
+    # the fixture's build against smooooth's reference output (tests/refs/14_Si_bc9.out)
+    assert core["pnorm_order"] == 16
+    assert core["pnorm"] == pytest.approx(6.1736498059584196e-05, rel=1e-8)
+    assert core["emax"] == pytest.approx(9.8148998082709087e-05, rel=1e-8)
+    assert [s["share"] for s in core["error_shares"]] == [0.88, 1.0, 1.5, 2.0]
+    assert core["error_shares"][0]["q"] == 13.266499
+    assert core["error_shares"][0]["error"] == pytest.approx(
+        -9.8148998082709087e-05, rel=1e-8
+    )
+    assert core["monotonicity_margin"] == pytest.approx(1.0902790470683512, rel=1e-8)
+    martins = parse_output("oncvpsp-4.0.1-sr_14_Si_icmod8").budgeted_core
+    assert (
+        martins["icmod"] == 8 and martins["fill"] == "Martins" and martins["r_s"] == 0.9
+    )
+    assert martins["a"] is not None and len(martins["error_shares"]) == 4
+    deprecated = parse_output("oncvpsp-4.0.1-sr_14_Si_icmod6_deprecated")
+    assert "modcore_budget_deprecated" in [w["name"] for w in deprecated.warnings]
+    assert deprecated.budgeted_core["icmod"] == 6
+    assert deprecated.budgeted_core["pnorm"] is not None
+    for name, error in (
+        ("icmod9_rs_range", "modcore_budget_rs_out_of_range"),
+        ("icmod9_fill_not_monotone", "modcore_budget_fill_not_monotone"),
+    ):
+        failed = parse_output(f"oncvpsp-4.0.1-sr_14_Si_{name}")
+        assert failed.budgeted_core is None
+        assert [e["name"] for e in failed.errors] == [error]
 
 
 @pytest.mark.parametrize(

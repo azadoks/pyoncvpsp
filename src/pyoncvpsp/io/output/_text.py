@@ -1280,7 +1280,7 @@ class OncvpspTextParser:
 
     @cached_property
     def budgeted_core(self) -> dict | None:
-        """Budgeted model core charge of azadoks/oncvpsp (icmod 6 and 7).
+        """Budgeted model core charge of azadoks/oncvpsp (icmod 6 to 9).
 
         Beyond the radius r_s the model core charge is the all-electron core charge; inside it, a
         fill matched to it and its first two derivatives at r_s: the minimum-tail polynomial
@@ -1289,11 +1289,12 @@ class OncvpspTextParser:
         takes the smallest radius whose model needs no more than `slack` times the cutoff budget for
         the exchange-correlation energy error; icmod 7 (hardness-matched) the radius, among those
         from the smallest rc down to a little below that of icmod 6, whose model fits and acts on
-        the pseudo valence states most as the all-electron core does.
+        the pseudo valence states most as the all-electron core does. icmod 8 (Martins' fill) and 9
+        (the minimum tail) take r_s from the input (smooooth api 9).
 
         Returns:
             dict | None: None if the output has no budgeted model core, else
-                icmod (int): 6 or 7.
+                icmod (int): 6 to 9.
                 ecut (float): Cutoff budget (Ha).
                 ecut_pseudo_waves (float | None): Cutoff of the pseudo-waves (Ha) when the budget is taken
                     from it (`fcfact <= 0`), else None: from 59d0ba8 on, the largest Ecut of the convergence
@@ -1321,8 +1322,20 @@ class OncvpspTextParser:
                 candidates (list[dict] | None): icmod 7: per radius, r_s, fill ("minimum tail",
                     "Martins" or None if neither is monotone), hardness_mismatch and fits
                     (None where not computed or checked).
+                The error report of smooooth api 9 on (each None before it):
+                q_window (list[float] | None): The density cutoffs [q_b, q_hi] (bohr^-1) of the
+                    window of the error's mean.
+                pnorm_order (int | None): p of the mean.
+                pnorm (float | None): ((1/(q_hi - q_b)) int |error|^p dq)^(1/p) over the window (Ha).
+                emax (float | None): The largest |error| over the window (Ha).
+                error_shares (list[dict] | None): per share s of the budget, share, q (its density
+                    cutoff, bohr^-1) and error (the signed exchange-correlation energy error, Ha).
+                monotonicity_margin (float | None): The least of -(d rho/du)/rho(r_s) over
+                    u = (r/r_s)^2 in [0, 1] of the fill, negative where it rises.
         """
-        start = self.search(r"^Model core correction: (?:budgeted|hardness-matched)")
+        start = self.search(
+            r"^Model core correction: (?:budgeted|hardness-matched|Martins' fill at r_s|minimum tail at r_s)"
+        )
         if not start:
             return None
         i = start[0]
@@ -1368,6 +1381,32 @@ class OncvpspTextParser:
         core_max = find(rf"last radius with core charge\s+(?P<r>{RE_FLOAT})")
         smallest = find(rf"smallest fitting radius \(icmod 6\)\s+(?P<r>{RE_FLOAT})")
         mismatch = find(rf"hardness mismatch\s+(?P<rms>{RE_FLOAT}) Ha")
+        q_window = find(
+            rf"error over the density cutoffs\s+(?P<q_b>{RE_FLOAT})\s+(?P<q_hi>{RE_FLOAT}) bohr"
+        )
+        pnorm = find(rf"^\s*(?P<p>\d+)-mean\s+(?P<value>{RE_FLOAT}) Ha")
+        emax = find(rf"^\s*largest\s+(?P<value>{RE_FLOAT}) Ha")
+        margin = find(rf"fill monotonicity margin\s+(?P<value>{RE_FLOAT})")
+        error_shares = None
+        shares_at = next(
+            (
+                k
+                for k, line in enumerate(window)
+                if line.strip().startswith("signed errors:")
+            ),
+            None,
+        )
+        if shares_at is not None:
+            error_shares = []
+            for line in window[shares_at + 1 :]:
+                words = line.split()
+                if len(words) != 3:
+                    break
+                try:
+                    share, q, error = (fort_float(w) for w in words)
+                except ValueError:
+                    break
+                error_shares.append({"share": share, "q": q, "error": error})
         candidates = None
         table = next(
             (
@@ -1424,6 +1463,14 @@ class OncvpspTextParser:
             "r_s_smallest": fort_float(smallest["r"]) if smallest else None,
             "hardness_mismatch": fort_float(mismatch["rms"]) if mismatch else None,
             "candidates": candidates,
+            "q_window": [fort_float(q_window["q_b"]), fort_float(q_window["q_hi"])]
+            if q_window
+            else None,
+            "pnorm_order": int(pnorm["p"]) if pnorm else None,
+            "pnorm": fort_float(pnorm["value"]) if pnorm else None,
+            "emax": fort_float(emax["value"]) if emax else None,
+            "error_shares": error_shares,
+            "monotonicity_margin": fort_float(margin["value"]) if margin else None,
         }
 
     @cached_property

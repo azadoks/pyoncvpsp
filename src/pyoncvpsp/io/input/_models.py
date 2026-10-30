@@ -21,6 +21,8 @@ _WELL_TAILS: tuple[str, ...] = ("well", "free", "confined")
 _WELL_NORMS: tuple[str | None, ...] = (None, "space", "rc")
 # `budget_cutoff` by its value on the icmod line
 _BUDGET_CUTOFFS: tuple[str, ...] = ("max", "weighted", "max_all")
+# the budgeted model cores of azadoks/oncvpsp: icmod 6 and 7 search r_s, 8 and 9 take it
+_BUDGETED_ICMODS: tuple[int, ...] = (6, 7, 8, 9)
 
 
 class OncvpspAtomInput(BaseModel):  # pylint: disable=too-few-public-methods
@@ -518,7 +520,7 @@ class VKBProjectorsInput(BaseModel):  # pylint: disable=too-few-public-methods
             well state, at least that of ONCVPSP's choice; 0 for its choice, and None for 0 in all
             (azadoks/oncvpsp; `well_n` in `[vkb_projectors]`, or the optional fourth column of the
             projector lines, written for all channels when any is above 0).
-        ecut_weight (list[float] | None): With `icmod in (6, 7)` and `fcfact <= 0`, for each
+        ecut_weight (list[float] | None): With `icmod` 6 to 9 and `fcfact <= 0`, for each
             channel with no occupied valence state, the weight of its first pseudo-wave in the
             cutoff of the pseudo-waves, by default (a negative value) 2(2l+1); 0 leaves the
             channel out of it. A value of 0 or more for a channel with an occupied state is an
@@ -616,15 +618,25 @@ class ModelCoreChargeInput(BaseModel):  # pylint: disable=too-few-public-methods
                 smallest rc down to a little below the icmod 6 r_s, the one that fits the cutoff
                 and whose exchange-correlation hardness of the pseudo valence states is closest to
                 that of the all-electron core. Same `fcfact`, `rcfact` and `slack` as icmod 6.
+            8) (azadoks/oncvpsp smooooth, api 9) Martins' fill :math:`\exp(a + b r^2 + c r^4)` inside
+                the given radius `r_s`, with no search; whether it fits the budget is the caller's.
+            9) (azadoks/oncvpsp smooooth, api 9) The minimum-tail fill inside the given radius `r_s`,
+                with no search; a fill that is not monotone fails (`modcore_budget_fill_not_monotone`).
+            icmod 6 and 7 are deprecated in azadoks/oncvpsp smooooth from api 9 on.
         fcfact (float): Used to determine the matching radius for `icmod in (1, 2)`. Unused for `icmod in (0, 3, 4)`.
-            Plane-wave cutoff (Ha) for `icmod in (6, 7)` if positive; else 0 for the cutoff of the
-            pseudo-waves, or minus its multiple. Negative only for `icmod in (6, 7)`.
-        rcfact (float): Exchange-correlation energy error (Ha) for `icmod in (6, 7)`, where 0 means the
+            Plane-wave cutoff (Ha) for `icmod` 6 to 9 if positive; else 0 for the cutoff of the
+            pseudo-waves, or minus its multiple. Negative only for `icmod` 6 to 9.
+        rcfact (float): Exchange-correlation energy error (Ha) for `icmod` 6 to 9, where 0 means the
             ONCVPSP default (1e-4 Ha up to f098dc9, 1e-5 Ha in the builds that read `slack`).
-        slack (float): For `icmod in (6, 7)`, the fraction of the cutoff the model core must fit;
+        r_s (None | float): For `icmod in (8, 9)` (required there, None otherwise), the radius (bohr)
+            of the model, in (0, min(rc)]: the fourth value of the .dat icmod line, `r_s` in the TOML.
+        error_shares (None | list[float]): For `icmod` 6 to 9, the shares of the budget at whose
+            density cutoffs the signed exchange-correlation energy errors are reported, 1 to 8 positive
+            numbers; None for ONCVPSP's default (slack, 1, 1.5, 2). TOML input only.
+        slack (float): For `icmod` 6 to 9, the fraction of the cutoff the model core must fit;
             the core is still made for the density cutoff of the whole cutoff. In (0, 1], default
             1. Older builds ignore it.
-        budget_cutoff (str): For `icmod in (6, 7)` with `fcfact <= 0`, the cutoff of the
+        budget_cutoff (str): For `icmod` 6 to 9 with `fcfact <= 0`, the cutoff of the
             pseudo-waves: "max", the largest over the pseudo-waves of the cutoff at which each
             one's residual kinetic energy per electron falls to `rcfact` (ONCVPSP's default), or
             "weighted", the cutoff at which their mean weighted by the occupations falls to it
@@ -644,11 +656,18 @@ class ModelCoreChargeInput(BaseModel):  # pylint: disable=too-few-public-methods
         teter_scale_step (None | float): Teter scale factor step size for grid search (relative or absolute).
     """
 
-    icmod: Annotated[int, Field(ge=0, le=7)]
+    icmod: Annotated[int, Field(ge=0, le=9)]
     fcfact: Annotated[float, Field()] = 0.0
     rcfact: Annotated[float, Field(ge=0.0)] = 0.0
     slack: Annotated[float, Field(gt=0.0, le=1.0)] = 1.0
     budget_cutoff: Literal["max", "weighted", "max_all"] = "max"
+    r_s: None | Annotated[float, Field(gt=0.0)] = None
+    error_shares: (
+        None
+        | Annotated[
+            list[Annotated[float, Field(gt=0.0)]], Field(min_length=1, max_length=8)
+        ]
+    ) = None
     teter_relative: Annotated[bool, Field()] = True
     teter_amp_min: None | Annotated[float, Field()] = None
     teter_amp_max: None | Annotated[float, Field()] = None
@@ -665,12 +684,19 @@ class ModelCoreChargeInput(BaseModel):  # pylint: disable=too-few-public-methods
         if self.icmod == 3:
             if self.rcfact == 0.0:
                 raise ValueError("rcfact must be greater than 0 for icmod 3")
-        if self.icmod not in (6, 7) and self.fcfact < 0.0:
-            raise ValueError("fcfact must not be negative except for icmod 6 and 7")
-        if self.icmod not in (6, 7) and self.slack != 1.0:
-            raise ValueError("slack is only read for icmod 6 and 7")
-        if self.icmod not in (6, 7) and self.budget_cutoff != "max":
-            raise ValueError("budget_cutoff is only read for icmod 6 and 7")
+        budgeted = self.icmod in _BUDGETED_ICMODS
+        if not budgeted and self.fcfact < 0.0:
+            raise ValueError("fcfact must not be negative except for icmod 6 to 9")
+        if not budgeted and self.slack != 1.0:
+            raise ValueError("slack is only read for icmod 6 to 9")
+        if not budgeted and self.budget_cutoff != "max":
+            raise ValueError("budget_cutoff is only read for icmod 6 to 9")
+        if not budgeted and self.error_shares is not None:
+            raise ValueError("error_shares is only read for icmod 6 to 9")
+        if self.icmod in (8, 9) and self.r_s is None:
+            raise ValueError("r_s is required for icmod 8 and 9")
+        if self.icmod not in (8, 9) and self.r_s is not None:
+            raise ValueError("r_s is only read for icmod 8 and 9")
         return self
 
     def as_dat_string(self, with_comment: bool = False) -> str:
@@ -685,6 +711,21 @@ class ModelCoreChargeInput(BaseModel):  # pylint: disable=too-few-public-methods
             s = f" {self.icmod:>10d} {self.fcfact:>10.5f} {self.rcfact:>10.5f}"
             if with_comment:
                 s = f"# {'icmod':>8s} {'fcfact':>10s} {'rcfact':>10s}\n" + s
+        elif self.icmod in (8, 9):
+            # r_s is the required fourth value, after rcfact (which ONCVPSP rejects at 0); slack and
+            # budget_cutoff follow it. r_s in full precision: the model moves with it. The .dat input
+            # has no error_shares.
+            rcfact = self.rcfact if self.rcfact > 0.0 else 1.0e-5
+            s = f" {self.icmod:>10d} {self.fcfact:>10.5f} {rcfact:>12.5e} {self.r_s!r:>24s}"
+            header = f"# {'icmod':>8s} {'fcfact':>10s} {'rcfact':>12s} {'r_s':>24s}"
+            if self.slack != 1.0 or self.budget_cutoff != "max":
+                s += f" {self.slack:>10.5f}"
+                header += f" {'slack':>10s}"
+            if self.budget_cutoff != "max":
+                s += f" {_BUDGET_CUTOFFS.index(self.budget_cutoff):>5d}"
+                header += " budget_cutoff"
+            if with_comment:
+                s = header + "\n" + s
         elif self.icmod in (6, 7):
             # rcfact is an energy error (Ha), often below the resolution of %10.5f
             if self.budget_cutoff != "max":
@@ -885,7 +926,8 @@ def _to_oncvpsp_toml(data: dict[str, Any]) -> dict[str, Any]:
     `teter_relative`. The log mesh parameters that are not given are left out, and `[log_mesh]`
     too when none is; so are `c_light` when it is not given, `upf_mesh` when it is 0, and
     `ep_as_given`, `well_onset`, `well_tail`, `wave_regularization` and `well_norm` at their
-    defaults, `well_n` and `ecut_weight` when None, and `budget_cutoff` at "max"."""
+    defaults, `well_n` and `ecut_weight` when None, `budget_cutoff` at "max", and `r_s` and
+    `error_shares` when None."""
     data = deepcopy(data)
     psps = data["pseudopotentials"]
     for key, default in (
@@ -913,6 +955,9 @@ def _to_oncvpsp_toml(data: dict[str, Any]) -> dict[str, Any]:
     core = data["model_core_charge"]
     if core.get("budget_cutoff", "max") == "max":
         core.pop("budget_cutoff", None)
+    for key in ("r_s", "error_shares"):
+        if core.get(key) is None:
+            core.pop(key, None)
     for field, key in _TOML_TETER_GRID_KEYS.items():
         value = core.pop(field, None)
         if value is not None:
@@ -1219,10 +1264,19 @@ class OncvpspInput(BaseModel):
         icmod = int(words[0])
         fcfact = float(words[1])
         rcfact: float = 0.0 if len(words) < 3 else float(words[2])
-        slack: float = float(words[3]) if icmod in (6, 7) and len(words) >= 4 else 1.0
+        # icmod 8 and 9: icmod, fcfact, rcfact, r_s [, slack [, budget_cutoff]]
+        r_s: float | None = (
+            float(words[3]) if icmod in (8, 9) and len(words) >= 4 else None
+        )
+        i_slack = 4 if icmod in (8, 9) else 3
+        slack: float = (
+            float(words[i_slack])
+            if icmod in _BUDGETED_ICMODS and len(words) > i_slack
+            else 1.0
+        )
         budget_cutoff = (
-            _BUDGET_CUTOFFS[int(words[4])]
-            if icmod in (6, 7) and len(words) >= 5
+            _BUDGET_CUTOFFS[int(words[i_slack + 1])]
+            if icmod in _BUDGETED_ICMODS and len(words) > i_slack + 1
             else "max"
         )
         teter_grid: dict[str, float] = {}
@@ -1331,6 +1385,7 @@ class OncvpspInput(BaseModel):
                 "icmod": icmod,
                 "fcfact": fcfact,
                 "rcfact": rcfact,
+                "r_s": r_s,
                 "slack": slack,
                 "budget_cutoff": budget_cutoff,
                 **teter_grid,
