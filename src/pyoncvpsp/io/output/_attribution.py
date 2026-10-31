@@ -256,6 +256,10 @@ ATTRIBUTION: dict[str, dict[str, Any]] = {
         "stage": Stage.MODEL_CORE,
         "scope": Scope.MODEL_CORE,
     },
+    "modcore_budget_fill_not_positive": {
+        "stage": Stage.MODEL_CORE,
+        "scope": Scope.MODEL_CORE,
+    },
     "modcore_budget_share_out_of_range": {
         "stage": Stage.MODEL_CORE,
         "scope": Scope.MODEL_CORE,

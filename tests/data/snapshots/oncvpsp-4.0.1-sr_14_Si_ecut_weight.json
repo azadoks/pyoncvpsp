@@ -36,6 +36,7 @@
   "budget_source": "weighted_mean",
   "c": null,
   "candidates": null,
+  "central_slope": null,
   "coefficients": [
    64.8921989,
    -155.023854,
@@ -47,6 +48,7 @@
    -5654.80329,
    1303.64918
   ],
+  "crater_depth": null,
   "ecut": 9.0016,
   "ecut_needed": 9.0016,
   "ecut_pseudo_waves": 9.0016,

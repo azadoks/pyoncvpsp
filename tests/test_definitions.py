@@ -189,6 +189,10 @@ MESSAGES = [
         "modcore_budget_fill_not_monotone",
     ),
     (
+        "modcore_budget: ERROR the fill is not positive at r_s=    0.200000 bohr",
+        "modcore_budget_fill_not_positive",
+    ),
+    (
         "modcore_budget: ERROR the error share s=    9.000000 has its cutoff beyond 1800.000000 Ha",
         "modcore_budget_share_out_of_range",
     ),

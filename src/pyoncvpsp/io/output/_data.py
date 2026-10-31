@@ -653,12 +653,24 @@ ERRORS: list[dict[str, Any]] = [
     },
     {
         "name": "modcore_budget_fill_not_monotone",
-        # azadoks/oncvpsp smooooth api 9 (msg_budget_fill_monotone)
+        # azadoks/oncvpsp smooooth api 9 before 6f95dd4 (msg_budget_fill_monotone)
         "pattern": rf"modcore_budget: ERROR the fill is not monotone at r_s=\s*(?P<r_s>{RE_FLOAT}) bohr",
         "match_string": "modcore_budget: ERROR the fill is not monotone",
         "line_count": 1,
         "subroutine": "modcore_budget",
-        "description": "The fill of the budgeted model core (icmod 8, 9) rises inside the given radius r_s.",
+        "description": "The fill of the budgeted model core (icmod 9) rises inside the given radius r_s (builds "
+        "before smooooth 6f95dd4, which keep such a fill while it stays positive: "
+        "`modcore_budget_fill_not_positive`).",
+    },
+    {
+        "name": "modcore_budget_fill_not_positive",
+        # azadoks/oncvpsp smooooth api 9 since 6f95dd4 (msg_budget_fill_positive; before, msg_budget_fill_monotone)
+        "pattern": rf"modcore_budget: ERROR the fill is not positive at r_s=\s*(?P<r_s>{RE_FLOAT}) bohr",
+        "match_string": "modcore_budget: ERROR the fill is not positive",
+        "line_count": 1,
+        "subroutine": "modcore_budget",
+        "description": "The fill of the budgeted model core (icmod 9) is not positive on [0, r_s], r_s the given "
+        "radius; a fill that rises inside r_s but stays positive is kept.",
     },
     {
         "name": "modcore_budget_share_out_of_range",

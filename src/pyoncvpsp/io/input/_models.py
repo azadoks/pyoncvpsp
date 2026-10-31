@@ -621,7 +621,8 @@ class ModelCoreChargeInput(BaseModel):  # pylint: disable=too-few-public-methods
             8) (azadoks/oncvpsp smooooth, api 9) Martins' fill :math:`\exp(a + b r^2 + c r^4)` inside
                 the given radius `r_s`, with no search; whether it fits the budget is the caller's.
             9) (azadoks/oncvpsp smooooth, api 9) The minimum-tail fill inside the given radius `r_s`,
-                with no search; a fill that is not monotone fails (`modcore_budget_fill_not_monotone`).
+                with no search; a fill that is not positive fails (`modcore_budget_fill_not_positive`;
+                before smooooth 6f95dd4, one that is not monotone).
             icmod 6 and 7 are deprecated in azadoks/oncvpsp smooooth from api 9 on.
         fcfact (float): Used to determine the matching radius for `icmod in (1, 2)`. Unused for `icmod in (0, 3, 4)`.
             Plane-wave cutoff (Ha) for `icmod` 6 to 9 if positive; else 0 for the cutoff of the

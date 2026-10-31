@@ -403,6 +403,7 @@
     "r_s": 0.613127
    }
   ],
+  "central_slope": null,
   "coefficients": [
    214.037724,
    -761.408568,
@@ -414,6 +415,7 @@
    -198.076693,
    30.2840482
   ],
+  "crater_depth": null,
   "ecut": 39.7455,
   "ecut_needed": 27.7513,
   "ecut_pseudo_waves": 39.7455,

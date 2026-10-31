@@ -35,7 +35,7 @@
     "",
     "modcore_budget: ERROR the fill is not monotone at r_s=    0.300000 bohr"
    ],
-   "description": "The fill of the budgeted model core (icmod 8, 9) rises inside the given radius r_s.",
+   "description": "The fill of the budgeted model core (icmod 9) rises inside the given radius r_s (builds before smooooth 6f95dd4, which keep such a fill while it stays positive: `modcore_budget_fill_not_positive`).",
    "line_numbers": [
     316
    ],

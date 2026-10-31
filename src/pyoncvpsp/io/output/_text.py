@@ -1332,6 +1332,11 @@ class OncvpspTextParser:
                     cutoff, bohr^-1) and error (the signed exchange-correlation energy error, Ha).
                 monotonicity_margin (float | None): The least of -(d rho/du)/rho(r_s) over
                     u = (r/r_s)^2 in [0, 1] of the fill, negative where it rises.
+                Since smooooth 6f95dd4 (each None before it):
+                central_slope (float | None): -(d rho/du)/rho(r_s) of the fill at u = 0, negative
+                    where it rises from the centre; smooth in the inputs.
+                crater_depth (float | None): (max rho - rho(0))/rho(0) of the fill over [0, r_s]; 0
+                    if it falls from the centre (not that it is monotone: the margin's sign).
         """
         start = self.search(
             r"^Model core correction: (?:budgeted|hardness-matched|Martins' fill at r_s|minimum tail at r_s)"
@@ -1387,6 +1392,8 @@ class OncvpspTextParser:
         pnorm = find(rf"^\s*(?P<p>\d+)-mean\s+(?P<value>{RE_FLOAT}) Ha")
         emax = find(rf"^\s*largest\s+(?P<value>{RE_FLOAT}) Ha")
         margin = find(rf"fill monotonicity margin\s+(?P<value>{RE_FLOAT})")
+        central_slope = find(rf"fill central slope\s+(?P<value>{RE_FLOAT})")
+        crater = find(rf"fill crater depth\s+(?P<value>{RE_FLOAT})")
         error_shares = None
         shares_at = next(
             (
@@ -1471,6 +1478,10 @@ class OncvpspTextParser:
             "emax": fort_float(emax["value"]) if emax else None,
             "error_shares": error_shares,
             "monotonicity_margin": fort_float(margin["value"]) if margin else None,
+            "central_slope": fort_float(central_slope["value"])
+            if central_slope
+            else None,
+            "crater_depth": fort_float(crater["value"]) if crater else None,
         }
 
     @cached_property

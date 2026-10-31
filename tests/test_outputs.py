@@ -234,6 +234,8 @@ def test_budgeted_core(parse_output):
         "emax": None,
         "error_shares": None,
         "monotonicity_margin": None,
+        "central_slope": None,
+        "crater_depth": None,
     }
     capped = parse_output("oncvpsp-4.0.1-sr_N_budget_cap").budgeted_core
     assert capped is not None
@@ -405,6 +407,13 @@ def test_budgeted_core_api9(parse_output):
         -9.8148998082709087e-05, rel=1e-8
     )
     assert core["monotonicity_margin"] == pytest.approx(1.0902790470683512, rel=1e-8)
+    # the fixture's build (6980298) predates the central slope and the crater depth
+    assert core["central_slope"] is None and core["crater_depth"] is None
+    # smooooth 6f95dd4 keeps a rising fill while it stays positive: here it rises off the centre
+    rising = parse_output("oncvpsp-4.0.1-sr_14_Si_icmod9_not_monotone").budgeted_core
+    assert rising["r_s"] == 0.3 and rising["monotonicity_margin"] < 0
+    assert rising["central_slope"] == pytest.approx(1.8530241541145136e02, rel=1e-8)
+    assert rising["crater_depth"] == 0.0
     martins = parse_output("oncvpsp-4.0.1-sr_14_Si_icmod8").budgeted_core
     assert (
         martins["icmod"] == 8 and martins["fill"] == "Martins" and martins["r_s"] == 0.9
@@ -417,6 +426,7 @@ def test_budgeted_core_api9(parse_output):
     for name, error in (
         ("icmod9_rs_range", "modcore_budget_rs_out_of_range"),
         ("icmod9_fill_not_monotone", "modcore_budget_fill_not_monotone"),
+        ("icmod9_fill_not_positive", "modcore_budget_fill_not_positive"),
     ):
         failed = parse_output(f"oncvpsp-4.0.1-sr_14_Si_{name}")
         assert failed.budgeted_core is None
